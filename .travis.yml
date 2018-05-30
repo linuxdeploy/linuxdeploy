@@ -1,0 +1,20 @@
+language: cpp
+sudo: required
+
+plugins:
+  apt:
+    update: true
+    packages:
+      - libboost-regex-dev
+      - libboost-filesystem-dev
+      - libmagick++-dev
+
+script:
+  - mkdir build
+  - cd build
+  - cmake ..
+  - make -j$(nproc)
+  - bin/linuxdeploy --init-appdir --appdir AppDir -e bin/linuxdeploy -i ../resources/linuxdeploy.png --create-desktop-file
+  - wget https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
+  - chmod +x appimagetool-x86_64.AppImage
+  - ./appimagetool-x86_64.AppImage AppDir
