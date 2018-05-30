@@ -5,8 +5,8 @@ addons:
   apt:
     update: true
     packages:
-      - libboost-regex-dev
-      - libboost-filesystem-dev
+      - libboost-regex1.55-dev
+      - libboost-filesystem1.55-dev
       - libmagick++-dev
 
 script:
