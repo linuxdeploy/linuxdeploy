@@ -15,7 +15,8 @@ install:
   - cd patchelf
   - ./bootstrap.sh
   - ./configure --prefix=/usr
-  - make -j$(nproc) install
+  - make -j$(nproc)
+  - sudo make install
   - cd ..
   - rm -rf patchelf
 
