@@ -91,48 +91,57 @@ namespace linuxdeploy {
             }
 
             std::string ElfFile::getRPath() {
-                subprocess::Popen patchelfProc(
-                    {getPatchelfPath().c_str(), "--print-rpath", d->path.c_str()},
-                    subprocess::output(subprocess::PIPE),
-                    subprocess::error(subprocess::PIPE)
-                );
+                try {
+                    subprocess::Popen patchelfProc(
+                        {getPatchelfPath().c_str(), "--print-rpath", d->path.c_str()},
+                        subprocess::output(subprocess::PIPE),
+                        subprocess::error(subprocess::PIPE)
+                    );
 
-                auto patchelfOutput = patchelfProc.communicate();
-                auto& patchelfStdout = patchelfOutput.first;
-                auto& patchelfStderr = patchelfOutput.second;
+                    auto patchelfOutput = patchelfProc.communicate();
+                    auto& patchelfStdout = patchelfOutput.first;
+                    auto& patchelfStderr = patchelfOutput.second;
 
-                if (patchelfProc.retcode() != 0) {
-                    std::string errStr(patchelfStderr.buf.data());
+                    if (patchelfProc.retcode() != 0) {
+                        std::string errStr(patchelfStderr.buf.data());
 
-                    // if file is not an ELF executable, there is no need for a detailed error message
-                    if (patchelfProc.retcode() == 1 && errStr.find("not an ELF executable")) {
-                        return "";
-                    } else {
-                        ldLog() << LD_ERROR << "Call to patchelf failed:" << std::endl << errStr;
-                        return "";
+                        // if file is not an ELF executable, there is no need for a detailed error message
+                        if (patchelfProc.retcode() == 1 && errStr.find("not an ELF executable")) {
+                            return "";
+                        } else {
+                            ldLog() << LD_ERROR << "Call to patchelf failed:" << std::endl << errStr;
+                            return "";
+                        }
                     }
+
+
+                    std::string retval = patchelfStdout.buf.data();
+                    util::trim(retval, '\n');
+                    util::trim(retval);
+
+                    return retval;
+                } catch (const std::exception&) {
+                    return "";
                 }
-
-                std::string retval = patchelfStdout.buf.data();
-                util::trim(retval, '\n');
-                util::trim(retval);
-
-                return retval;
             }
 
             bool ElfFile::setRPath(const std::string& value) {
-                subprocess::Popen patchelfProc(
-                    {getPatchelfPath().c_str(), "--set-rpath", value.c_str(), d->path.c_str()},
-                    subprocess::output(subprocess::PIPE),
-                    subprocess::error(subprocess::PIPE)
-                );
+                try {
+                    subprocess::Popen patchelfProc(
+                        {getPatchelfPath().c_str(), "--set-rpath", value.c_str(), d->path.c_str()},
+                        subprocess::output(subprocess::PIPE),
+                        subprocess::error(subprocess::PIPE)
+                    );
 
-                auto patchelfOutput = patchelfProc.communicate();
-                auto& patchelfStdout = patchelfOutput.first;
-                auto& patchelfStderr = patchelfOutput.second;
+                    auto patchelfOutput = patchelfProc.communicate();
+                    auto& patchelfStdout = patchelfOutput.first;
+                    auto& patchelfStderr = patchelfOutput.second;
 
-                if (patchelfProc.retcode() != 0) {
-                    ldLog() << LD_ERROR << "Call to patchelf failed:" << std::endl << patchelfStderr.buf;
+                    if (patchelfProc.retcode() != 0) {
+                        ldLog() << LD_ERROR << "Call to patchelf failed:" << std::endl << patchelfStderr.buf;
+                        return false;
+                    }
+                } catch (const std::exception&) {
                     return false;
                 }
 
