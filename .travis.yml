@@ -1,0 +1,31 @@
+language: cpp
+sudo: required
+
+addons:
+  apt:
+    update: true
+    packages:
+      - libboost-regex1.55-dev
+      - libboost-filesystem1.55-dev
+      - libmagick++-dev
+      - automake  # required for patchelf
+
+install:
+  - git clone https://github.com/NixOS/patchelf.git
+  - cd patchelf
+  - ./bootstrap.sh
+  - ./configure --prefix=/usr
+  - make -j$(nproc)
+  - sudo make install
+  - cd ..
+  - rm -rf patchelf
+
+script:
+  - mkdir build
+  - cd build
+  - cmake ..
+  - make VERBOSE=1
+  - bin/linuxdeploy --init-appdir --appdir AppDir -e bin/linuxdeploy -i ../resources/linuxdeploy.png --create-desktop-file
+  - wget https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
+  - chmod +x appimagetool-x86_64.AppImage
+  - ./appimagetool-x86_64.AppImage AppDir
