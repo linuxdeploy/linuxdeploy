@@ -25,7 +25,9 @@ script:
   - cd build
   - cmake ..
   - make VERBOSE=1
-  - bin/linuxdeploy --init-appdir --appdir AppDir -e bin/linuxdeploy -i ../resources/linuxdeploy.png --create-desktop-file
+  # deploy patchelf which is a dependency of linuxdeploy
+  - bin/linuxdeploy --init-appdir --appdir AppDir -e bin/linuxdeploy -i ../resources/linuxdeploy.png --create-desktop-file -e /usr/bin/patchelf
+  # verify that an AppImage can be built
   - wget https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
   - chmod +x appimagetool-x86_64.AppImage
   - ./appimagetool-x86_64.AppImage AppDir
