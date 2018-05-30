@@ -71,9 +71,28 @@ namespace linuxdeploy {
                 return paths;
             }
 
+            std::string getPatchelfPath() {
+                // by default, try to use a patchelf next to the linuxdeploy binary
+                // if that isn't available, fall back to searching for patchelf in the PATH
+                std::string patchelfPath = "patchelf";
+
+                // FIXME: reading /proc/self/exe line is Linux specific
+                std::vector<char> buf(PATH_MAX, '\0');
+                if (readlink("/proc/self/exe", buf.data(), buf.size()) != -1) {
+                    auto binDirPath = bf::path(buf.data());
+                    auto localPatchelfPath = binDirPath.parent_path() / "patchelf";
+                    if (bf::exists(localPatchelfPath))
+                        patchelfPath = localPatchelfPath.string();
+                }
+
+                ldLog() << LD_DEBUG << "Using patchelf:" << patchelfPath << std::endl;
+
+                return patchelfPath;
+            }
+
             std::string ElfFile::getRPath() {
                 subprocess::Popen patchelfProc(
-                    {"patchelf", "--print-rpath", d->path.c_str()},
+                    {getPatchelfPath().c_str(), "--print-rpath", d->path.c_str()},
                     subprocess::output(subprocess::PIPE),
                     subprocess::error(subprocess::PIPE)
                 );
@@ -103,7 +122,7 @@ namespace linuxdeploy {
 
             bool ElfFile::setRPath(const std::string& value) {
                 subprocess::Popen patchelfProc(
-                    {"patchelf", "--set-rpath", value.c_str(), d->path.c_str()},
+                    {getPatchelfPath().c_str(), "--set-rpath", value.c_str(), d->path.c_str()},
                     subprocess::output(subprocess::PIPE),
                     subprocess::error(subprocess::PIPE)
                 );
