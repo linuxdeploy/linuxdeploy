@@ -8,6 +8,16 @@ addons:
       - libboost-regex1.55-dev
       - libboost-filesystem1.55-dev
       - libmagick++-dev
+      - automake  # required for patchelf
+
+install:
+  - git clone https://github.com/NixOS/patchelf.git
+  - cd patchelf
+  - ./bootstrap.sh
+  - ./configure --prefix=/usr
+  - make -j$(nproc) install
+  - cd ..
+  - rm -rf patchelf
 
 script:
   - mkdir build
