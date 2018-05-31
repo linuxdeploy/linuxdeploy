@@ -61,7 +61,8 @@ int main(int argc, char** argv) {
         return 0;
 
     if (!appDirPath) {
-        std::cerr << "--appdir parameter required" << std::endl;
+        ldLog() << LD_ERROR << "--appdir parameter required" << std::endl;
+        std::cerr << std::endl << parser;
         return 1;
     }
 
