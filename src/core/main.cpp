@@ -23,7 +23,7 @@ int main(int argc, char** argv) {
 
     args::HelpFlag help(parser, "help", "Display this help text.", {'h', "help"});
     args::Flag showVersion(parser, "", "Print version and exit", {'V', "version"});
-    args::ValueFlag<int> verbosity(parser, "verbosity", "Verbosity of log output (0 = debug, 1 = info, 2 = warning, 3 = error)", {'v', "verbosity"});
+    args::ValueFlag<int> verbosity(parser, "verbosity", "Verbosity of log output (0 = debug, 1 = info (default), 2 = warning, 3 = error)", {'v', "verbosity"});
 
     args::Flag initAppDir(parser, "", "Create basic AppDir structure", {"init-appdir"});
     args::ValueFlag<std::string> appDirPath(parser, "appdir", "Path to target AppDir", {"appdir"});
