@@ -47,7 +47,7 @@ namespace linuxdeploy {
                 public:
                     // actually copy file
                     // mimics cp command behavior
-                    bool copyFile(const bf::path& from, bf::path to) {
+                    bool copyFile(const bf::path& from, bf::path to, bool overwrite = false) {
                         ldLog() << "Copying file" << from << "to" << to << std::endl;
 
                         try {
@@ -59,7 +59,11 @@ namespace linuxdeploy {
                             if (*(to.string().end() - 1) == '/' || bf::is_directory(to))
                                 to /= from.filename();
 
-                            bf::copy_file(from, to, bf::copy_option::overwrite_if_exists);
+                            if (!overwrite && bf::exists(to)) {
+                                ldLog() << LD_DEBUG << "File exists, skipping:" << to << std::endl;
+                            } else {
+                                bf::copy_file(from, to, bf::copy_option::overwrite_if_exists);
+                            }
                         } catch (const bf::filesystem_error& e) {
                             return false;
                         }
