@@ -41,8 +41,11 @@ namespace linuxdeploy {
                     // the little amount of additional memory is worth it, considering the improved performance
                     std::set<bf::path> visitedFiles;
 
+                    // used to automatically rename resources to improve the UX, e.g. icons
+                    std::string appName;
+
                 public:
-                    PrivateData() : copyOperations(), setElfRPathOperations(), visitedFiles(), appDirPath() {};
+                    PrivateData() : copyOperations(), setElfRPathOperations(), visitedFiles(), appDirPath(), appName() {};
 
                 public:
                     // actually copy file
@@ -325,7 +328,17 @@ namespace linuxdeploy {
                             }
                         }
 
-                        deployFile(path, appDirPath / "usr/share/icons/hicolor" / resolution / "apps/");
+                        // rename files like <appname>_*.ext to <appname>.ext
+                        auto filename = path.filename().string();
+                        if (!appName.empty() && util::stringStartsWith(path.string(), appName)) {
+                            auto newFilename = appName + path.extension().string();
+                            if (newFilename != filename) {
+                                ldLog() << LD_WARNING << "Renaming icon" << path << "to" << newFilename << std::endl;
+                                filename = newFilename;
+                            }
+                        }
+
+                        deployFile(path, appDirPath / "usr/share/icons/hicolor" / resolution / "apps" / filename);
 
                         return true;
                     }
@@ -566,6 +579,10 @@ namespace linuxdeploy {
                 }
 
                 return true;
+            }
+
+            void AppDir::setAppName(const std::string& appName) {
+                d->appName = appName;
             }
         }
     }

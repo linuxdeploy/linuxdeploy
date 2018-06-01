@@ -72,6 +72,7 @@ int main(int argc, char** argv) {
 
     if (appName) {
         ldLog() << std::endl << "-- Deploying application \"" << LD_NO_SPACE << appName.Get() << LD_NO_SPACE << "\" --" << std::endl;
+        appDir.setAppName(appName.Get());
     }
 
     // initialize AppDir with common directories on request
