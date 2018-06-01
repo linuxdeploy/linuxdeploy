@@ -25,7 +25,7 @@ namespace linuxdeploy {
                 public:
                     bf::path appDirPath;
                     std::map<bf::path, bf::path> copyOperations;
-                    std::vector<bf::path> setElfRPathOperations;
+                    std::map<bf::path, std::string> setElfRPathOperations;
 
                 public:
                     PrivateData() {
@@ -134,12 +134,13 @@ namespace linuxdeploy {
 
                         if (success) {
                             while (!setElfRPathOperations.empty()) {
-                                static const auto rpath = "$ORIGIN/../lib";
-                                const auto& elfFilePath = *(setElfRPathOperations.begin());
+                                const auto& currentEntry = *(setElfRPathOperations.begin());
+                                const auto& filePath = currentEntry.first;
+                                const auto& rpath = currentEntry.second;
 
-                                ldLog() << "Setting rpath in ELF file" << elfFilePath << "to" << rpath << std::endl;
-                                if (!elf::ElfFile(elfFilePath).setRPath(rpath)) {
-                                    ldLog() << LD_ERROR << "Failed to set rpath in ELF file:" << elfFilePath << std::endl;
+                                ldLog() << "Setting rpath in ELF file" << filePath << "to" << rpath << std::endl;
+                                if (!elf::ElfFile(filePath).setRPath(rpath)) {
+                                    ldLog() << LD_ERROR << "Failed to set rpath in ELF file:" << filePath << std::endl;
                                     success = false;
                                 }
 
@@ -211,7 +212,7 @@ namespace linuxdeploy {
 
                         deployFile(path, appDirPath / "usr/lib/");
 
-                        setElfRPathOperations.push_back(appDirPath / "usr/lib" / path.filename());
+                        setElfRPathOperations[appDirPath / "usr/lib" / path.filename()] = "$ORIGIN";
 
                         if (!deployElfDependencies(path))
                             return false;
@@ -231,7 +232,7 @@ namespace linuxdeploy {
 
                         deployFile(path, appDirPath / "usr/bin/");
 
-                        setElfRPathOperations.push_back(appDirPath / "usr/bin" / path.filename());
+                        setElfRPathOperations[appDirPath / "usr/bin" / path.filename()] = "$ORIGIN/../lib";
 
                         if (!deployElfDependencies(path))
                             return false;
