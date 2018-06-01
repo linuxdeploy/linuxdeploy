@@ -1,3 +1,8 @@
+// system headers
+#include <set>
+#include <string>
+#include <vector>
+
 // library headers
 #include <boost/filesystem.hpp>
 #include <Magick++.h>
@@ -24,13 +29,14 @@ namespace linuxdeploy {
             class AppDir::PrivateData {
                 public:
                     bf::path appDirPath;
+
+                    // store deferred operations
+                    // these can be executed by calling excuteDeferredOperations
                     std::map<bf::path, bf::path> copyOperations;
                     std::map<bf::path, std::string> setElfRPathOperations;
 
                 public:
-                    PrivateData() {
-                        this->copyOperations = {};
-                    };
+                    PrivateData() : copyOperations(), setElfRPathOperations() {};
 
                 public:
                     // actually copy file
