@@ -52,6 +52,14 @@ namespace linuxdeploy {
                 std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c) { return std::tolower(c); });
                 return s;
             }
+
+            static bool stringStartsWith(const std::string& string, const std::string& prefix) {
+                // sanity check
+                if (string.size() < prefix.size())
+                    return false;
+
+                return strncmp(string.c_str(), prefix.c_str(), prefix.size()) == 0;
+            }
         }
     }
 }
