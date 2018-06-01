@@ -101,11 +101,23 @@ namespace linuxdeploy {
             }
 
             bool DesktopFile::addDefaultKeys(const std::string& executableFileName) {
+                ldLog() << "Adding default values to desktop file:" << path() << std::endl;
+
                 auto rv = true;
 
                 auto setDefault = [&rv, this](const std::string& section, const std::string& key, const std::string& value) {
-                    if (setEntry(section, key, value)) {
+                    if (entryExists(section, key)) {
+                        std::string currentValue;
+                        if (!getEntry(section, key, currentValue))
+                            ldLog() << LD_ERROR << "This should never happen" << std::endl;
+
+                        ldLog() << LD_WARNING << "Key exists, not modified:" << key << "(current value:" << currentValue << LD_NO_SPACE << ")" << std::endl;
                         rv = false;
+                    } else {
+                        if (setEntry(section, key, value)) {
+                            // *should* be unreachable
+                            rv = false;
+                        }
                     }
                 };
 

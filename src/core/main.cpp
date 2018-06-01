@@ -163,6 +163,7 @@ int main(int argc, char** argv) {
         }
 
         ldLog() << std::endl << "-- Creating desktop file --" << std::endl;
+        ldLog() << LD_WARNING << "Please beware the created desktop file is of low quality and should be edited or replaced before using it for production releases!" << std::endl;
 
         auto executableName = bf::path(executablePaths.Get().front()).filename().string();
 
@@ -176,7 +177,7 @@ int main(int argc, char** argv) {
 
         desktopfile::DesktopFile desktopFile(desktopFilePath);
         if (!desktopFile.addDefaultKeys(executableName)) {
-            ldLog() << LD_WARNING << "Tried to overwrite existing entries in desktop file" << std::endl;
+            ldLog() << LD_WARNING << "Tried to overwrite existing entries in desktop file:" << desktopFilePath << std::endl;
         }
 
         if (!desktopFile.save()) {
