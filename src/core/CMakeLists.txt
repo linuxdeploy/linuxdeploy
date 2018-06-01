@@ -22,6 +22,7 @@ add_library(linuxdeploy_core STATIC elf.cpp log.cpp  appdir.cpp desktopfile.cpp 
 target_link_libraries(linuxdeploy_core PUBLIC Boost::filesystem Boost::regex subprocess cpp-feather-ini-parser PkgConfig::magick++ ${CMAKE_THREAD_LIBS_INIT})
 target_include_directories(linuxdeploy_core PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_include_directories(linuxdeploy_core PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../util)
+target_include_directories(linuxdeploy_core PUBLIC ${PROJECT_SOURCE_DIR}/include)
 target_compile_definitions(linuxdeploy_core PUBLIC -DBOOST_NO_CXX11_SCOPED_ENUMS)
 
 add_executable(linuxdeploy main.cpp)
