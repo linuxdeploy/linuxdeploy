@@ -15,7 +15,7 @@
 #include "linuxdeploy/core/appdir.h"
 #include "linuxdeploy/core/elf.h"
 #include "linuxdeploy/core/log.h"
-#include "linuxdeploy/core/util.h"
+#include "util.h"
 #include "excludelist.h"
 
 using namespace linuxdeploy::core;
