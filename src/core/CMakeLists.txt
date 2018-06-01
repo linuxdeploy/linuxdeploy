@@ -5,6 +5,7 @@ cmake_minimum_required(VERSION 3.6)
 # include headers to make CLion happy
 file(GLOB HEADERS ${PROJECT_SOURCE_DIR}/include/linuxdeploy/core/*.h)
 
+set(Boost_USE_STATIC_LIBS ON)
 find_package(Boost REQUIRED COMPONENTS filesystem regex)
 find_package(Threads)
 
