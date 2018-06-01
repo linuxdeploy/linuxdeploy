@@ -35,6 +35,12 @@ namespace linuxdeploy {
                     std::map<bf::path, bf::path> copyOperations;
                     std::map<bf::path, std::string> setElfRPathOperations;
 
+                    // stores all files that have been visited by the deploy functions, e.g., when they're blacklisted,
+                    // have been added to the deferred operations already, etc.
+                    // lookups in a single container are a lot faster than having to look up in several ones, therefore
+                    // the little amount of additional memory is worth it, considering the improved performance
+                    std::set<bf::path> visitedFiles;
+
                 public:
                     PrivateData() : copyOperations(), setElfRPathOperations() {};
 
@@ -107,8 +113,8 @@ namespace linuxdeploy {
                         return true;
                     }
 
-                    bool checkDuplicate(const bf::path& path) {
-                        return copyOperations.find(path) != copyOperations.end();
+                    bool hasBeenVisitedAlready(const bf::path& path) {
+                        return visitedFiles.find(path) != visitedFiles.end();
                     }
 
                     // execute deferred copy operations registered with the deploy* functions
@@ -159,6 +165,9 @@ namespace linuxdeploy {
                         }
 
                         copyOperations[from] = to;
+
+                        // mark file as visited
+                        visitedFiles.insert(from);
                     }
 
                     bool deployElfDependencies(const bf::path& path) {
@@ -173,8 +182,8 @@ namespace linuxdeploy {
                     }
 
                     bool deployLibrary(const bf::path& path) {
-                        if (checkDuplicate(path)) {
-                            ldLog() << LD_DEBUG << "Skipping duplicate deployment of shared library" << path << std::endl;
+                        if (hasBeenVisitedAlready(path)) {
+                            ldLog() << LD_DEBUG << "File has been visited already:" << path << std::endl;
                             return true;
                         }
 
@@ -201,6 +210,10 @@ namespace linuxdeploy {
 
                         if (isInExcludelist(path.filename())) {
                             ldLog() << "Skipping deployment of blacklisted library" << path << std::endl;
+
+                            // mark file as visited
+                            visitedFiles.insert(path);
+
                             return true;
                         } else {
                             ldLog() << "Deploying shared library" << path << std::endl;
@@ -217,8 +230,8 @@ namespace linuxdeploy {
                     }
 
                     bool deployExecutable(const bf::path& path) {
-                        if (checkDuplicate(path)) {
-                            ldLog() << LD_DEBUG << "Skipping duplicate deployment of executable" << path << std::endl;
+                        if (hasBeenVisitedAlready(path)) {
+                            ldLog() << LD_DEBUG << "File has been visited already:" << path << std::endl;
                             return true;
                         }
 
@@ -237,8 +250,8 @@ namespace linuxdeploy {
                     }
 
                     bool deployDesktopFile(const desktopfile::DesktopFile& desktopFile) {
-                        if (checkDuplicate(desktopFile.path())) {
-                            ldLog() << LD_DEBUG << "Skipping duplicate deployment of desktop file" << desktopFile.path() << std::endl;
+                        if (hasBeenVisitedAlready(desktopFile.path())) {
+                            ldLog() << LD_DEBUG << "File has been visited already:" << desktopFile.path() << std::endl;
                             return true;
                         }
 
@@ -254,8 +267,8 @@ namespace linuxdeploy {
                     }
 
                     bool deployIcon(const bf::path& path) {
-                        if (checkDuplicate(path)) {
-                            ldLog() << LD_DEBUG << "Skipping duplicate deployment of icon" << path << std::endl;
+                        if (hasBeenVisitedAlready(path)) {
+                            ldLog() << LD_DEBUG << "File has been visited already:" << path << std::endl;
                             return true;
                         }
 
