@@ -38,6 +38,8 @@ int main(int argc, char** argv) {
 
     args::ValueFlagList<std::string> iconPaths(parser, "icon file", "Icon to deploy", {'i', "icon-file"});
 
+    args::ValueFlag<std::string> customAppRunPath(parser, "AppRun path", "Path to custom AppRun script (linuxdeploy will not create a symlink but copy this file instead)", {"custom-apprun"});
+
     try {
         parser.ParseCLI(argc, argv);
     } catch (args::Help&) {
@@ -196,7 +198,15 @@ int main(int argc, char** argv) {
 
             ldLog() << "Deploying desktop file:" << desktopFile.path();
 
-            if (!appDir.createLinksInAppDirRoot(desktopFile))
+            bool rv;
+
+            if (customAppRunPath) {
+                rv = appDir.createLinksInAppDirRoot(desktopFile, customAppRunPath.Get());
+            } else {
+                rv = appDir.createLinksInAppDirRoot(desktopFile);
+            }
+
+            if (!rv)
                 return 1;
         }
     }

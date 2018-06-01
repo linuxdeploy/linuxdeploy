@@ -466,7 +466,7 @@ namespace linuxdeploy {
                 return desktopFiles;
             }
 
-            bool AppDir::createLinksInAppDirRoot(const desktopfile::DesktopFile& desktopFile) {
+            bool AppDir::createLinksInAppDirRoot(const desktopfile::DesktopFile& desktopFile, boost::filesystem::path customAppRunPath) {
                 ldLog() << "Deploying desktop file to AppDir root:" << desktopFile.path() << std::endl;
 
                 // copy desktop file to root directory
@@ -486,7 +486,7 @@ namespace linuxdeploy {
                 const auto foundIconPaths = deployedIconPaths();
 
                 if (foundIconPaths.empty()) {
-                    ldLog() << LD_ERROR << "Could not find suitable executable for Exec entry:" << iconName << std::endl;
+                    ldLog() << LD_ERROR << "Could not find suitable executable for Icon entry:" << iconName << std::endl;
                     return false;
                 }
 
@@ -503,30 +503,50 @@ namespace linuxdeploy {
                     }
                 }
 
-                // look for suitable binary to create AppRun symlink
-                std::string executableName;
+                if (!customAppRunPath.empty()) {
+                    // copy custom AppRun executable
+                    // FIXME: make sure this file is executable
+                    ldLog() << "Deploying custom AppRun:" << customAppRunPath;
 
-                if (!desktopFile.getEntry("Desktop Entry", "Exec", executableName)) {
-                    ldLog() << LD_ERROR << "Exec entry missing in desktop file:" << desktopFile.path() << std::endl;
-                    return false;
-                }
+                    if (!d->copyFile(customAppRunPath, path() / "AppRun"))
+                        return false;
+                } else {
+                    // check if there is a custom AppRun already
+                    // in that case, skip deployment of symlink
+                    if (bf::exists(path() / "AppRun")) {
+                        ldLog() << LD_WARNING << "Custom AppRun detected, skipping deployment of symlink" << std::endl;
+                    } else {
+                        // look for suitable binary to create AppRun symlink
+                        std::string executableName;
 
-                const auto foundExecutablePaths = deployedExecutablePaths();
-
-                if (foundExecutablePaths.empty()) {
-                    ldLog() << LD_ERROR << "Could not find suitable executable for Exec entry:" << iconName << std::endl;
-                    return false;
-                }
-
-                for (const auto& executablePath : foundExecutablePaths) {
-                    ldLog() << LD_DEBUG << "Executable found:" << executablePath << std::endl;
-
-                    if (executablePath.stem() == iconName) {
-                        ldLog() << "Deploying AppRun symlink for executable in AppDir root:" << executablePath << std::endl;
-
-                        if (!d->symlinkFile(executablePath, path() / "AppRun")) {
-                            ldLog() << LD_ERROR << "Failed to create AppRun symlink for executable in AppDir root:" << executablePath << std::endl;
+                        if (!desktopFile.getEntry("Desktop Entry", "Exec", executableName)) {
+                            ldLog() << LD_ERROR << "Exec entry missing in desktop file:" << desktopFile.path()
+                                    << std::endl;
                             return false;
+                        }
+
+                        const auto foundExecutablePaths = deployedExecutablePaths();
+
+                        if (foundExecutablePaths.empty()) {
+                            ldLog() << LD_ERROR << "Could not find suitable executable for Exec entry:" << iconName
+                                    << std::endl;
+                            return false;
+                        }
+
+                        for (const auto& executablePath : foundExecutablePaths) {
+                            ldLog() << LD_DEBUG << "Executable found:" << executablePath << std::endl;
+
+                            if (executablePath.stem() == iconName) {
+                                ldLog() << "Deploying AppRun symlink for executable in AppDir root:" << executablePath
+                                        << std::endl;
+
+                                if (!d->symlinkFile(executablePath, path() / "AppRun")) {
+                                    ldLog() << LD_ERROR
+                                            << "Failed to create AppRun symlink for executable in AppDir root:"
+                                            << executablePath << std::endl;
+                                    return false;
+                                }
+                            }
                         }
                     }
                 }

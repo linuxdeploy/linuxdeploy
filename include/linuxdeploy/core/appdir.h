@@ -64,7 +64,7 @@ namespace linuxdeploy {
                     std::vector<desktopfile::DesktopFile> deployedDesktopFiles();
 
                     // create symlinks for AppRun, desktop file and icon in the AppDir root directory
-                    bool createLinksInAppDirRoot(const desktopfile::DesktopFile& desktopFile);
+                    bool createLinksInAppDirRoot(const desktopfile::DesktopFile& desktopFile, boost::filesystem::path customAppRunPath = "");
             };
         }
     }
