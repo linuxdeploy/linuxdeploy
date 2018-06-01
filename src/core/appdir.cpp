@@ -108,17 +108,7 @@ namespace linuxdeploy {
                     }
 
                     bool checkDuplicate(const bf::path& path) {
-                        // FIXME: use more efficient search (e.g., binary search)
-                        // a linear search is not _really_ efficient
-                        //return std::binary_search(copyOperations.begin(), copyOperations.end(), path);
-                        for (const auto& pair : copyOperations) {
-                            if (pair.first == path) {
-                                ldLog() << LD_DEBUG << "Duplicate:" << pair.first << std::endl;
-                                return true;
-                            }
-                        }
-
-                        return false;
+                        return copyOperations.find(path) != copyOperations.end();
                     }
 
                     // execute deferred copy operations registered with the deploy* functions
