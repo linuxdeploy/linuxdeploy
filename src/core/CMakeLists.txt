@@ -18,7 +18,7 @@ execute_process(
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
 )
 
-add_library(core elf.cpp log.cpp  appdir.cpp desktopfile.cpp ${HEADERS})
+add_library(core STATIC elf.cpp log.cpp  appdir.cpp desktopfile.cpp ${HEADERS})
 target_link_libraries(core Boost::filesystem Boost::regex subprocess cpp-feather-ini-parser PkgConfig::magick++ ${CMAKE_THREAD_LIBS_INIT})
 target_include_directories(core PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_compile_definitions(core PUBLIC -DBOOST_NO_CXX11_SCOPED_ENUMS)
