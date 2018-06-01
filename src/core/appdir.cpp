@@ -42,7 +42,7 @@ namespace linuxdeploy {
                     std::set<bf::path> visitedFiles;
 
                 public:
-                    PrivateData() : copyOperations(), setElfRPathOperations() {};
+                    PrivateData() : copyOperations(), setElfRPathOperations(), visitedFiles(), appDirPath() {};
 
                 public:
                     // actually copy file
