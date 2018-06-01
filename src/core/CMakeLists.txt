@@ -18,12 +18,12 @@ execute_process(
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
 )
 
-add_library(core STATIC elf.cpp log.cpp  appdir.cpp desktopfile.cpp ${HEADERS})
-target_link_libraries(core Boost::filesystem Boost::regex subprocess cpp-feather-ini-parser PkgConfig::magick++ ${CMAKE_THREAD_LIBS_INIT})
-target_include_directories(core PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
-target_compile_definitions(core PUBLIC -DBOOST_NO_CXX11_SCOPED_ENUMS)
+add_library(linuxdeploy_core STATIC elf.cpp log.cpp  appdir.cpp desktopfile.cpp ${HEADERS})
+target_link_libraries(linuxdeploy_core PUBLIC Boost::filesystem Boost::regex subprocess cpp-feather-ini-parser PkgConfig::magick++ ${CMAKE_THREAD_LIBS_INIT})
+target_include_directories(linuxdeploy_core PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
+target_compile_definitions(linuxdeploy_core PUBLIC -DBOOST_NO_CXX11_SCOPED_ENUMS)
 
 add_executable(linuxdeploy main.cpp)
-target_link_libraries(linuxdeploy core args)
+target_link_libraries(linuxdeploy linuxdeploy_core args)
 
 set_target_properties(linuxdeploy PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
