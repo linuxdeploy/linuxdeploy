@@ -8,7 +8,7 @@
 namespace linuxdeploy {
     namespace util {
         namespace magic {
-            class MagicWrapper::PrivateData {
+            class Magic::PrivateData {
                 private:
                     magic_t cookie;
 
@@ -37,11 +37,11 @@ namespace linuxdeploy {
                     }
             };
 
-            MagicWrapper::MagicWrapper() {
+            Magic::Magic() {
                 d = new PrivateData();
             }
 
-            MagicWrapper::~MagicWrapper() {
+            Magic::~Magic() {
                 delete d;
             }
         }

@@ -23,14 +23,14 @@ namespace linuxdeploy {
                     }
             };
 
-            class MagicWrapper {
+            class Magic {
                 private:
                     class PrivateData;
                     PrivateData *d;
 
                 public:
-                    MagicWrapper();
-                    ~MagicWrapper();
+                    Magic();
+                    ~Magic();
             };
         }
     }
