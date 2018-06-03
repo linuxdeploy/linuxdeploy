@@ -1,4 +1,10 @@
+# required for zlib imported target
+cmake_minimum_required(VERSION 3.3)
+
 message(STATUS "Searching for libmagic")
+
+# on Debian-ish systems, libmagic depends on zlib
+find_package(ZLIB REQUIRED)
 
 find_library(LIBMAGIC_A libmagic.a)
 
@@ -18,4 +24,4 @@ endif()
 
 add_library(libmagic_static INTERFACE IMPORTED)
 set_property(TARGET libmagic_static PROPERTY INTERFACE_INCLUDE_DIRECTORIES ${LIBMAGIC_MAGIC_H})
-set_property(TARGET libmagic_static PROPERTY INTERFACE_LINK_LIBRARIES ${LIBMAGIC_A})
+set_property(TARGET libmagic_static PROPERTY INTERFACE_LINK_LIBRARIES ${LIBMAGIC_A};ZLIB::ZLIB)
