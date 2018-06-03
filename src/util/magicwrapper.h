@@ -1,6 +1,7 @@
 // system includes
 #include <exception>
 #include <string>
+#include <stdexcept>
 #include <utility>
 
 #pragma once
@@ -9,18 +10,9 @@ namespace linuxdeploy {
     namespace util {
         namespace magic {
             // thrown by constructors if opening the magic database fails
-            class MagicError : std::exception {
-                private:
-                    const std::string message;
-
+            class MagicError : public std::runtime_error {
                 public:
-                    explicit MagicError() : message() {}
-
-                    explicit MagicError(std::string message) : message(std::move(message)) {}
-
-                    const char* what() {
-                        return message.c_str();
-                    }
+                    explicit MagicError(const std::string& msg) : std::runtime_error(msg) {}
             };
 
             class Magic {
