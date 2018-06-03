@@ -75,7 +75,7 @@ namespace linuxdeploy {
                     }
 
                     // create symlink
-                    bool symlinkFile(bf::path target, bf::path symlink, const bool useRelativePath = true) {
+                    bool symlinkFile(const bf::path& target, const bf::path& symlink, const bool useRelativePath = true) {
                         ldLog() << "Creating symlink for file" << target << "in/as" << symlink << std::endl;
 
                         /*try {
