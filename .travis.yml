@@ -8,6 +8,7 @@ addons:
       - libboost-regex1.55-dev
       - libboost-filesystem1.55-dev
       - libmagick++-dev
+      - libmagic-dev
       - automake  # required for patchelf
 
 install:
