@@ -9,7 +9,7 @@ namespace linuxdeploy {
     namespace util {
         namespace magic {
             class Magic::PrivateData {
-                private:
+                public:
                     magic_t cookie;
 
                 public:
@@ -26,15 +26,6 @@ namespace linuxdeploy {
                             cookie = nullptr;
                         }
                     };
-
-                    std::string fileType(const std::string& path) {
-                        const auto* buf = magic_file(cookie, path.c_str());
-
-                        if (buf == nullptr)
-                            return "";
-
-                        return buf;
-                    }
             };
 
             Magic::Magic() {
@@ -43,6 +34,15 @@ namespace linuxdeploy {
 
             Magic::~Magic() {
                 delete d;
+            }
+
+            std::string Magic::fileType(const std::string& path) {
+                const auto* buf = magic_file(d->cookie, path.c_str());
+
+                if (buf == nullptr)
+                    return "";
+
+                return buf;
             }
         }
     }

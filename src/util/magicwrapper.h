@@ -31,6 +31,10 @@ namespace linuxdeploy {
                 public:
                     Magic();
                     ~Magic();
+
+                public:
+                    // returns MIME-style description of <path>
+                    std::string fileType(const std::string& path);
             };
         }
     }
