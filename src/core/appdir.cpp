@@ -584,6 +584,54 @@ namespace linuxdeploy {
             void AppDir::setAppName(const std::string& appName) {
                 d->appName = appName;
             }
+
+            std::vector<bf::path> AppDir::listExecutables() {
+                util::magic::Magic magic;
+
+                std::vector<bf::path> executables;
+
+                for (const auto& file : listFilesInDirectory(path() / "usr" / "bin", false)) {
+                    auto fileType = magic.fileType(bf::absolute(file).string());
+
+                    ldLog() << LD_DEBUG << "Type of file" << file << LD_NO_SPACE << ":" << fileType << std::endl;
+
+                    if (util::stringStartsWith(fileType, "application/x-executable"))
+                        executables.push_back(file);
+                }
+
+                return executables;
+            }
+
+            std::vector<bf::path> AppDir::listSharedLibraries() {
+                util::magic::Magic magic;
+
+                std::vector<bf::path> sharedLibraries;
+
+                for (const auto& file : listFilesInDirectory(path() / "usr" / "lib", true)) {
+                    auto fileType = magic.fileType(bf::absolute(file).string());
+
+                    ldLog() << LD_DEBUG << "Type of file" << file << LD_NO_SPACE << ":" << fileType << std::endl;
+
+                    if (util::stringStartsWith(fileType, "application/x-sharedlib"))
+                        sharedLibraries.push_back(file);
+                }
+
+                return sharedLibraries;
+            }
+
+            bool AppDir::deployDependenciesForExistingFiles() {
+                for (const auto& executable : listExecutables()) {
+                    if (!d->deployElfDependencies(executable))
+                        return false;
+                }
+
+                for (const auto& sharedLibrary : listSharedLibraries()) {
+                    if (!d->deployElfDependencies(sharedLibrary))
+                        return false;
+                }
+
+                return true;
+            }
         }
     }
 }

@@ -83,6 +83,12 @@ int main(int argc, char** argv) {
             return 1;
     }
 
+    ldLog() << std::endl << "-- Deploying dependencies for existing files in AppDir --" << std::endl;
+    if (!appDir.deployDependenciesForExistingFiles()) {
+        ldLog() << LD_ERROR << "Failed to deploy dependencies for existing files" << std::endl;
+        return 1;
+    }
+
     // deploy shared libraries to usr/lib, and deploy their dependencies to usr/lib
     if (sharedLibraryPaths) {
         ldLog() << std::endl << "-- Deploying shared libraries --" << std::endl;

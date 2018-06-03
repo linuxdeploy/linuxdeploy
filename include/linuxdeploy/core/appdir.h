@@ -71,6 +71,19 @@ namespace linuxdeploy {
                     // make the deployment easier by not requiring special filenames
                     // resources' filenames should be prefixed with this value (example: linuxdeploy_48x48.png)
                     void setAppName(const std::string& appName);
+
+                    // list all executables in <AppDir>/usr/bin
+                    // this function does not perform a recursive search, but only searches the bin directory
+                    std::vector<boost::filesystem::path> listExecutables();
+
+                    // list all shared libraries in <AppDir>/usr/lib
+                    // this function recursively searches the entire lib directory for shared libraries
+                    std::vector<boost::filesystem::path> listSharedLibraries();
+
+                    // search for executables and libraries and deploy their dependencies
+                    // calling this function can turn sure file trees created by make install commands into working
+                    // AppDirs
+                    bool deployDependenciesForExistingFiles();
             };
         }
     }
