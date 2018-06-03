@@ -14,10 +14,10 @@ namespace linuxdeploy {
 
                 public:
                     PrivateData() noexcept(false) {
-                        cookie = magic_open(MAGIC_DEBUG | MAGIC_SYMLINK | MAGIC_MIME_TYPE);
+                        cookie = magic_open(MAGIC_CHECK | MAGIC_MIME_TYPE | MAGIC_MIME_ENCODING);
 
                         if (cookie == nullptr)
-                            throw MagicError("Failed to open magic database");
+                            throw MagicError("Failed to open magic database: " + std::string(magic_error(cookie)));
                     }
 
                     ~PrivateData() {
@@ -40,7 +40,7 @@ namespace linuxdeploy {
                 const auto* buf = magic_file(d->cookie, path.c_str());
 
                 if (buf == nullptr)
-                    return "";
+                    throw MagicError("magic_file() failed: " + std::string(magic_error(d->cookie)));
 
                 return buf;
             }
