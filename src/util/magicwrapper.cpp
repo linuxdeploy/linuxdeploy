@@ -18,6 +18,10 @@ namespace linuxdeploy {
 
                         if (cookie == nullptr)
                             throw MagicError("Failed to open magic database: " + std::string(magic_error(cookie)));
+
+                        // load magic data from default location
+                        if (magic_load(cookie, nullptr) != 0)
+                            throw MagicError("Failed to load magic data: " + std::string(magic_error(cookie)));
                     }
 
                     ~PrivateData() {
