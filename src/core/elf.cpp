@@ -1,3 +1,6 @@
+// system includes
+#include <fstream>
+
 // library includes
 #include <boost/regex.hpp>
 #include <subprocess.hpp>
@@ -14,6 +17,12 @@ namespace bf = boost::filesystem;
 namespace linuxdeploy {
     namespace core {
         namespace elf {
+            // thrown by constructor if file is not an ELF file
+            class ElfFileParseError : public std::runtime_error {
+                public:
+                    explicit ElfFileParseError(const std::string& msg) : std::runtime_error(msg) {}
+            };
+
             class ElfFile::PrivateData {
                 public:
                     const bf::path path;
@@ -23,6 +32,21 @@ namespace linuxdeploy {
             };
 
             ElfFile::ElfFile(const boost::filesystem::path& path) {
+                // check if file exists
+                if (!bf::exists(path))
+                    throw ElfFileParseError("No such file or directory: " + path.string());
+
+                // check magic bytes
+                std::ifstream ifs(path.string());
+                if (!ifs)
+                    throw ElfFileParseError("Could not open file: " + path.string());
+
+                std::vector<char> magicBytes(4);
+                ifs.read(magicBytes.data(), 4);
+
+                if (strncmp(magicBytes.data(), "\177ELF", 4) != 0)
+                    throw ElfFileParseError("Invalid magic bytes in file header");
+
                 d = new PrivateData(path);
             }
 
