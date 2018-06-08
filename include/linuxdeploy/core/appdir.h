@@ -37,7 +37,10 @@ namespace linuxdeploy {
                     bool createBasicStructure();
 
                     // deploy shared library
-                    bool deployLibrary(const boost::filesystem::path& path);
+                    //
+                    // if destination is specified, the library is copied to this location, and the rpath is adjusted accordingly
+                    // the dependencies are copied to the normal destination, though
+                    bool deployLibrary(const boost::filesystem::path& path, const boost::filesystem::path& destination = "");
 
                     // deploy executable
                     bool deployExecutable(const boost::filesystem::path& path);

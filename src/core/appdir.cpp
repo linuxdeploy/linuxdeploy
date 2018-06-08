@@ -188,7 +188,7 @@ namespace linuxdeploy {
                         return true;
                     }
 
-                    bool deployLibrary(const bf::path& path) {
+                    bool deployLibrary(const bf::path& path, const bf::path& destination = "") {
                         if (hasBeenVisitedAlready(path)) {
                             ldLog() << LD_DEBUG << "File has been visited already:" << path << std::endl;
                             return true;
@@ -226,9 +226,30 @@ namespace linuxdeploy {
                             ldLog() << "Deploying shared library" << path << std::endl;
                         }
 
-                        deployFile(path, appDirPath / "usr/lib/");
+                        auto destinationPath = destination.empty() ? appDirPath / "usr/lib/" : destination;
 
-                        setElfRPathOperations[appDirPath / "usr/lib" / path.filename()] = "$ORIGIN";
+                        deployFile(path, destinationPath);
+
+                        std::string rpath = "$ORIGIN";
+
+                        ldLog() << "library destination:" << destination << std::endl;
+
+                        if (!destination.empty()) {
+                            std::string rpathDestination = destination.string();
+
+                            if (destination.string().back() == '/') {
+                                rpathDestination = destination.string();
+
+                                while (rpathDestination.back() == '/')
+                                    rpathDestination.erase(rpathDestination.end() - 1, rpathDestination.end());
+                            } else {
+                                rpathDestination = destination.parent_path().string();
+                            }
+                            // FIXME: adding / to "fake" root to calculate proper relative path
+                            rpath = "$ORIGIN/" + bf::relative("/usr/lib", "/" + rpathDestination).string() + ":$ORIGIN";
+                        }
+
+                        setElfRPathOperations[destinationPath / path.filename()] = rpath;
 
                         if (!deployElfDependencies(path))
                             return false;
@@ -389,8 +410,8 @@ namespace linuxdeploy {
                 return true;
             }
 
-            bool AppDir::deployLibrary(const bf::path& path) {
-                return d->deployLibrary(path);
+            bool AppDir::deployLibrary(const bf::path& path, const bf::path& destination) {
+                return d->deployLibrary(path, destination);
             }
 
             bool AppDir::deployExecutable(const bf::path& path) {
