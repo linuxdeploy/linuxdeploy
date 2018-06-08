@@ -232,8 +232,6 @@ namespace linuxdeploy {
 
                         std::string rpath = "$ORIGIN";
 
-                        ldLog() << "library destination:" << destination << std::endl;
-
                         if (!destination.empty()) {
                             std::string rpathDestination = destination.string();
 
