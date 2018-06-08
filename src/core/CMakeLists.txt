@@ -35,4 +35,4 @@ target_compile_definitions(linuxdeploy_core PUBLIC -DBOOST_NO_CXX11_SCOPED_ENUMS
 
 add_executable(linuxdeploy main.cpp)
 target_link_libraries(linuxdeploy linuxdeploy_core args)
-set_target_properties(linuxdeploy PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+set_target_properties(linuxdeploy PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin")
