@@ -177,24 +177,35 @@ namespace linuxdeploy {
                         visitedFiles.insert(from);
                     }
 
-                    bool deployElfDependencies(const bf::path& path) {
-                        ldLog() << "Deploying dependencies for ELF file" << path << std::endl;
+                    std::string getLogPrefix(int recursionLevel) {
+                        std::string logPrefix;
+                        for (int i = 0; i < recursionLevel; i++)
+                            logPrefix += "  ";
+                        return logPrefix;
+                    }
+
+                    bool deployElfDependencies(const bf::path& path, int recursionLevel = 0) {
+                        auto logPrefix = getLogPrefix(recursionLevel);
+
+                        ldLog() << logPrefix << LD_NO_SPACE << "Deploying dependencies for ELF file" << path << std::endl;
                         
                         for (const auto& dependencyPath : elf::ElfFile(path).traceDynamicDependencies()) {
-                            if (!deployLibrary(dependencyPath))
+                            if (!deployLibrary(dependencyPath, recursionLevel + 1))
                                 return false;
                         }
                         
                         return true;
                     }
 
-                    bool deployLibrary(const bf::path& path, const bf::path& destination = "") {
+                    bool deployLibrary(const bf::path& path, int recursionLevel = 0, const bf::path& destination = "") {
+                        auto logPrefix = getLogPrefix(recursionLevel);
+
                         if (hasBeenVisitedAlready(path)) {
-                            ldLog() << LD_DEBUG << "File has been visited already:" << path << std::endl;
+                            ldLog() << LD_DEBUG << logPrefix << LD_NO_SPACE << "File has been visited already:" << path << std::endl;
                             return true;
                         }
 
-                        static auto isInExcludelist = [](const bf::path& fileName) {
+                        static auto isInExcludelist = [&logPrefix](const bf::path& fileName) {
                             for (const auto& excludePattern : generatedExcludelist) {
                                 // simple string match is faster than using fnmatch
                                 if (excludePattern == fileName)
@@ -207,7 +218,7 @@ namespace linuxdeploy {
                                     case FNM_NOMATCH:
                                         break;
                                     default:
-                                        ldLog() << LD_ERROR << "fnmatch() reported error:" << fnmatchResult << std::endl;
+                                        ldLog() << LD_ERROR << logPrefix << LD_NO_SPACE << "fnmatch() reported error:" << fnmatchResult << std::endl;
                                         return false;
                                 }
                             }
@@ -216,7 +227,7 @@ namespace linuxdeploy {
                         };
 
                         if (isInExcludelist(path.filename())) {
-                            ldLog() << "Skipping deployment of blacklisted library" << path << std::endl;
+                            ldLog() << logPrefix << LD_NO_SPACE << "Skipping deployment of blacklisted library" << path << std::endl;
 
                             // mark file as visited
                             visitedFiles.insert(path);
@@ -224,7 +235,7 @@ namespace linuxdeploy {
                             return true;
                         }
 
-                        ldLog() << "Deploying shared library" << path;
+                        ldLog() << logPrefix << LD_NO_SPACE << "Deploying shared library" << path;
                         if (!destination.empty())
                             ldLog() << " (destination:" << destination << LD_NO_SPACE << ")";
                         ldLog() << std::endl;
@@ -253,7 +264,7 @@ namespace linuxdeploy {
 
                         setElfRPathOperations[destinationPath / path.filename()] = rpath;
 
-                        if (!deployElfDependencies(path))
+                        if (!deployElfDependencies(path, recursionLevel))
                             return false;
 
                         return true;
@@ -413,7 +424,7 @@ namespace linuxdeploy {
             }
 
             bool AppDir::deployLibrary(const bf::path& path, const bf::path& destination) {
-                return d->deployLibrary(path, destination);
+                return d->deployLibrary(path, 0, destination);
             }
 
             bool AppDir::deployExecutable(const bf::path& path) {
