@@ -243,8 +243,9 @@ namespace linuxdeploy {
                             } else {
                                 rpathDestination = destination.parent_path().string();
                             }
-                            // FIXME: adding / to "fake" root to calculate proper relative path
-                            rpath = "$ORIGIN/" + bf::relative("/usr/lib", "/" + rpathDestination).string() + ":$ORIGIN";
+
+                            auto relPath = bf::relative(bf::absolute(appDirPath) / "usr/lib", bf::absolute(rpathDestination));
+                            rpath = "$ORIGIN/" + relPath.string() + ":$ORIGIN";
                         }
 
                         setElfRPathOperations[destinationPath / path.filename()] = rpath;
