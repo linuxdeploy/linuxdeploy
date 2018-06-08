@@ -222,12 +222,12 @@ namespace linuxdeploy {
                             visitedFiles.insert(path);
 
                             return true;
-                        } else {
-                            ldLog() << "Deploying shared library" << path;
-                            if (!destination.empty())
-                                ldLog() << " (destination:" << destination << LD_NO_SPACE << ")";
-                            ldLog() << std::endl;
                         }
+
+                        ldLog() << "Deploying shared library" << path;
+                        if (!destination.empty())
+                            ldLog() << " (destination:" << destination << LD_NO_SPACE << ")";
+                        ldLog() << std::endl;
 
                         auto destinationPath = destination.empty() ? appDirPath / "usr/lib/" : destination;
 
