@@ -7,3 +7,15 @@
 [submodule "lib/cpp-feather-ini-parser"]
 	path = lib/cpp-feather-ini-parser
 	url = https://github.com/Turbine1991/cpp-feather-ini-parser.git
+[submodule "lib/boost-filesystem"]
+	path = lib/boost-filesystem
+	url = https://github.com/boostorg/filesystem.git
+[submodule "lib/lib/boost-regex"]
+	path = lib/lib/boost-regex
+	url = https://github.com/boostorg/regex.git
+[submodule "lib/boost-regex"]
+	path = lib/boost-regex
+	url = https://github.com/boostorg/regex.git
+[submodule "lib/boost-system"]
+	path = lib/boost-system
+	url = https://github.com/boostorg/system.git

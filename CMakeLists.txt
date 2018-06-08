@@ -10,6 +10,8 @@ add_definitions(-DLINUXDEPLOY_VERSION="${LINUXDEPLOY_VERSION}")
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake/Modules/")
 
+set(USE_SYSTEM_BOOST OFF CACHE BOOL "Set to ON to use system boost libraries instead of building up to date boost libraries from source")
+
 add_subdirectory(lib)
 
 add_subdirectory(src)
