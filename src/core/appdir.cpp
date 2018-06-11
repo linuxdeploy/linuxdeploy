@@ -69,7 +69,7 @@ namespace linuxdeploy {
 
                             bf::copy_file(from, to, bf::copy_option::overwrite_if_exists);
                         } catch (const bf::filesystem_error& e) {
-                            ldLog() << LD_ERROR << "Failed to copy file " << from << "to" << to << LD_NO_SPACE << ":" << e.what() << std::endl;
+                            ldLog() << LD_ERROR << "Failed to copy file" << from << "to" << to << LD_NO_SPACE << ":" << e.what() << std::endl;
                             return false;
                         }
 
