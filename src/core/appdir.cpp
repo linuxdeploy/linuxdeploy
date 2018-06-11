@@ -135,10 +135,8 @@ namespace linuxdeploy {
                             const auto& from = pair.first;
                             const auto& to = pair.second;
 
-                            if (!copyFile(from, to)) {
-                                ldLog() << LD_ERROR << "Failed to copy file" << from << "to" << to << std::endl;
+                            if (!copyFile(from, to))
                                 success = false;
-                            }
 
                             copyOperations.erase(copyOperations.begin());
                         }
