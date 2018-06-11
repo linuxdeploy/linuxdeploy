@@ -270,7 +270,7 @@ namespace linuxdeploy {
                         return true;
                     }
 
-                    bool deployExecutable(const bf::path& path) {
+                    bool deployExecutable(const bf::path& path, const boost::filesystem::path& destination) {
                         if (hasBeenVisitedAlready(path)) {
                             ldLog() << LD_DEBUG << "File has been visited already:" << path << std::endl;
                             return true;
@@ -280,9 +280,29 @@ namespace linuxdeploy {
 
                         // FIXME: make executables executable
 
-                        deployFile(path, appDirPath / "usr/bin/");
+                        auto destinationPath = destination.empty() ? appDirPath / "usr/bin/" : destination;
 
-                        setElfRPathOperations[appDirPath / "usr/bin" / path.filename()] = "$ORIGIN/../lib";
+                        deployFile(path, destination);
+
+                        std::string rpath = "$ORIGIN/../lib";
+
+                        if (!destination.empty()) {
+                            std::string rpathDestination = destination.string();
+
+                            if (destination.string().back() == '/') {
+                                rpathDestination = destination.string();
+
+                                while (rpathDestination.back() == '/')
+                                    rpathDestination.erase(rpathDestination.end() - 1, rpathDestination.end());
+                            } else {
+                                rpathDestination = destination.parent_path().string();
+                            }
+
+                            auto relPath = bf::relative(bf::absolute(appDirPath) / "usr/lib", bf::absolute(rpathDestination));
+                            rpath = "$ORIGIN/" + relPath.string();
+                        }
+
+                        setElfRPathOperations[destination / path.filename()] = rpath;
 
                         if (!deployElfDependencies(path))
                             return false;
@@ -427,8 +447,8 @@ namespace linuxdeploy {
                 return d->deployLibrary(path, 0, destination);
             }
 
-            bool AppDir::deployExecutable(const bf::path& path) {
-                return d->deployExecutable(path);
+            bool AppDir::deployExecutable(const bf::path& path, const boost::filesystem::path& destination) {
+                return d->deployExecutable(path, destination);
             }
 
             bool AppDir::deployDesktopFile(const desktopfile::DesktopFile& desktopFile) {

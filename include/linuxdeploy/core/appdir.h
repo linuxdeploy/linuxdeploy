@@ -43,7 +43,7 @@ namespace linuxdeploy {
                     bool deployLibrary(const boost::filesystem::path& path, const boost::filesystem::path& destination = "");
 
                     // deploy executable
-                    bool deployExecutable(const boost::filesystem::path& path);
+                    bool deployExecutable(const boost::filesystem::path& path, const boost::filesystem::path& destination = "");
 
                     // deploy desktop file
                     bool deployDesktopFile(const desktopfile::DesktopFile& desktopFile);
