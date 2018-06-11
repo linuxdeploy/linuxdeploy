@@ -51,6 +51,9 @@ namespace linuxdeploy {
                     // deploy icon
                     bool deployIcon(const boost::filesystem::path& path);
 
+                    // deploy arbitrary file
+                    void deployFile(const boost::filesystem::path& from, const boost::filesystem::path& to);
+
                     // execute deferred copy operations
                     bool executeDeferredOperations();
 

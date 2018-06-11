@@ -635,6 +635,10 @@ namespace linuxdeploy {
                 return true;
             }
 
+            void AppDir::deployFile(const boost::filesystem::path& from, const boost::filesystem::path& to) {
+                return d->deployFile(from, to);
+            }
+
             void AppDir::setAppName(const std::string& appName) {
                 d->appName = appName;
             }
