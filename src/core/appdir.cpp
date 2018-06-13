@@ -163,8 +163,9 @@ namespace linuxdeploy {
                     // register copy operation that will be executed later
                     // by compiling a list of files to copy instead of just copying everything, one can ensure that
                     // the files are touched once only
-                    void deployFile(const bf::path& from, bf::path to) {
-                        ldLog() << LD_DEBUG << "Deploying file" << from << "to" << to << std::endl;
+                    void deployFile(const bf::path& from, bf::path to, bool verbose = false) {
+                        if (verbose)
+                            ldLog() << "Deploying file" << from << "to" << to << std::endl;
 
                         // not sure whether this is 100% bullet proof, but it simulates the cp command behavior
                         if (to.string().back() == '/' || bf::is_directory(to)) {
@@ -636,7 +637,7 @@ namespace linuxdeploy {
             }
 
             void AppDir::deployFile(const boost::filesystem::path& from, const boost::filesystem::path& to) {
-                return d->deployFile(from, to);
+                return d->deployFile(from, to, true);
             }
 
             void AppDir::setAppName(const std::string& appName) {
