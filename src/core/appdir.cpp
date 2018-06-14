@@ -7,8 +7,6 @@
 #include <boost/filesystem.hpp>
 #include <Magick++.h>
 #include <fnmatch.h>
-#include <dirent.h>
-#include <fts.h>
 #include <subprocess.hpp>
 
 // local headers
@@ -471,47 +469,16 @@ namespace linuxdeploy {
             static std::vector<bf::path> listFilesInDirectory(const bf::path& path, const bool recursive = true) {
                 std::vector<bf::path> foundPaths;
 
-                std::vector<char> pathBuf(path.string().size() + 1, '\0');
-                strcpy(pathBuf.data(), path.string().c_str());
-
-                std::vector<char*> searchPaths = {pathBuf.data(), nullptr};
-
                 if (recursive) {
-                    // reset errno
-                    errno = 0;
-
-                    auto* fts = fts_open(searchPaths.data(), FTS_NOCHDIR | FTS_NOSTAT, nullptr);
-
-                    int error = errno;
-                    if (fts == nullptr || error != 0) {
-                        ldLog() << LD_ERROR << "fts() failed:" << strerror(error) << std::endl;
-                        return {};
-                    }
-
-                    FTSENT* ent;
-                    while ((ent = fts_read(fts)) != nullptr) {
-                        // FIXME: use ent's fts_info member instead of boost::filesystem
-                        if (bf::is_regular_file(ent->fts_path)) {
-                            foundPaths.push_back(ent->fts_path);
+                    for (bf::recursive_directory_iterator i(path); i != bf::recursive_directory_iterator(); ++i) {
+                        if (bf::is_regular_file(*i)) {
+                            foundPaths.push_back((*i).path());
                         }
-                    };
-                    error = errno;
-                    if (error != 0) {
-                        ldLog() << LD_ERROR << "fts_read() failed:" << strerror(error) << std::endl;
-                        return {};
                     }
                 } else {
-                    DIR* dir;
-                    if ((dir = opendir(path.string().c_str())) == NULL) {
-                        auto error = errno;
-                        ldLog() << LD_ERROR << "opendir() failed:" << strerror(error);
-                    }
-
-                    struct dirent* ent;
-                    while ((ent = readdir(dir)) != NULL)  {
-                        auto fullPath = path / bf::path(ent->d_name);
-                        if (bf::is_regular_file(fullPath)) {
-                            foundPaths.push_back(fullPath);
+                    for (bf::directory_iterator i(path); i != bf::directory_iterator(); ++i) {
+                        if (bf::is_regular_file(*i)) {
+                            foundPaths.push_back((*i).path());
                         }
                     }
                 }
