@@ -283,7 +283,7 @@ namespace linuxdeploy {
 
                         auto destinationPath = destination.empty() ? appDirPath / "usr/bin/" : destination;
 
-                        deployFile(path, destination);
+                        deployFile(path, destinationPath);
 
                         std::string rpath = "$ORIGIN/../lib";
 
@@ -303,9 +303,9 @@ namespace linuxdeploy {
                             rpath = "$ORIGIN/" + relPath.string();
                         }
 
-                        setElfRPathOperations[destination / path.filename()] = rpath;
+                        setElfRPathOperations[destinationPath / path.filename()] = rpath;
 
-                        if (!deployElfDependencies(path))
+                        if (!deployElfDependencies(destinationPath / path.filename()))
                             return false;
 
                         return true;
