@@ -303,7 +303,7 @@ namespace linuxdeploy {
 
                         setElfRPathOperations[destinationPath / path.filename()] = rpath;
 
-                        if (!deployElfDependencies(destinationPath / path.filename()))
+                        if (!deployElfDependencies(path))
                             return false;
 
                         return true;
