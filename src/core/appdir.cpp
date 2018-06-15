@@ -469,6 +469,10 @@ namespace linuxdeploy {
             static std::vector<bf::path> listFilesInDirectory(const bf::path& path, const bool recursive = true) {
                 std::vector<bf::path> foundPaths;
 
+                // directory_iterators throw exceptions if the directory doesn't exist
+                if (!bf::is_directory(path))
+                    return {};
+
                 if (recursive) {
                     for (bf::recursive_directory_iterator i(path); i != bf::recursive_directory_iterator(); ++i) {
                         if (bf::is_regular_file(*i)) {
