@@ -133,7 +133,7 @@ int main(int argc, char** argv) {
             }
 
             if (!appDir.deployIcon(iconPath)) {
-                std::cerr << "Failed to deploy desktop file: " << iconPath << std::endl;
+                std::cerr << "Failed to deploy icon: " << iconPath << std::endl;
                 return 1;
             }
         }
