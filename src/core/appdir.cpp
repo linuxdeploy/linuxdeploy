@@ -334,30 +334,32 @@ namespace linuxdeploy {
 
                         ldLog() << "Deploying icon" << path << std::endl;
 
-                        Magick::Image image;
-
-                        try {
-                            image.read(path.string());
-                        } catch (const Magick::Exception& e) {
-                            ldLog() << LD_ERROR << "Magick error: " << e.what() << std::endl;
-                            return false;
-                        }
-
-                        auto xRes = image.columns();
-                        auto yRes = image.rows();
-
-                        if (xRes != yRes) {
-                            ldLog() << LD_WARNING << "x and y resolution of icon are not equal:" << path;
-                        }
-
-                        auto resolution = std::to_string(xRes) + "x" + std::to_string(yRes);
-
-                        auto format = image.format();
+                        std::string resolution;
 
                         // if file is a vector image, use "scalable" directory
                         if (util::strLower(bf::extension(path)) == "svg") {
                             resolution = "scalable";
                         } else {
+                            Magick::Image image;
+
+                            try {
+                                image.read(path.string());
+                            } catch (const Magick::Exception& e) {
+                                ldLog() << LD_ERROR << "Magick error: " << e.what() << std::endl;
+                                return false;
+                            }
+
+                            auto xRes = image.columns();
+                            auto yRes = image.rows();
+
+                            if (xRes != yRes) {
+                                ldLog() << LD_WARNING << "x and y resolution of icon are not equal:" << path;
+                            }
+
+                            resolution = std::to_string(xRes) + "x" + std::to_string(yRes);
+
+                            auto format = image.format();
+
                             // otherwise, test resolution against "known good" values, and reject invalid ones
                             const auto knownResolutions = {8, 16, 20, 22, 24, 32, 48, 64, 72, 96, 128, 192, 256, 512};
 
