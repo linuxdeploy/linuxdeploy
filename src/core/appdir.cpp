@@ -338,7 +338,8 @@ namespace linuxdeploy {
 
                         try {
                             image.read(path.string());
-                        } catch (const Magick::Exception& error) {
+                        } catch (const Magick::Exception& e) {
+                            ldLog() << LD_ERROR << "Magick error: " << e.what() << std::endl;
                             return false;
                         }
 
