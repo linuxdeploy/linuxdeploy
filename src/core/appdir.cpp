@@ -495,13 +495,7 @@ namespace linuxdeploy {
             }
 
             std::vector<bf::path> AppDir::deployedExecutablePaths() {
-                auto paths = listFilesInDirectory(path() / "usr/bin/", false);
-
-                paths.erase(std::remove_if(paths.begin(), paths.end(), [](const bf::path& path) {
-                    return !bf::is_regular_file(path);
-                }), paths.end());
-
-                return paths;
+                return listFilesInDirectory(path() / "usr/bin/", false);
             }
 
             std::vector<desktopfile::DesktopFile> AppDir::deployedDesktopFiles() {
