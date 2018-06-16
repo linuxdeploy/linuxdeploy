@@ -358,8 +358,6 @@ namespace linuxdeploy {
 
                             resolution = std::to_string(xRes) + "x" + std::to_string(yRes);
 
-                            auto format = image.format();
-
                             // otherwise, test resolution against "known good" values, and reject invalid ones
                             const auto knownResolutions = {8, 16, 20, 22, 24, 32, 48, 64, 72, 96, 128, 192, 256, 512};
 
