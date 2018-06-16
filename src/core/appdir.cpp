@@ -625,7 +625,7 @@ namespace linuxdeploy {
 
                     ldLog() << LD_DEBUG << "Type of file" << file << LD_NO_SPACE << ":" << fileType << std::endl;
 
-                    if (util::stringStartsWith(fileType, "application/x-executable"))
+//                    if (util::stringStartsWith(fileType, "application/x-executable"))
                         executables.push_back(file);
                 }
 
@@ -642,7 +642,7 @@ namespace linuxdeploy {
 
                     ldLog() << LD_DEBUG << "Type of file" << file << LD_NO_SPACE << ":" << fileType << std::endl;
 
-                    if (util::stringStartsWith(fileType, "application/x-sharedlib"))
+//                    if (util::stringStartsWith(fileType, "application/x-sharedlib"))
                         sharedLibraries.push_back(file);
                 }
 
