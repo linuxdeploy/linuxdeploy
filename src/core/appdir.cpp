@@ -337,7 +337,7 @@ namespace linuxdeploy {
                         std::string resolution;
 
                         // if file is a vector image, use "scalable" directory
-                        if (util::strLower(bf::extension(path)) == "svg") {
+                        if (util::strLower(path.filename().extension().string()) == "svg") {
                             resolution = "scalable";
                         } else {
                             Magick::Image image;
