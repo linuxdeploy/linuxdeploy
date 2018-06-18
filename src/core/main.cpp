@@ -204,7 +204,7 @@ int main(int argc, char** argv) {
         } else {
             auto& desktopFile = deployedDesktopFiles[0];
 
-            ldLog() << "Deploying desktop file:" << desktopFile.path();
+            ldLog() << "Deploying desktop file:" << desktopFile.path() << std::endl;
 
             bool rv;
 
