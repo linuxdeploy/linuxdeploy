@@ -315,7 +315,7 @@ namespace linuxdeploy {
                             return true;
                         }
 
-                        if (desktopFile.validate()) {
+                        if (!desktopFile.validate()) {
                             ldLog() << LD_ERROR << "Failed to verify desktop file:" << desktopFile.path() << std::endl;
                         }
 
