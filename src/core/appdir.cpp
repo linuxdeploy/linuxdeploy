@@ -531,6 +531,8 @@ namespace linuxdeploy {
                     return false;
                 }
 
+                bool iconDeployed = false;
+
                 const auto foundIconPaths = deployedIconPaths();
 
                 if (foundIconPaths.empty()) {
@@ -548,7 +550,15 @@ namespace linuxdeploy {
                             ldLog() << LD_ERROR << "Failed to create symlink for icon in AppDir root:" << iconPath << std::endl;
                             return false;
                         }
+
+                        iconDeployed = true;
+                        break;
                     }
+                }
+
+                if (!iconDeployed) {
+                    ldLog() << LD_ERROR << "Could not find suitable icon for Icon entry:" << iconName << std::endl;
+                    return false;
                 }
 
                 if (!customAppRunPath.empty()) {
