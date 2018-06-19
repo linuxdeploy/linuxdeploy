@@ -10,6 +10,7 @@
 #include "linuxdeploy/core/desktopfile.h"
 #include "linuxdeploy/core/elf.h"
 #include "linuxdeploy/core/log.h"
+#include "linuxdeploy/plugin/plugin.h"
 
 using namespace linuxdeploy::core;
 using namespace linuxdeploy::core::log;
@@ -40,6 +41,8 @@ int main(int argc, char** argv) {
 
     args::ValueFlag<std::string> customAppRunPath(parser, "AppRun path", "Path to custom AppRun script (linuxdeploy will not create a symlink but copy this file instead)", {"custom-apprun"});
 
+    args::Flag listPlugins(parser, "", "Search for plugins, print them to stdout and exit", {"list-plugins"});
+
     try {
         parser.ParseCLI(argc, argv);
     } catch (args::Help&) {
@@ -61,6 +64,19 @@ int main(int argc, char** argv) {
 
     if (showVersion)
         return 0;
+
+    auto foundPlugins = linuxdeploy::plugin::findPlugins();
+
+    if (listPlugins) {
+        ldLog() << "Available plugins:" << std::endl;
+        for (const auto& plugin : foundPlugins) {
+            ldLog() << plugin.first << LD_NO_SPACE << ":" << plugin.second->path() << LD_NO_SPACE
+                    << "(type: " << plugin.second->pluginTypeString() << LD_NO_SPACE << ","
+                    << "API level:" << plugin.second->apiLevel()
+                    << LD_NO_SPACE << ")" << std::endl;
+        }
+        return 0;
+    }
 
     if (!appDirPath) {
         ldLog() << LD_ERROR << "--appdir parameter required" << std::endl;
