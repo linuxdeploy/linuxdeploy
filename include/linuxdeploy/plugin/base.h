@@ -40,6 +40,9 @@ namespace linuxdeploy {
                     // get plugin type
                     PLUGIN_TYPE pluginType() const override;
                     std::string pluginTypeString() const override;
+
+                    // run plugin
+                    int run(const boost::filesystem::path& appDirPath) override;
             };
         }
     }

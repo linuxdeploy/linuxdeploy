@@ -115,6 +115,24 @@ namespace linuxdeploy {
             int PluginBase<API_LEVEL>::apiLevel() const {
                 return d->apiLevel;
             }
+
+            template<int API_LEVEL>
+            int PluginBase<API_LEVEL>::run(const boost::filesystem::path& appDirPath) {
+                auto pluginPath = path();
+                auto args = {pluginPath.c_str(), "--appdir", appDirPath.string().c_str()};
+
+                auto log = linuxdeploy::core::log::ldLog();
+                log << "Running process:";
+                for (const auto& arg : args) {
+                    log << arg;
+                }
+                log << std::endl;
+
+                auto process = subprocess::Popen(args);
+
+                auto retcode = process.wait();
+                return retcode;
+            }
         }
     }
 }

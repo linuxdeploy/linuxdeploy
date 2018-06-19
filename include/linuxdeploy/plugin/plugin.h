@@ -34,6 +34,7 @@ namespace linuxdeploy {
                 virtual int apiLevel() const = 0;
                 virtual PLUGIN_TYPE pluginType() const = 0;
                 virtual std::string pluginTypeString() const = 0;
+                virtual int run(const boost::filesystem::path& appDirPath) = 0;
         };
 
         /// Implementations are not public, see source directory for those headers ///
