@@ -5,19 +5,26 @@
 namespace bf = boost::filesystem;
 
 int main(const int argc, const char* const* const argv) {
-    if (argc < 2) {
-        std::cout << "Usage: " << argv[0] << " <path to plugin>" << std::endl;
-        return 1;
+    auto plugins = linuxdeploy::plugin::findPlugins();
+
+    if (argc > 1) {
+        for (int i = 1; i < argc; i++) {
+            const std::string path = argv[1];
+            auto* plugin = linuxdeploy::plugin::createPluginInstance(path);
+            plugins.push_back(plugin);
+        }
     }
 
-    const std::string path = argv[1];
+    for (const auto& plugin : plugins) {
+        std::cout << "Testing plugin: " << plugin->path().string() << std::endl;
 
-    std::cout << "Testing plugin: " << path << std::endl;
+        std::cout << "API level: " << plugin->apiLevel() << std::endl;
+        std::cout << "Plugin type: " << plugin->pluginType() << " (a.k.a. " << plugin->pluginTypeString() << ")"
+                  << std::endl;
 
-    auto* plugin = linuxdeploy::plugin::createPluginInstance(path);
-
-    std::cout << "API level: " << plugin->apiLevel() << std::endl;
-    std::cout << "Plugin type: " << plugin->pluginType() << " (a.k.a. " << plugin->pluginTypeString() << ")" << std::endl;
+        if (plugin != plugins.back())
+            std::cout << std::endl;
+    }
 
     return 0;
 }
