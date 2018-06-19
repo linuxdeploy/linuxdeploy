@@ -36,12 +36,18 @@ LINUXDEPLOY_ARGS=("--init-appdir" "--appdir" "AppDir" "-e" "bin/linuxdeploy" "-i
 # deploy patchelf which is a dependency of linuxdeploy
 bin/linuxdeploy "${LINUXDEPLOY_ARGS[@]}"
 
-# verify that an AppImage can be built
-wget https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
-chmod +x appimagetool-x86_64.AppImage
-./appimagetool-x86_64.AppImage AppDir
+# bundle AppImage plugin
+wget https://github.com/TheAssassin/linuxdeploy-plugin-appimage/releases/download/continuous/linuxdeploy-plugin-appimage-x86_64.AppImage
+chmod +x linuxdeploy-plugin-appimage*.AppImage
+mv linuxdeploy-plugin-appimage*.AppImage AppDir/usr/bin/
+
+# build AppImage using plugin
+AppDir/usr/bin/linuxdeploy-plugin-appimage*.AppImage --appdir AppDir/
 
 # verify that the resulting AppImage works
 ./linuxdeploy*.AppImage "${LINUXDEPLOY_ARGS[@]}"
+
+# check whether AppImage plugin is found and works
+./linuxdeploy*.AppImage "${LINUXDEPLOY_ARGS[@]}" --output appimage
 
 mv linuxdeploy*.AppImage "$OLD_CWD"
