@@ -21,7 +21,7 @@ int main(int argc, char** argv) {
         "linuxdeploy -- create AppDir bundles with ease"
     );
 
-    args::HelpFlag help(parser, "help", "Display this help text.", {'h', "help"});
+    args::HelpFlag help(parser, "help", "Display this help text", {'h', "help"});
     args::Flag showVersion(parser, "", "Print version and exit", {'V', "version"});
     args::ValueFlag<int> verbosity(parser, "verbosity", "Verbosity of log output (0 = debug, 1 = info (default), 2 = warning, 3 = error)", {'v', "verbosity"});
 
