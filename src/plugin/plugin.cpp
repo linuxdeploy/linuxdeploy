@@ -43,7 +43,12 @@ namespace linuxdeploy {
 
             const boost::regex expr(R"(^linuxdeploy-plugin-([^\s\.-]+)(?:-[a-zA-Z0-9_]+)?(?:\..+)?$)");
 
-            for (const auto& dir : util::split(PATH, ':')) {
+            auto paths = util::split(PATH, ':');
+
+            auto currentExeDir = bf::path(util::getOwnExecutablePath()).parent_path();
+            paths.insert(paths.begin(), currentExeDir.string());
+
+            for (const auto& dir : paths) {
                 if (!bf::is_directory(dir))
                     continue;
 
