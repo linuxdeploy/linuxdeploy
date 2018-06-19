@@ -62,5 +62,10 @@ namespace linuxdeploy {
          * This function automatically selects the correct subclass implementing the right API level, and
          */
         IPlugin* createPluginInstance(const boost::filesystem::path& path);
+
+        /*
+         * Finds all linuxdeploy plugins in $PATH and the current executable's directory and returns IPlugin instances for them.
+         */
+        std::vector<IPlugin*> findPlugins();
     }
 }
