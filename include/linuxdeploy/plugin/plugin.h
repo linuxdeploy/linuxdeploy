@@ -13,10 +13,6 @@
 namespace linuxdeploy {
     namespace plugin {
         /*
-         * Searches for plugins in PATH (and in the current binary directory). Returns pointers to the plugin
-         */
-
-        /*
          * Exception class indicating that the plugin doesn't implement the right API level for the selected class
          */
         class PluginError : public std::runtime_error {
