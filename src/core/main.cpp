@@ -70,7 +70,7 @@ int main(int argc, char** argv) {
     if (listPlugins) {
         ldLog() << "Available plugins:" << std::endl;
         for (const auto& plugin : foundPlugins) {
-            ldLog() << plugin.first << LD_NO_SPACE << ":" << plugin.second->path() << LD_NO_SPACE
+            ldLog() << plugin.first << LD_NO_SPACE << ":" << plugin.second->path()
                     << "(type:" << plugin.second->pluginTypeString() << LD_NO_SPACE << ","
                     << "API level:" << plugin.second->apiLevel()
                     << LD_NO_SPACE << ")" << std::endl;
