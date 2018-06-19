@@ -1,5 +1,5 @@
 #include <iostream>
-
+#include <boost/filesystem.hpp>
 #include <linuxdeploy/plugin/plugin.h>
 
 namespace bf = boost::filesystem;
@@ -9,20 +9,24 @@ int main(const int argc, const char* const* const argv) {
 
     if (argc > 1) {
         for (int i = 1; i < argc; i++) {
-            const std::string path = argv[1];
+            const bf::path path = argv[1];
             auto* plugin = linuxdeploy::plugin::createPluginInstance(path);
-            plugins.push_back(plugin);
+            plugins[path.filename().string()] = plugin;
         }
     }
 
-    for (const auto& plugin : plugins) {
-        std::cout << "Testing plugin: " << plugin->path().string() << std::endl;
+    std::vector<std::pair<std::string, linuxdeploy::plugin::IPlugin*>> pluginList;
+    for (const auto& plugin : plugins)
+        pluginList.push_back(plugin);
 
-        std::cout << "API level: " << plugin->apiLevel() << std::endl;
-        std::cout << "Plugin type: " << plugin->pluginType() << " (a.k.a. " << plugin->pluginTypeString() << ")"
+    for (const auto& plugin : pluginList) {
+        std::cout << "Testing plugin '" << plugin.first << "': " << plugin.second->path().string() << std::endl;
+
+        std::cout << "API level: " << plugin.second->apiLevel() << std::endl;
+        std::cout << "Plugin type: " << plugin.second->pluginType() << " (a.k.a. " << plugin.second->pluginTypeString() << ")"
                   << std::endl;
 
-        if (plugin != plugins.back())
+        if (plugin != pluginList.back())
             std::cout << std::endl;
     }
 

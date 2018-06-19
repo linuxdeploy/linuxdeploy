@@ -1,5 +1,5 @@
 // system includes
-#include <set>
+#include <map>
 #include <string>
 
 // library includes
@@ -66,6 +66,6 @@ namespace linuxdeploy {
         /*
          * Finds all linuxdeploy plugins in $PATH and the current executable's directory and returns IPlugin instances for them.
          */
-        std::vector<IPlugin*> findPlugins();
+        std::map<std::string, IPlugin*> findPlugins();
     }
 }

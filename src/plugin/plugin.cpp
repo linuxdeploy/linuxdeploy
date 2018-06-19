@@ -36,8 +36,8 @@ namespace linuxdeploy {
             return rv;
         }
 
-        std::vector<IPlugin*> findPlugins() {
-            std::vector<IPlugin*> foundPlugins;
+        std::map<std::string, IPlugin*> findPlugins() {
+            std::map<std::string, IPlugin*> foundPlugins;
 
             const auto PATH = getenv("PATH");
 
@@ -53,11 +53,13 @@ namespace linuxdeploy {
                     // file must be executable...
                     if (bf::status(*i).permissions() & (bf::owner_exe | bf::group_exe | bf::others_exe)) {
                         // ... and filename must match regular expression
-                        if (boost::regex_match((*i).path().filename().string(), expr)) {
+                        boost::cmatch res;
+                        if (boost::regex_match((*i).path().filename().string().c_str(), res, expr)) {
                             try {
+                                auto name = res[1].str();
                                 auto* plugin = createPluginInstance(*i);
-                                ldLog() << LD_DEBUG << "Found plugin:" << plugin->path() << std::endl;
-                                foundPlugins.push_back(plugin);
+                                ldLog() << LD_DEBUG << "Found plugin '" << LD_NO_SPACE << name << LD_NO_SPACE << "':" << plugin->path() << std::endl;
+                                foundPlugins[name] = plugin;
                             } catch (const PluginError& e) {
                                 ldLog() << LD_WARNING << "Could not load plugin" << (*i).path() << LD_NO_SPACE << ": " << e.what();
                             }
