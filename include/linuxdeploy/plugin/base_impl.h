@@ -28,7 +28,7 @@ namespace linuxdeploy {
                 public:
                     explicit PrivateData(const boost::filesystem::path& path) : pluginPath(path) {
                         if (!boost::filesystem::exists(path)) {
-                            throw std::runtime_error("No such file or directory: " + path.string());
+                            throw PluginError("No such file or directory: " + path.string());
                         }
 
                         apiLevel = getApiLevelFromExecutable();
