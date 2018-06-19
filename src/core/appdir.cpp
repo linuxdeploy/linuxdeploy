@@ -591,10 +591,12 @@ namespace linuxdeploy {
                             return false;
                         }
 
+                        bool deployedExecutable = false;
+
                         for (const auto& executablePath : foundExecutablePaths) {
                             ldLog() << LD_DEBUG << "Executable found:" << executablePath << std::endl;
 
-                            if (executablePath.stem() == iconName) {
+                            if (executablePath.filename() == executableName) {
                                 ldLog() << "Deploying AppRun symlink for executable in AppDir root:" << executablePath
                                         << std::endl;
 
@@ -604,7 +606,15 @@ namespace linuxdeploy {
                                             << executablePath << std::endl;
                                     return false;
                                 }
+
+                                deployedExecutable = true;
+                                break;
                             }
+                        }
+
+                        if (!deployedExecutable) {
+                            ldLog() << LD_ERROR << "Could not deploy symlink for executable: could not find suitable executable for Exec entry:" << executableName << std::endl;
+                            return false;
                         }
                     }
                 }
