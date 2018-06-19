@@ -124,7 +124,7 @@ namespace linuxdeploy {
                 auto log = linuxdeploy::core::log::ldLog();
                 log << "Running process:";
                 for (const auto& arg : args) {
-                    log << arg;
+                    log << "" << arg;
                 }
                 log << std::endl;
 
