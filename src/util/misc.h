@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <climits>
 #include <cstring>
 #include <sstream>
 #include <string>
@@ -61,6 +62,17 @@ namespace linuxdeploy {
                     return false;
 
                 return strncmp(string.c_str(), prefix.c_str(), prefix.size()) == 0;
+            }
+
+            static std::string getOwnExecutablePath() {
+                // FIXME: reading /proc/self/exe line is Linux specific
+                std::vector<char> buf(PATH_MAX, '\0');
+
+                if (readlink("/proc/self/exe", buf.data(), buf.size()) < 0) {
+                    return "";
+                }
+
+                return buf.data();
             }
         }
     }

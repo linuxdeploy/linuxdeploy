@@ -94,14 +94,11 @@ namespace linuxdeploy {
                 // if that isn't available, fall back to searching for patchelf in the PATH
                 std::string patchelfPath = "patchelf";
 
-                // FIXME: reading /proc/self/exe line is Linux specific
-                std::vector<char> buf(PATH_MAX, '\0');
-                if (readlink("/proc/self/exe", buf.data(), buf.size()) != -1) {
-                    auto binDirPath = bf::path(buf.data());
-                    auto localPatchelfPath = binDirPath.parent_path() / "patchelf";
-                    if (bf::exists(localPatchelfPath))
-                        patchelfPath = localPatchelfPath.string();
-                }
+                auto binDirPath = bf::path(util::getOwnExecutablePath());
+                auto localPatchelfPath = binDirPath.parent_path() / "patchelf";
+
+                if (bf::exists(localPatchelfPath))
+                    patchelfPath = localPatchelfPath.string();
 
                 ldLog() << LD_DEBUG << "Using patchelf:" << patchelfPath << std::endl;
 
