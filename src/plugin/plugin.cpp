@@ -41,7 +41,7 @@ namespace linuxdeploy {
 
             const auto PATH = getenv("PATH");
 
-            const boost::regex expr(R"(^linuxdeploy-plugin-([^\s\.-]+)(?:-[a-zA-Z0-9_]+)?(?:\..+)?$)");
+            const boost::regex expr(R"(^linuxdeploy-plugin-([^\s\.-]+)(?:-[^\.]+)?(?:\..+)?$)");
 
             auto paths = util::split(PATH, ':');
 
