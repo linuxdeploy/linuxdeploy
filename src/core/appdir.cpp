@@ -642,6 +642,14 @@ namespace linuxdeploy {
 
                     ldLog() << LD_DEBUG << "Type of file" << file << LD_NO_SPACE << ":" << fileType << std::endl;
 
+                    // make sure it's an ELF file
+                    try {
+                        elf::ElfFile elfFile(file);
+                    } catch (const elf::ElfFileParseError&) {
+                        // FIXME: remove this workaround once the MIME check below works as intended
+                        continue;
+                    }
+
 //                    if (util::stringStartsWith(fileType, "application/x-executable"))
                         executables.push_back(file);
                 }
@@ -658,6 +666,14 @@ namespace linuxdeploy {
                     auto fileType = magic.fileType(bf::absolute(file).string());
 
                     ldLog() << LD_DEBUG << "Type of file" << file << LD_NO_SPACE << ":" << fileType << std::endl;
+
+                    // make sure it's an ELF file
+                    try {
+                        elf::ElfFile elfFile(file);
+                    } catch (const elf::ElfFileParseError&) {
+                        // FIXME: remove this workaround once the MIME check below works as intended
+                        continue;
+                    }
 
 //                    if (util::stringStartsWith(fileType, "application/x-sharedlib"))
                         sharedLibraries.push_back(file);
