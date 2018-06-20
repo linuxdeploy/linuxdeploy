@@ -670,11 +670,15 @@ namespace linuxdeploy {
                 for (const auto& executable : listExecutables()) {
                     if (!d->deployElfDependencies(executable))
                         return false;
+
+                    d->setElfRPathOperations[executable] = "$ORIGIN/../lib";
                 }
 
                 for (const auto& sharedLibrary : listSharedLibraries()) {
                     if (!d->deployElfDependencies(sharedLibrary))
                         return false;
+
+                    d->setElfRPathOperations[sharedLibrary] = "$ORIGIN";
                 }
 
                 return true;
