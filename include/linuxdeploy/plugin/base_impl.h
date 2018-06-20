@@ -77,9 +77,9 @@ namespace linuxdeploy {
             PluginBase<API_LEVEL>::PluginBase(const boost::filesystem::path& path) : IPlugin(path) {
                 d = new PrivateData(path);
 
-                if (d->apiLevel != apiLevel()) {
+                if (d->apiLevel != API_LEVEL) {
                     std::stringstream msg;
-                    msg << "This class only supports API level " << apiLevel() << ", not " << d->apiLevel;
+                    msg << "This class only supports API level " << API_LEVEL << ", not " << d->apiLevel;
                     throw WrongApiLevelError(msg.str());
                 }
             }
