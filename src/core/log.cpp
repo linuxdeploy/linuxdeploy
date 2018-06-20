@@ -60,6 +60,14 @@ namespace linuxdeploy {
                 return ldLog(true, logLevelSet, currentLogLevel);
             }
 
+            ldLog ldLog::operator<<(const int val) {
+                return ldLog::operator<<(std::to_string(val));
+            }
+
+            ldLog ldLog::operator<<(const size_t val) {
+                return ldLog::operator<<(std::to_string(val));
+            }
+
             ldLog ldLog::operator<<(const double val) {
                 return ldLog::operator<<(std::to_string(val));
             }

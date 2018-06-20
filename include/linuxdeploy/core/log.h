@@ -59,6 +59,8 @@ namespace linuxdeploy {
                     ldLog operator<<(const std::string& message);
                     ldLog operator<<(const char* message);
                     ldLog operator<<(const boost::filesystem::path& path);
+                    ldLog operator<<(const int val);
+                    ldLog operator<<(const size_t val);
                     ldLog operator<<(const double val);
                     ldLog operator<<(stdEndlType strm);
                     ldLog operator<<(const LD_LOGLEVEL logLevel);
