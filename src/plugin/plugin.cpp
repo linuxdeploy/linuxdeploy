@@ -59,14 +59,18 @@ namespace linuxdeploy {
                     if (bf::status(*i).permissions() & (bf::owner_exe | bf::group_exe | bf::others_exe)) {
                         // ... and filename must match regular expression
                         boost::cmatch res;
-                        if (boost::regex_match((*i).path().filename().string().c_str(), res, expr)) {
+                        if (boost::regex_match(i->path().filename().string().c_str(), res, expr)) {
                             try {
                                 auto name = res[1].str();
                                 auto* plugin = createPluginInstance(*i);
-                                ldLog() << LD_DEBUG << "Found plugin '" << LD_NO_SPACE << name << LD_NO_SPACE << "':" << plugin->path() << std::endl;
-                                foundPlugins[name] = plugin;
+                                if (plugin == nullptr) {
+                                    ldLog() << LD_DEBUG << "Failed to create instance for plugin" << i->path();
+                                } else {
+                                    ldLog() << LD_DEBUG << "Found plugin '" << LD_NO_SPACE << name << LD_NO_SPACE << "':" << plugin->path() << std::endl;
+                                    foundPlugins[name] = plugin;
+                                }
                             } catch (const PluginError& e) {
-                                ldLog() << LD_WARNING << "Could not load plugin" << (*i).path() << LD_NO_SPACE << ": " << e.what();
+                                ldLog() << LD_WARNING << "Could not load plugin" << i->path() << LD_NO_SPACE << ": " << e.what();
                             }
                         }
                     }
