@@ -45,7 +45,7 @@ mv linuxdeploy-plugin-appimage*.AppImage AppDir/usr/bin/
 AppDir/usr/bin/linuxdeploy-plugin-appimage*.AppImage --appdir AppDir/
 
 # rename AppImage to avoid "Text file busy" issues when using it to create another one
-mv ./linuxdeploy-plugin-appimage*.AppImage test.AppImage
+mv ./linuxdeploy*.AppImage test.AppImage
 
 # verify that the resulting AppImage works
 ./test.AppImage "${LINUXDEPLOY_ARGS[@]}"
