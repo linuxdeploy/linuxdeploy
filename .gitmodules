@@ -10,9 +10,6 @@
 [submodule "lib/boost-filesystem"]
 	path = lib/boost-filesystem
 	url = https://github.com/boostorg/filesystem.git
-[submodule "lib/lib/boost-regex"]
-	path = lib/lib/boost-regex
-	url = https://github.com/boostorg/regex.git
 [submodule "lib/boost-regex"]
 	path = lib/boost-regex
 	url = https://github.com/boostorg/regex.git
