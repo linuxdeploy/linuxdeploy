@@ -536,7 +536,7 @@ namespace linuxdeploy {
                 const auto foundIconPaths = deployedIconPaths();
 
                 if (foundIconPaths.empty()) {
-                    ldLog() << LD_ERROR << "Could not find suitable executable for Icon entry:" << iconName << std::endl;
+                    ldLog() << LD_ERROR << "Could not find icon executable for Icon entry:" << iconName << std::endl;
                     return false;
                 }
 
