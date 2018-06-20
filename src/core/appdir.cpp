@@ -583,6 +583,8 @@ namespace linuxdeploy {
                             return false;
                         }
 
+                        executableName = util::split(executableName)[0];
+
                         const auto foundExecutablePaths = deployedExecutablePaths();
 
                         if (foundExecutablePaths.empty()) {
