@@ -42,6 +42,7 @@ int main(int argc, char** argv) {
     args::ValueFlag<std::string> customAppRunPath(parser, "AppRun path", "Path to custom AppRun script (linuxdeploy will not create a symlink but copy this file instead)", {"custom-apprun"});
 
     args::Flag listPlugins(parser, "", "Search for plugins, print them to stdout and exit", {"list-plugins"});
+    args::ValueFlagList<std::string> inputPlugins(parser, "name", "Input plugins to run (check whether they are available with --list-plugins)", {'p', "plugin"});
     args::ValueFlagList<std::string> outputPlugins(parser, "name", "Output plugins to run (check whether they are available with --list-plugins)", {'o', "output"});
 
     try {
@@ -207,6 +208,34 @@ int main(int argc, char** argv) {
         if (!desktopFile.save()) {
             ldLog() << LD_ERROR << "Failed to save desktop file:" << desktopFilePath << std::endl;
             return 1;
+        }
+    }
+
+    if (inputPlugins) {
+        for (const auto& pluginName : inputPlugins.Get()) {
+            auto it = foundPlugins.find(std::string(pluginName));
+
+            if (it == foundPlugins.end()) {
+                ldLog() << LD_ERROR << "Could not find plugin:" << pluginName;
+                return 1;
+            }
+
+            auto plugin = it->second;
+
+            if (plugin->pluginType() != linuxdeploy::plugin::INPUT_TYPE) {
+                ldLog() << LD_ERROR << "Plugin" << pluginName << "has wrong type:" << plugin->pluginType() << std::endl;
+                return 1;
+            }
+
+            ldLog() << std::endl << "-- Running input plugin:" << pluginName << "--" << std::endl;
+
+            auto retcode = plugin->run(appDir.path());
+
+            if (retcode != 0) {
+                ldLog() << LD_ERROR << "Failed to run plugin:" << pluginName << std::endl;
+                ldLog() << LD_DEBUG << "Exited with return code:" << retcode << std::endl;
+                return 1;
+            }
         }
     }
 
