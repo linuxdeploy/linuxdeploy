@@ -586,7 +586,7 @@ namespace linuxdeploy {
                         const auto foundExecutablePaths = deployedExecutablePaths();
 
                         if (foundExecutablePaths.empty()) {
-                            ldLog() << LD_ERROR << "Could not find suitable executable for Exec entry:" << iconName
+                            ldLog() << LD_ERROR << "Could not find suitable executable for Exec entry:" << executableName
                                     << std::endl;
                             return false;
                         }
