@@ -48,6 +48,12 @@ namespace linuxdeploy {
             auto currentExeDir = bf::path(util::getOwnExecutablePath()).parent_path();
             paths.insert(paths.begin(), currentExeDir.string());
 
+            // if shipping as an AppImage, search for plugins in AppImage's location, too
+            if (getenv("APPIMAGE") != nullptr) {
+                auto appImageDir = bf::path(getenv("APPIMAGE")).parent_path();
+                paths.insert(paths.begin(), appImageDir.string());
+            }
+
             for (const auto& dir : paths) {
                 if (!bf::is_directory(dir))
                     continue;
