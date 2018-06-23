@@ -471,8 +471,10 @@ namespace linuxdeploy {
                 std::vector<bf::path> foundPaths;
 
                 // directory_iterators throw exceptions if the directory doesn't exist
-                if (!bf::is_directory(path))
+                if (!bf::is_directory(path)) {
+                    ldLog() << LD_DEBUG << "No such directory:" << path << std::endl;
                     return {};
+                }
 
                 if (recursive) {
                     for (bf::recursive_directory_iterator i(path); i != bf::recursive_directory_iterator(); ++i) {
