@@ -5,7 +5,7 @@
 
 // library headers
 #include <boost/filesystem.hpp>
-#include <Magick++.h>
+#include <CImg.h>
 #include <fnmatch.h>
 #include <subprocess.hpp>
 
@@ -19,6 +19,7 @@
 using namespace linuxdeploy::core;
 using namespace linuxdeploy::core::log;
 
+using namespace cimg_library;
 namespace bf = boost::filesystem;
 
 namespace linuxdeploy {
@@ -340,44 +341,42 @@ namespace linuxdeploy {
                         if (util::strLower(path.filename().extension().string()) == ".svg") {
                             resolution = "scalable";
                         } else {
-                            Magick::Image image;
-
                             try {
-                                image.read(path.string());
-                            } catch (const Magick::Exception& e) {
-                                ldLog() << LD_ERROR << "Magick error: " << e.what() << std::endl;
-                                return false;
-                            }
+                                CImg<unsigned char> image(path.c_str());
 
-                            auto xRes = image.columns();
-                            auto yRes = image.rows();
+                                auto xRes = image.width();
+                                auto yRes = image.height();
 
-                            if (xRes != yRes) {
-                                ldLog() << LD_WARNING << "x and y resolution of icon are not equal:" << path;
-                            }
+                                if (xRes != yRes) {
+                                    ldLog() << LD_WARNING << "x and y resolution of icon are not equal:" << path;
+                                }
 
-                            resolution = std::to_string(xRes) + "x" + std::to_string(yRes);
+                                resolution = std::to_string(xRes) + "x" + std::to_string(yRes);
 
-                            // otherwise, test resolution against "known good" values, and reject invalid ones
-                            const auto knownResolutions = {8, 16, 20, 22, 24, 32, 48, 64, 72, 96, 128, 192, 256, 512};
+                                // otherwise, test resolution against "known good" values, and reject invalid ones
+                                const auto knownResolutions = {8, 16, 20, 22, 24, 32, 48, 64, 72, 96, 128, 192, 256, 512};
 
-                            // assume invalid
-                            bool invalidXRes = true, invalidYRes = true;
+                                // assume invalid
+                                bool invalidXRes = true, invalidYRes = true;
 
-                            for (const auto res : knownResolutions) {
-                                if (xRes == res)
-                                    invalidXRes = false;
-                                if (yRes == res)
-                                    invalidYRes = false;
-                            }
+                                for (const auto res : knownResolutions) {
+                                    if (xRes == res)
+                                        invalidXRes = false;
+                                    if (yRes == res)
+                                        invalidYRes = false;
+                                }
 
-                            if (invalidXRes) {
-                                ldLog() << LD_ERROR << "Icon" << path << "has invalid x resolution:" << xRes;
-                                return false;
-                            }
+                                if (invalidXRes) {
+                                    ldLog() << LD_ERROR << "Icon" << path << "has invalid x resolution:" << xRes;
+                                    return false;
+                                }
 
-                            if (invalidYRes) {
-                                ldLog() << LD_ERROR << "Icon" << path << "has invalid x resolution:" << xRes;
+                                if (invalidYRes) {
+                                    ldLog() << LD_ERROR << "Icon" << path << "has invalid x resolution:" << xRes;
+                                    return false;
+                                }
+                            } catch (const CImgException& e) {
+                                ldLog() << LD_ERROR << "CImg error: " << e.what() << std::endl;
                                 return false;
                             }
                         }
