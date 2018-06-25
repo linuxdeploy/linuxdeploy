@@ -494,7 +494,11 @@ namespace linuxdeploy {
             }
 
             std::vector<bf::path> AppDir::deployedIconPaths() {
-                return listFilesInDirectory(path() / "/usr/share/icons/");
+                auto icons = listFilesInDirectory(path() / "usr/share/icons/");
+                auto pixmaps = listFilesInDirectory(path() / "usr/share/pixmaps/", false);
+                icons.reserve(pixmaps.size());
+                std::copy(pixmaps.begin(), pixmaps.end(), std::back_inserter(icons));
+                return icons;
             }
 
             std::vector<bf::path> AppDir::deployedExecutablePaths() {
