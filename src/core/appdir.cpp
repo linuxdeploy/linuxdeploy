@@ -228,7 +228,9 @@ namespace linuxdeploy {
                             return false;
 
                         for (const auto& file : copyrightFiles) {
-                            deployFile(file, appDirPath / from);
+                            std::string targetDir = file.string();
+                            targetDir.erase(0, 1);
+                            deployFile(file, appDirPath / targetDir);
                         }
 
                         return true;
