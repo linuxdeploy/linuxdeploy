@@ -64,6 +64,10 @@ namespace linuxdeploy {
                 return strncmp(string.c_str(), prefix.c_str(), prefix.size()) == 0;
             }
 
+            static bool stringContains(const std::string& string, const std::string& part) {
+                return string.find(part) != std::string::npos;
+            }
+
             static std::string getOwnExecutablePath() {
                 // FIXME: reading /proc/self/exe line is Linux specific
                 std::vector<char> buf(PATH_MAX, '\0');

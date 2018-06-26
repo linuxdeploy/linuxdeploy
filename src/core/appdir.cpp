@@ -159,6 +159,81 @@ namespace linuxdeploy {
                         return success;
                     }
 
+                    // search for copyright file related to given file
+                    // this function utilizes distribution tools like dpkg-query to determine the paths of copyright
+                    // files
+                    std::vector<bf::path> searchForCopyrightFiles(const bf::path& from) {
+                        auto check_command = [](const std::string& command) {
+                            auto p = subprocess::Popen(
+                                command,
+                                subprocess::output(subprocess::PIPE),
+                                subprocess::error(subprocess::PIPE)
+                            );
+
+                            return p.wait();
+                        };
+
+                        // cannot deploy copyright files for files in AppDir
+                        if (!util::stringStartsWith(bf::absolute(from).string(), bf::absolute(appDirPath).string())) {
+                            if (check_command("which dpkg-query") == 0) {
+                                ldLog() << LD_DEBUG << "Using dpkg-query to search for copyright files" << std::endl;
+
+                                auto call = [](const std::initializer_list<const char*>& args) {
+                                    auto proc = subprocess::Popen(
+                                        args,
+                                        subprocess::output(subprocess::PIPE),
+                                        subprocess::error(subprocess::PIPE)
+                                    );
+
+                                    auto output = proc.communicate();
+                                    return std::make_pair(proc.retcode(), output.first);
+                                };
+
+                                auto dpkgQueryPackages = call({"dpkg-query", "-S", from.c_str()});
+
+                                if (dpkgQueryPackages.first != 0
+                                    || dpkgQueryPackages.second.buf.empty()
+                                    || dpkgQueryPackages.second.buf.front() == '\0') {
+                                    ldLog() << LD_WARNING << "Could not find copyright files for file" << from << "using dpkg-query" << std::endl;
+                                    return {};
+                                }
+
+                                auto packageName = util::split(util::splitLines(dpkgQueryPackages.second.buf.data())[0], ':')[0];
+
+                                if (!packageName.empty()) {
+
+                                    auto copyrightFilePath = bf::path("/usr/share/doc") / packageName / "copyright";
+
+                                    if (bf::is_regular_file(copyrightFilePath)) {
+                                        return {copyrightFilePath};
+                                    }
+                                } else {
+                                    ldLog() << LD_WARNING << "Could not find copyright files for file" << from << "using dpkg-query" << std::endl;
+                                }
+                            }
+                        } else {
+                            ldLog() << LD_DEBUG << "Cannot deploy copyright files for files in AppDir:" << from << std::endl;
+                        }
+
+                        ldLog() << LD_DEBUG << "Could not find suitable tool for copyright files deployment, skipping" << from << std::endl;
+
+                        return {};
+                    }
+
+                    // search for copyright file for file and deploy it to AppDir
+                    bool deployCopyrightFiles(const bf::path& from) {
+                        auto copyrightFiles = searchForCopyrightFiles(from);
+
+                        if (copyrightFiles.empty())
+                            return false;
+
+                        for (const auto& file : copyrightFiles) {
+                            deployFile(file, appDirPath / from);
+                        }
+
+                        return true;
+                    }
+
                     // register copy operation that will be executed later
                     // by compiling a list of files to copy instead of just copying everything, one can ensure that
                     // the files are touched once only
@@ -243,6 +318,7 @@ namespace linuxdeploy {
                         auto destinationPath = destination.empty() ? appDirPath / "usr/lib/" : destination;
 
                         deployFile(path, destinationPath);
+                        deployCopyrightFiles(path);
 
                         std::string rpath = "$ORIGIN";
 
@@ -283,6 +359,7 @@ namespace linuxdeploy {
                         auto destinationPath = destination.empty() ? appDirPath / "usr/bin/" : destination;
 
                         deployFile(path, destinationPath);
+                        deployCopyrightFiles(path);
 
                         std::string rpath = "$ORIGIN/../lib";
 
@@ -392,6 +469,7 @@ namespace linuxdeploy {
                         }
 
                         deployFile(path, appDirPath / "usr/share/icons/hicolor" / resolution / "apps" / filename);
+                        deployCopyrightFiles(path);
 
                         return true;
                     }
