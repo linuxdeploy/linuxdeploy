@@ -32,6 +32,7 @@ namespace linuxdeploy {
                     // store deferred operations
                     // these can be executed by calling excuteDeferredOperations
                     std::map<bf::path, bf::path> copyOperations;
+                    std::set<bf::path> stripOperations;
                     std::map<bf::path, std::string> setElfRPathOperations;
 
                     // stores all files that have been visited by the deploy functions, e.g., when they're blacklisted,
@@ -44,7 +45,7 @@ namespace linuxdeploy {
                     std::string appName;
 
                 public:
-                    PrivateData() : copyOperations(), setElfRPathOperations(), visitedFiles(), appDirPath(), appName() {};
+                    PrivateData() : copyOperations(), stripOperations(), setElfRPathOperations(), visitedFiles(), appDirPath(), appName() {};
 
                 public:
                     // actually copy file
@@ -140,23 +141,52 @@ namespace linuxdeploy {
                             copyOperations.erase(copyOperations.begin());
                         }
 
-                        if (success) {
-                            while (!setElfRPathOperations.empty()) {
-                                const auto& currentEntry = *(setElfRPathOperations.begin());
-                                const auto& filePath = currentEntry.first;
-                                const auto& rpath = currentEntry.second;
+                        if (!success)
+                            return false;
 
-                                ldLog() << "Setting rpath in ELF file" << filePath << "to" << rpath << std::endl;
-                                if (!elf::ElfFile(filePath).setRPath(rpath)) {
-                                    ldLog() << LD_ERROR << "Failed to set rpath in ELF file:" << filePath << std::endl;
-                                    success = false;
-                                }
+                        while (!stripOperations.empty()) {
+                            const auto& filePath = *(stripOperations.begin());
 
-                                setElfRPathOperations.erase(setElfRPathOperations.begin());
+                            ldLog() << "Calling strip on library" << filePath << std::endl;
+
+                            std::map<std::string, std::string> env;
+                            env.insert(std::make_pair(std::string("LC_ALL"), std::string("C")));
+
+                            subprocess::Popen proc(
+                                {"strip", filePath.c_str()},
+                                subprocess::output(subprocess::PIPE),
+                                subprocess::error(subprocess::PIPE),
+                                subprocess::environment(env)
+                            );
+
+                            std::string err = proc.communicate().second.buf.data();
+
+                            if (proc.retcode() != 0 && !util::stringContains(err, "Not enough room for program headers")) {
+                                ldLog() << LD_ERROR << "Strip call failed:" << err << std::endl;
+                                success = false;
                             }
+
+                            stripOperations.erase(stripOperations.begin());
                         }
 
-                        return success;
+                        if (!success)
+                            return false;
+
+                        while (!setElfRPathOperations.empty()) {
+                            const auto& currentEntry = *(setElfRPathOperations.begin());
+                            const auto& filePath = currentEntry.first;
+                            const auto& rpath = currentEntry.second;
+
+                            ldLog() << "Setting rpath in ELF file" << filePath << "to" << rpath << std::endl;
+                            if (!elf::ElfFile(filePath).setRPath(rpath)) {
+                                ldLog() << LD_ERROR << "Failed to set rpath in ELF file:" << filePath << std::endl;
+                                success = false;
+                            }
+
+                            setElfRPathOperations.erase(setElfRPathOperations.begin());
+                        }
+
+                        return true;
                     }
 
                     // search for copyright file related to given file
@@ -221,7 +251,9 @@ namespace linuxdeploy {
                     }
 
                     // search for copyright file for file and deploy it to AppDir
-                    bool deployCopyrightFiles(const bf::path& from) {
+                    bool deployCopyrightFiles(const bf::path& from, const std::string& logPrefix = "") {
+                        ldLog() << logPrefix << LD_NO_SPACE << "Deploying copyright files for file" << from << std::endl;
+
                         auto copyrightFiles = searchForCopyrightFiles(from);
 
                         if (copyrightFiles.empty())
@@ -320,7 +352,7 @@ namespace linuxdeploy {
                         auto destinationPath = destination.empty() ? appDirPath / "usr/lib/" : destination;
 
                         deployFile(path, destinationPath);
-                        deployCopyrightFiles(path);
+                        deployCopyrightFiles(path, logPrefix);
 
                         std::string rpath = "$ORIGIN";
 
@@ -341,6 +373,7 @@ namespace linuxdeploy {
                         }
 
                         setElfRPathOperations[destinationPath / path.filename()] = rpath;
+                        stripOperations.insert(destinationPath / path.filename());
 
                         if (!deployElfDependencies(path, recursionLevel))
                             return false;
@@ -382,6 +415,7 @@ namespace linuxdeploy {
                         }
 
                         setElfRPathOperations[destinationPath / path.filename()] = rpath;
+                        stripOperations.insert(destinationPath / path.filename());
 
                         if (!deployElfDependencies(path))
                             return false;
