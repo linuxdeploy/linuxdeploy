@@ -147,23 +147,28 @@ namespace linuxdeploy {
                         while (!stripOperations.empty()) {
                             const auto& filePath = *(stripOperations.begin());
 
-                            ldLog() << "Calling strip on library" << filePath << std::endl;
+                            if (util::stringStartsWith(elf::ElfFile(filePath).getRPath(), "$")) {
+                                ldLog() << LD_WARNING << "Not calling strip on binary" << filePath << LD_NO_SPACE << ": rpath starts with $" << std::endl;
+                            } else {
+                                ldLog() << "Calling strip on library" << filePath << std::endl;
 
-                            std::map<std::string, std::string> env;
-                            env.insert(std::make_pair(std::string("LC_ALL"), std::string("C")));
+                                std::map<std::string, std::string> env;
+                                env.insert(std::make_pair(std::string("LC_ALL"), std::string("C")));
 
-                            subprocess::Popen proc(
-                                {getStripPath().c_str(), filePath.c_str()},
-                                subprocess::output(subprocess::PIPE),
-                                subprocess::error(subprocess::PIPE),
-                                subprocess::environment(env)
-                            );
+                                subprocess::Popen proc(
+                                    {getStripPath().c_str(), filePath.c_str()},
+                                    subprocess::output(subprocess::PIPE),
+                                    subprocess::error(subprocess::PIPE),
+                                    subprocess::environment(env)
+                                );
 
-                            std::string err = proc.communicate().second.buf.data();
+                                std::string err = proc.communicate().second.buf.data();
 
-                            if (proc.retcode() != 0 && !util::stringContains(err, "Not enough room for program headers")) {
-                                ldLog() << LD_ERROR << "Strip call failed:" << err << std::endl;
-                                success = false;
+                                if (proc.retcode() != 0 &&
+                                    !util::stringContains(err, "Not enough room for program headers")) {
+                                    ldLog() << LD_ERROR << "Strip call failed:" << err << std::endl;
+                                    success = false;
+                                }
                             }
 
                             stripOperations.erase(stripOperations.begin());
