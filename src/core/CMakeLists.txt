@@ -22,7 +22,3 @@ target_link_libraries(linuxdeploy_core PUBLIC linuxdeploy_plugin linuxdeploy_uti
 target_include_directories(linuxdeploy_core PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_include_directories(linuxdeploy_core PUBLIC ${PROJECT_SOURCE_DIR}/include)
 target_compile_definitions(linuxdeploy_core PUBLIC -DBOOST_NO_CXX11_SCOPED_ENUMS)
-
-add_executable(linuxdeploy main.cpp)
-target_link_libraries(linuxdeploy linuxdeploy_core args)
-set_target_properties(linuxdeploy PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin")
