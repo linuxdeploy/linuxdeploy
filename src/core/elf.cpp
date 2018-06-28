@@ -23,6 +23,23 @@ namespace linuxdeploy {
 
                 public:
                     explicit PrivateData(const bf::path& path) : path(path) {}
+
+                public:
+                    static std::string getPatchelfPath() {
+                        // by default, try to use a patchelf next to the linuxdeploy binary
+                        // if that isn't available, fall back to searching for patchelf in the PATH
+                        std::string patchelfPath = "patchelf";
+
+                        auto binDirPath = bf::path(util::getOwnExecutablePath());
+                        auto localPatchelfPath = binDirPath.parent_path() / "patchelf";
+
+                        if (bf::exists(localPatchelfPath))
+                            patchelfPath = localPatchelfPath.string();
+
+                        ldLog() << LD_DEBUG << "Using patchelf:" << patchelfPath << std::endl;
+
+                        return patchelfPath;
+                    }
             };
 
             ElfFile::ElfFile(const boost::filesystem::path& path) {
@@ -89,26 +106,10 @@ namespace linuxdeploy {
                 return paths;
             }
 
-            std::string getPatchelfPath() {
-                // by default, try to use a patchelf next to the linuxdeploy binary
-                // if that isn't available, fall back to searching for patchelf in the PATH
-                std::string patchelfPath = "patchelf";
-
-                auto binDirPath = bf::path(util::getOwnExecutablePath());
-                auto localPatchelfPath = binDirPath.parent_path() / "patchelf";
-
-                if (bf::exists(localPatchelfPath))
-                    patchelfPath = localPatchelfPath.string();
-
-                ldLog() << LD_DEBUG << "Using patchelf:" << patchelfPath << std::endl;
-
-                return patchelfPath;
-            }
-
             std::string ElfFile::getRPath() {
                 try {
                     subprocess::Popen patchelfProc(
-                        {getPatchelfPath().c_str(), "--print-rpath", d->path.c_str()},
+                        {d->getPatchelfPath().c_str(), "--print-rpath", d->path.c_str()},
                         subprocess::output(subprocess::PIPE),
                         subprocess::error(subprocess::PIPE)
                     );
@@ -143,7 +144,7 @@ namespace linuxdeploy {
             bool ElfFile::setRPath(const std::string& value) {
                 try {
                     subprocess::Popen patchelfProc(
-                        {getPatchelfPath().c_str(), "--set-rpath", value.c_str(), d->path.c_str()},
+                        {d->getPatchelfPath().c_str(), "--set-rpath", value.c_str(), d->path.c_str()},
                         subprocess::output(subprocess::PIPE),
                         subprocess::error(subprocess::PIPE)
                     );
