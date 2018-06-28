@@ -153,7 +153,7 @@ namespace linuxdeploy {
                             env.insert(std::make_pair(std::string("LC_ALL"), std::string("C")));
 
                             subprocess::Popen proc(
-                                {"strip", filePath.c_str()},
+                                {getStripPath().c_str(), filePath.c_str()},
                                 subprocess::output(subprocess::PIPE),
                                 subprocess::error(subprocess::PIPE),
                                 subprocess::environment(env)
@@ -304,6 +304,22 @@ namespace linuxdeploy {
                         }
                         
                         return true;
+                    }
+
+                    static std::string getStripPath() {
+                        // by default, try to use a patchelf next to the linuxdeploy binary
+                        // if that isn't available, fall back to searching for patchelf in the PATH
+                        std::string patchelfPath = "strip";
+
+                        auto binDirPath = bf::path(util::getOwnExecutablePath());
+                        auto localStripPath = binDirPath.parent_path() / "strip";
+
+                        if (bf::exists(localStripPath))
+                            patchelfPath = localStripPath.string();
+
+                        ldLog() << LD_DEBUG << "Using strip:" << patchelfPath << std::endl;
+
+                        return patchelfPath;
                     }
 
                     bool deployLibrary(const bf::path& path, int recursionLevel = 0, const bf::path& destination = "") {
