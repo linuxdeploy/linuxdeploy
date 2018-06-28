@@ -7,7 +7,7 @@ if(USE_SYSTEM_BOOST)
     set(BOOST_LIBS Boost::filesystem Boost::regex)
 else()
     # use custom built libs
-    set(BOOST_LIBS Boost_system Boost_filesystem Boost_regex)
+    set(BOOST_LIBS boost_system boost_filesystem boost_regex)
 endif()
 
 add_subdirectory(util)
