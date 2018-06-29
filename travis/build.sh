@@ -37,7 +37,7 @@ fi
 
 cmake "$REPO_ROOT" "${EXTRA_CMAKE_ARGS[@]}"
 
-make VERBOSE=1
+make -j$(nproc)
 
 # args are used more than once
 LINUXDEPLOY_ARGS=("--init-appdir" "--appdir" "AppDir" "-e" "bin/linuxdeploy" "-i" "$REPO_ROOT/resources/linuxdeploy.png" "--create-desktop-file" "-e" "/usr/bin/patchelf" "-e" "/usr/bin/strip")
