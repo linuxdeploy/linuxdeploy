@@ -6,8 +6,15 @@ addons:
     update: true
     packages:
       - libmagic-dev
+      - libmagic-dev:i386
+      - libjpeg-dev
+      - libjpeg-dev:i386
       - cimg-dev
       - automake  # required for patchelf
+
+environment:
+  - ARCH=x86_64
+  - ARCH=i386
 
 install:
   - git clone https://github.com/NixOS/patchelf.git

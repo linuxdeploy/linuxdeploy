@@ -26,7 +26,16 @@ OLD_CWD=$(readlink -f .)
 
 pushd "$BUILD_DIR"
 
-cmake "$REPO_ROOT"
+if [ "$ARCH" == "x86_64" ]; then
+    EXTRA_CMAKE_ARGS=()
+elif [ "$ARCH" == "i386" ]; then
+    EXTRA_CMAKE_ARGS=("-DCMAKE_TOOLCHAIN_FILE=$REPO_ROOT/cmake/toolchains/i386-linux-gnu.cmake")
+else
+    echo "Architecture not supported: $ARCH" 1>&2
+    exit 1
+fi
+
+cmake "$REPO_ROOT" "${EXTRA_CMAKE_ARGS[@]}"
 
 make VERBOSE=1
 
@@ -37,12 +46,12 @@ LINUXDEPLOY_ARGS=("--init-appdir" "--appdir" "AppDir" "-e" "bin/linuxdeploy" "-i
 bin/linuxdeploy "${LINUXDEPLOY_ARGS[@]}"
 
 # bundle AppImage plugin
-wget https://github.com/TheAssassin/linuxdeploy-plugin-appimage/releases/download/continuous/linuxdeploy-plugin-appimage-x86_64.AppImage
-chmod +x linuxdeploy-plugin-appimage*.AppImage
-mv linuxdeploy-plugin-appimage*.AppImage AppDir/usr/bin/
+wget https://github.com/TheAssassin/linuxdeploy-plugin-appimage/releases/download/continuous/linuxdeploy-plugin-appimage-"$ARCH".AppImage
+chmod +x linuxdeploy-plugin-appimage-"$ARCH".AppImage
+mv linuxdeploy-plugin-appimage-"$ARCH".AppImage AppDir/usr/bin/
 
 # build AppImage using plugin
-AppDir/usr/bin/linuxdeploy-plugin-appimage*.AppImage --appdir AppDir/
+AppDir/usr/bin/linuxdeploy-plugin-appimage-"$ARCH".AppImage --appdir AppDir/
 
 # rename AppImage to avoid "Text file busy" issues when using it to create another one
 mv ./linuxdeploy*.AppImage test.AppImage
