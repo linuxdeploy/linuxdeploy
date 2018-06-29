@@ -13,6 +13,7 @@ addons:
 
 env:
   - ARCH=x86_64
+  - ARCH=i386
 
 matrix:
   include:
