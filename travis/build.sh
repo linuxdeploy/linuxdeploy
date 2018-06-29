@@ -35,7 +35,7 @@ else
     exit 1
 fi
 
-cmake "$REPO_ROOT" "${EXTRA_CMAKE_ARGS[@]}"
+cmake "$REPO_ROOT" -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=RelWithDebInfo "${EXTRA_CMAKE_ARGS[@]}"
 
 make -j$(nproc)
 
