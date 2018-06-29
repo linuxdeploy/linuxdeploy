@@ -16,3 +16,60 @@
 [submodule "lib/boost-system"]
 	path = lib/boost-system
 	url = https://github.com/boostorg/system.git
+[submodule "lib/boost-config"]
+	path = lib/boost-config
+	url = https://github.com/boostorg/config.git
+[submodule "lib/boost-utility"]
+	path = lib/boost-utility
+	url = https://github.com/boostorg/utility.git
+[submodule "lib/boost-predef"]
+	path = lib/boost-predef
+	url = https://github.com/boostorg/predef.git
+[submodule "lib/boost-assert"]
+	path = lib/boost-assert
+	url = https://github.com/boostorg/assert.git
+[submodule "lib/boost-core"]
+	path = lib/boost-core
+	url = https://github.com/boostorg/core.git
+[submodule "lib/boost-type_traits"]
+	path = lib/boost-type_traits
+	url = https://github.com/boostorg/type_traits.git
+[submodule "lib/boost-iterator"]
+	path = lib/boost-iterator
+	url = https://github.com/boostorg/iterator.git
+[submodule "lib/boost-mpl"]
+	path = lib/boost-mpl
+	url = https://github.com/boostorg/mpl.git
+[submodule "lib/boost-preprocessor"]
+	path = lib/boost-preprocessor
+	url = https://github.com/boostorg/preprocessor.git
+[submodule "lib/boost-static_assert"]
+	path = lib/boost-static_assert
+	url = https://github.com/boostorg/static_assert.git
+[submodule "lib/boost-detail"]
+	path = lib/boost-detail
+	url = https://github.com/boostorg/detail.git
+[submodule "lib/boost-smart_ptr"]
+	path = lib/boost-smart_ptr
+	url = https://github.com/boostorg/smart_ptr.git
+[submodule "lib/boost-exception"]
+	path = lib/boost-exception
+	url = https://github.com/boostorg/exception.git
+[submodule "lib/boost-throw_exception"]
+	path = lib/boost-throw_exception
+	url = https://github.com/boostorg/throw_exception.git
+[submodule "lib/boost-io"]
+	path = lib/boost-io
+	url = https://github.com/boostorg/io.git
+[submodule "lib/boost-functional"]
+	path = lib/boost-functional
+	url = https://github.com/boostorg/functional.git
+[submodule "lib/boost-container_hash"]
+	path = lib/boost-container_hash
+	url = https://github.com/boostorg/container_hash.git
+[submodule "lib/boost-range"]
+	path = lib/boost-range
+	url = https://github.com/boostorg/range.git
+[submodule "lib/boost-integer"]
+	path = lib/boost-integer
+	url = https://github.com/boostorg/integer.git

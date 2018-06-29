@@ -5,8 +5,6 @@ addons:
   apt:
     update: true
     packages:
-      - libboost-regex1.55-dev
-      - libboost-filesystem1.55-dev
       - libmagic-dev
       - cimg-dev
       - automake  # required for patchelf
