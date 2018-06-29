@@ -9,6 +9,8 @@ addons:
       - libmagic-dev:i386
       - libjpeg-dev
       - libjpeg-dev:i386
+      - libpng-dev
+      - libpng-dev:i386
       - cimg-dev
       - automake  # required for patchelf
 
