@@ -26,6 +26,8 @@ matrix:
             - libpng-dev:i386
             - gcc-multilib
             - g++-multilib
+            - cimg-dev
+            - automake  # required for patchelf
 
 install:
   - git clone https://github.com/NixOS/patchelf.git
