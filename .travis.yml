@@ -1,21 +1,18 @@
 language: cpp
 sudo: required
 
-addons:
-  apt:
-    update: true
-    packages:
-      - libmagic-dev
-      - libjpeg-dev
-      - libpng-dev
-      - cimg-dev
-      - automake  # required for patchelf
-
-env:
-  - ARCH=x86_64
-
 matrix:
   include:
+    - env: ARCH=x86_64
+      addons:
+        apt:
+          update: true
+          packages:
+            - libmagic-dev
+            - libjpeg-dev
+            - libpng-dev
+            - cimg-dev
+            - automake  # required for patchelf
     - env: ARCH=i386
       addons:
         apt:
