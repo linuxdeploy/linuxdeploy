@@ -17,14 +17,12 @@ matrix:
       addons:
         apt:
           packages:
-            - libmagic-dev:i386
-            - libjpeg-dev:i386
-            - libpng-dev:i386
-            - libcv-dev:i386
             - gcc-multilib
             - g++-multilib
             - cimg-dev
             - automake  # required for patchelf
+      before_script:
+        - sudo -E apt-get install -y libmagic-dev:i386 libjpeg-dev:i386 libpng-dev:i386
 
 install:
   - git clone https://github.com/NixOS/patchelf.git
