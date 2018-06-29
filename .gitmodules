@@ -73,3 +73,6 @@
 [submodule "lib/boost-integer"]
 	path = lib/boost-integer
 	url = https://github.com/boostorg/integer.git
+[submodule "lib/CImg"]
+	path = lib/CImg
+	url = https://github.com/dtschump/CImg.git
