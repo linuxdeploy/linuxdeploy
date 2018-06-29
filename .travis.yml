@@ -20,6 +20,7 @@ matrix:
             - libmagic-dev:i386
             - libjpeg-dev:i386
             - libpng-dev:i386
+            - libcv-dev:i386
             - gcc-multilib
             - g++-multilib
             - cimg-dev
