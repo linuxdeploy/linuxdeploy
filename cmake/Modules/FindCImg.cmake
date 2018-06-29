@@ -7,7 +7,7 @@ find_package(JPEG REQUIRED)
 if(NOT USE_SYSTEM_CIMG)
     message(STATUS "Using bundled CImg library")
 
-    set(CIMG_H_DIR "${CMAKE_CURRENT_SOURCE_DIR}/CImg/")
+    set(CIMG_H_DIR "${PROJECT_SOURCE_DIR}/lib/CImg/")
 else()
     message(STATUS "Searching for CImg")
 
