@@ -18,12 +18,13 @@ matrix:
         apt:
           update: true
           packages:
+            - libmagic-dev:i386
+            - libjpeg-dev:i386
+            - libpng-dev:i386
+            - cimg-dev
             - gcc-multilib
             - g++-multilib
             - automake  # required for patchelf
-      before_script:
-        - sudo -E apt-get install -y libmagic-dev:i386 libjpeg-dev:i386 libpng-dev:i386 cimg-dev
-        - find /usr/include -iname cimg.h
 
 install:
   - git clone https://github.com/NixOS/patchelf.git
