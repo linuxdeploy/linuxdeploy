@@ -22,6 +22,7 @@ matrix:
             - libjpeg-dev:i386
             - libpng-dev:i386
             - cimg-dev
+            - libcv-dev
             - gcc-multilib
             - g++-multilib
             - automake  # required for patchelf
