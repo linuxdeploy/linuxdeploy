@@ -27,9 +27,6 @@ matrix:
             - g++-multilib
             - automake  # required for patchelf
 
-before_install:
-  - apt-mark showhold
-
 install:
   - git clone https://github.com/NixOS/patchelf.git
   - cd patchelf
