@@ -42,6 +42,13 @@ namespace linuxdeploy {
                     // the dependencies are copied to the normal destination, though
                     bool deployLibrary(const boost::filesystem::path& path, const boost::filesystem::path& destination = "");
 
+                    // force deploy shared library
+                    //
+                    // works like deployLibrary, except that it doesn't check the excludelist
+                    // this is useful to deploy libraries and their dependencies that are blacklisted and would otherwise not be deployed
+                    // the excludelist check is only disabled for the current library, and will be enabled for the dependencies again
+                    bool forceDeployLibrary(const boost::filesystem::path& path, const boost::filesystem::path& destination = "");
+
                     // deploy executable
                     bool deployExecutable(const boost::filesystem::path& path, const boost::filesystem::path& destination = "");
 

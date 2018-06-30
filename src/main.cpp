@@ -117,7 +117,7 @@ int main(int argc, char** argv) {
                 return 1;
             }
 
-            if (!appDir.deployLibrary(libraryPath)) {
+            if (!appDir.forceDeployLibrary(libraryPath)) {
                 std::cerr << "Failed to deploy library: " << libraryPath << std::endl;
                 return 1;
             }
