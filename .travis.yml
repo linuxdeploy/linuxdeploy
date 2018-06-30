@@ -44,7 +44,7 @@ after_success:
   # make sure only pushes to rewrite create a new release, otherwise pretend PR and upload to transfer.sh
   - if [ "$TRAVIS_BRANCH" != "master" ]; then export TRAVIS_EVENT_TYPE=pull_request; fi
   - wget -c https://github.com/probonopd/uploadtool/raw/master/upload.sh
-  - bash upload.sh linuxdeploy*.AppImage*
+  - bash upload.sh linuxdeploy-"$ARCH".AppImage*
 
 branches:
   except:
