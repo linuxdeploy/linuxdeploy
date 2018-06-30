@@ -59,7 +59,7 @@ ln -s ../../plugins/linuxdeploy-plugin-appimage/AppRun AppDir/usr/bin/linuxdeplo
 AppDir/usr/bin/linuxdeploy-plugin-appimage --appdir AppDir/
 
 # rename AppImage to avoid "Text file busy" issues when using it to create another one
-mv ./linuxdeploy*.AppImage test.AppImage
+mv ./linuxdeploy-"$ARCH".AppImage test.AppImage
 
 # verify that the resulting AppImage works
 ./test.AppImage "${LINUXDEPLOY_ARGS[@]}"
