@@ -327,10 +327,10 @@ namespace linuxdeploy {
                         return patchelfPath;
                     }
 
-                    bool deployLibrary(const bf::path& path, int recursionLevel = 0, bool checkExcludelist = true, const bf::path& destination = bf::path()) {
+                    bool deployLibrary(const bf::path& path, int recursionLevel = 0, bool forceDeploy = false, const bf::path& destination = bf::path()) {
                         auto logPrefix = getLogPrefix(recursionLevel);
 
-                        if (hasBeenVisitedAlready(path)) {
+                        if (!forceDeploy && hasBeenVisitedAlready(path)) {
                             ldLog() << LD_DEBUG << logPrefix << LD_NO_SPACE << "File has been visited already:" << path << std::endl;
                             return true;
                         }
@@ -356,7 +356,7 @@ namespace linuxdeploy {
                             return false;
                         };
 
-                        if (checkExcludelist && isInExcludelist(path.filename())) {
+                        if (forceDeploy && isInExcludelist(path.filename())) {
                             ldLog() << logPrefix << LD_NO_SPACE << "Skipping deployment of blacklisted library" << path << std::endl;
 
                             // mark file as visited
@@ -578,11 +578,11 @@ namespace linuxdeploy {
             }
 
             bool AppDir::deployLibrary(const bf::path& path, const bf::path& destination) {
-                return d->deployLibrary(path, 0, true, destination);
+                return d->deployLibrary(path, 0, false, destination);
             }
 
             bool AppDir::forceDeployLibrary(const bf::path& path, const bf::path& destination) {
-                return d->deployLibrary(path, 0, false, destination);
+                return d->deployLibrary(path, 0, true, destination);
             }
 
             bool AppDir::deployExecutable(const bf::path& path, const boost::filesystem::path& destination) {
