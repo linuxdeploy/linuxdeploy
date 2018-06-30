@@ -46,12 +46,17 @@ LINUXDEPLOY_ARGS=("--init-appdir" "--appdir" "AppDir" "-e" "bin/linuxdeploy" "-i
 bin/linuxdeploy "${LINUXDEPLOY_ARGS[@]}"
 
 # bundle AppImage plugin
+mkdir -p AppDir/plugins
+
 wget https://github.com/TheAssassin/linuxdeploy-plugin-appimage/releases/download/continuous/linuxdeploy-plugin-appimage-"$ARCH".AppImage
 chmod +x linuxdeploy-plugin-appimage-"$ARCH".AppImage
-mv linuxdeploy-plugin-appimage-"$ARCH".AppImage AppDir/usr/bin/
+./linuxdeploy-plugin-appimage-"$ARCH".AppImage --appimage-extract
+mv squashfs-root/ AppDir/plugins/linuxdeploy-plugin-appimage
+
+ln -s ../../plugins/linuxdeploy-plugin-appimage/AppRun AppDir/usr/bin/linuxdeploy-plugin-appimage
 
 # build AppImage using plugin
-AppDir/usr/bin/linuxdeploy-plugin-appimage-"$ARCH".AppImage --appdir AppDir/
+AppDir/usr/bin/linuxdeploy-plugin-appimage --appdir AppDir/
 
 # rename AppImage to avoid "Text file busy" issues when using it to create another one
 mv ./linuxdeploy*.AppImage test.AppImage
