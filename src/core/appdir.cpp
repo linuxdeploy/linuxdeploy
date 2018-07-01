@@ -356,7 +356,7 @@ namespace linuxdeploy {
                             return false;
                         };
 
-                        if (forceDeploy && isInExcludelist(path.filename())) {
+                        if (!forceDeploy && isInExcludelist(path.filename())) {
                             ldLog() << logPrefix << LD_NO_SPACE << "Skipping deployment of blacklisted library" << path << std::endl;
 
                             // mark file as visited
