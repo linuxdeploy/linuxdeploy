@@ -30,7 +30,8 @@ install:
   - git clone https://github.com/NixOS/patchelf.git
   - cd patchelf
   - ./bootstrap.sh
-  - ./configure --prefix=/usr
+  - if [ "$ARCH" == "i386" ]; then export EXTRA_CONFIGURE_ARGS=("--build=i686-pc-linux-gnu" "CFLAGS=-m32" "CXXFLAGS=-m32" "LDFLAGS=-m32"); fi
+  - ./configure --prefix=/usr "${EXTRA_CONFIGURE_ARGS[@]}"
   - make -j$(nproc)
   - sudo make install
   - cd ..
