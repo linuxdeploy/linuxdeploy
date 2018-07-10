@@ -4,6 +4,7 @@
 
 // library includes
 #include <boost/filesystem.hpp>
+#include <boost/regex.hpp>
 
 // local includes
 #include "linuxdeploy/core/log.h"
@@ -17,6 +18,11 @@ namespace linuxdeploy {
             INPUT_TYPE = 0,
             OUTPUT_TYPE,
         };
+
+        /*
+         * Official regular expression to check filenames for plugins
+         */
+        static const boost::regex PLUGIN_EXPR(R"(^linuxdeploy-plugin-([^\s\.-]+)(?:-[^\.]+)?(?:\..+)?$)");
 
         /*
          * Plugin interface.

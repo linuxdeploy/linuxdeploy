@@ -41,8 +41,6 @@ namespace linuxdeploy {
 
             const auto PATH = getenv("PATH");
 
-            const boost::regex expr(R"(^linuxdeploy-plugin-([^\s\.-]+)(?:-[^\.]+)?(?:\..+)?$)");
-
             auto paths = util::split(PATH, ':');
 
             auto currentExeDir = bf::path(util::getOwnExecutablePath()).parent_path();
@@ -65,7 +63,7 @@ namespace linuxdeploy {
                     if (bf::status(*i).permissions() & (bf::owner_exe | bf::group_exe | bf::others_exe)) {
                         // ... and filename must match regular expression
                         boost::cmatch res;
-                        if (boost::regex_match(i->path().filename().string().c_str(), res, expr)) {
+                        if (boost::regex_match(i->path().filename().string().c_str(), res, PLUGIN_EXPR)) {
                             try {
                                 auto name = res[1].str();
                                 auto* plugin = createPluginInstance(*i);

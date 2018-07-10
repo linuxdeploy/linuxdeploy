@@ -33,6 +33,10 @@ namespace linuxdeploy {
 
                         apiLevel = getApiLevelFromExecutable();
                         pluginType = getPluginTypeFromExecutable();
+
+                        boost::cmatch res;
+                        boost::regex_match(path.filename().c_str(), res, PLUGIN_EXPR);
+                        name = res[1].str();
                     };
 
                 private:
