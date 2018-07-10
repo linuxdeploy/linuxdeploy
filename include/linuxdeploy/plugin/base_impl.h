@@ -2,6 +2,7 @@
 #include <set>
 #include <string>
 #include <vector>
+#include <poll.h>
 
 // library headers
 #include <boost/filesystem.hpp>
@@ -22,6 +23,7 @@ namespace linuxdeploy {
             class PluginBase<API_LEVEL>::PrivateData {
                 public:
                     const boost::filesystem::path pluginPath;
+                    std::string name;
                     int apiLevel;
                     PLUGIN_TYPE pluginType;
 
@@ -132,10 +134,56 @@ namespace linuxdeploy {
                 }
                 log << std::endl;
 
-                auto process = subprocess::Popen(args);
+                auto process = subprocess::Popen(args, subprocess::output{subprocess::PIPE}, subprocess::error{subprocess::PIPE});
 
-                auto retcode = process.wait();
-                return retcode;
+
+                std::vector<pollfd> pfds(2);
+                auto* opfd = &pfds[0];
+                auto* epfd = &pfds[1];
+
+                opfd->fd = fileno(process.output());
+                opfd->events = POLLIN;
+
+                epfd->fd = fileno(process.error());
+                epfd->events = POLLIN;
+
+                auto printOutput = [&pfds, opfd, epfd, this, &process]() {
+                    poll(pfds.data(), pfds.size(), -1);
+
+                    if (opfd->revents & POLLIN) {
+                        std::ostringstream oss;
+
+                        std::vector<char> buf(4096);
+                        auto* lineptr = buf.data();
+                        auto n = buf.size();
+
+                        while (getline(&lineptr, &n, process.output()) != -1) {
+                            oss << "[" << d->name << "/stdout] " << buf.data();
+                        }
+                        linuxdeploy::core::log::ldLog() << oss.str();
+                    }
+
+                    if (epfd->revents & POLLIN) {
+                        std::ostringstream oss;
+
+                        std::vector<char> buf(4096);
+                        auto* lineptr = buf.data();
+                        auto n = buf.size();
+
+                        while (getline(&lineptr, &n, process.error()) != -1) {
+                            oss << "[" << d->name << "/stderr] " << buf.data();
+                        }
+                        linuxdeploy::core::log::ldLog() << oss.str();
+                    }
+                };
+
+                do {
+                    printOutput();
+                } while (process.poll() < 0);
+
+                printOutput();
+
+                return process.retcode();
             }
         }
     }
