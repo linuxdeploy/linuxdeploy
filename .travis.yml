@@ -27,7 +27,7 @@ matrix:
             - libfuse2:i386
 
 install:
-  - git clone https://github.com/NixOS/patchelf.git
+  - git clone https://github.com/NixOS/patchelf.git -b 0.8
   - cd patchelf
   - ./bootstrap.sh
   - if [ "$ARCH" == "i386" ]; then export EXTRA_CONFIGURE_ARGS=("--build=i686-pc-linux-gnu" "CFLAGS=-m32" "CXXFLAGS=-m32" "LDFLAGS=-m32"); fi
