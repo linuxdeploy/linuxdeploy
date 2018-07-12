@@ -11,9 +11,11 @@
 #include "linuxdeploy/core/elf.h"
 #include "linuxdeploy/core/log.h"
 #include "linuxdeploy/plugin/plugin.h"
+#include "util.h"
 
 using namespace linuxdeploy::core;
 using namespace linuxdeploy::core::log;
+using namespace linuxdeploy::util;
 
 namespace bf = boost::filesystem;
 
@@ -245,10 +247,32 @@ int main(int argc, char** argv) {
 
         auto deployedDesktopFiles = appDir.deployedDesktopFiles();
 
+        desktopfile::DesktopFile desktopFile;
+
         if (deployedDesktopFiles.empty()) {
             ldLog() << LD_WARNING << "Could not find desktop file in AppDir, cannot create links for AppRun, desktop file and icon in AppDir root" << std::endl;
         } else {
-            auto& desktopFile = deployedDesktopFiles[0];
+            if (!appName.Get().empty()) {
+                auto desktopFileMatchingName = std::find_if(
+                    deployedDesktopFiles.begin(),
+                    deployedDesktopFiles.end(),
+                    [&appName](const desktopfile::DesktopFile& desktopFile) {
+                        auto fileName = desktopFile.path().filename().string();
+                        return stringStartsWith(fileName, appName.Get()) && stringEndsWith(fileName, ".desktop");
+                    }
+                );
+
+                if (desktopFileMatchingName != deployedDesktopFiles.end()) {
+                    desktopFile = *desktopFileMatchingName;
+                    ldLog() << "Found desktop file matching app name:" << desktopFile.path() << std::endl;
+                } else {
+                    desktopFile = deployedDesktopFiles[0];
+                    ldLog() << LD_WARNING << "Could not find suitable desktop file for given app name" << appName << LD_NO_SPACE << ", using first desktop file found:" << desktopFile.path() << std::endl;
+                }
+            } else {
+                desktopFile = deployedDesktopFiles[0];
+                ldLog() << LD_WARNING << "App name not specified, using first desktop file found:" << desktopFile.path() << std::endl;
+            }
 
             ldLog() << "Deploying desktop file:" << desktopFile.path() << std::endl;
 
