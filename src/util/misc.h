@@ -64,6 +64,14 @@ namespace linuxdeploy {
                 return strncmp(string.c_str(), prefix.c_str(), prefix.size()) == 0;
             }
 
+            static bool stringEndsWith(const std::string& string, const std::string& suffix) {
+                // sanity check
+                if (string.size() < suffix.size())
+                    return false;
+
+                return strcmp(string.c_str() + (string.size() - suffix.size()), suffix.c_str()) == 0;
+            }
+
             static bool stringContains(const std::string& string, const std::string& part) {
                 return string.find(part) != std::string::npos;
             }
