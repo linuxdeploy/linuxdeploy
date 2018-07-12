@@ -99,7 +99,11 @@ namespace linuxdeploy {
                         util::trim(libraryPath);
                         paths.push_back(bf::absolute(libraryPath));
                     } else {
-                        ldLog() << LD_DEBUG << "Invalid ldd output: " << line << std::endl;
+                        if (util::stringContains("not found", line)) {
+                            ldLog() << LD_ERROR << "Could not find dependency:" << line << std::endl;
+                        } else {
+                            ldLog() << LD_DEBUG << "Invalid ldd output: " << line << std::endl;
+                        }
                     }
                 }
 
