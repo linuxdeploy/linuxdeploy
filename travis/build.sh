@@ -55,6 +55,15 @@ mv squashfs-root/ AppDir/plugins/linuxdeploy-plugin-appimage
 
 ln -s ../../plugins/linuxdeploy-plugin-appimage/AppRun AppDir/usr/bin/linuxdeploy-plugin-appimage
 
+# bundle Qt plugin
+
+wget https://github.com/TheAssassin/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-"$ARCH".AppImage
+chmod +x linuxdeploy-plugin-qt-"$ARCH".AppImage
+./linuxdeploy-plugin-qt-"$ARCH".AppImage --appimage-extract
+mv squashfs-root/ AppDir/plugins/linuxdeploy-plugin-qt
+
+ln -s ../../plugins/linuxdeploy-plugin-qt/AppRun AppDir/usr/bin/linuxdeploy-plugin-qt
+
 # build AppImage using plugin
 AppDir/usr/bin/linuxdeploy-plugin-appimage --appdir AppDir/
 
