@@ -333,13 +333,14 @@ namespace linuxdeploy {
                         return patchelfPath;
                     }
 
-                    bool deployLibrary(const bf::path& path, int recursionLevel = 0, bool forceDeploy = false, const bf::path& destination = bf::path()) {
+                    bool deployLibrary(const bf::path& path, int recursionLevel = 0, bool forceDeploy = false,const bf::path &destination = bf::path()) {
                         auto logPrefix = getLogPrefix(recursionLevel);
 
                         if (!forceDeploy && hasBeenVisitedAlready(path)) {
                             ldLog() << LD_DEBUG << logPrefix << LD_NO_SPACE << "File has been visited already:" << path << std::endl;
                             return true;
                         }
+
 
                         static auto isInExcludelist = [&logPrefix](const bf::path& fileName) {
                             for (const auto& excludePattern : generatedExcludelist) {
@@ -378,6 +379,12 @@ namespace linuxdeploy {
 
                         auto destinationPath = destination.empty() ? appDirPath / "usr/lib/" : destination;
 
+                        // not sure whether this is 100% bullet proof, but it simulates the cp command behavior
+                        if (destinationPath.string().back() == '/' || bf::is_directory(destinationPath)) {
+                            destinationPath /= path.filename();
+                        }
+
+
                         deployFile(path, destinationPath);
                         deployCopyrightFiles(path, logPrefix);
 
@@ -399,8 +406,9 @@ namespace linuxdeploy {
                             rpath = "$ORIGIN/" + relPath.string() + ":$ORIGIN";
                         }
 
-                        setElfRPathOperations[destinationPath / path.filename()] = rpath;
-                        stripOperations.insert(destinationPath / path.filename());
+
+                        setElfRPathOperations[destinationPath] = rpath;
+                        stripOperations.insert(destinationPath);
 
                         if (!deployElfDependencies(path, recursionLevel))
                             return false;
