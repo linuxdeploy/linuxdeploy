@@ -3,10 +3,10 @@ cmake_minimum_required(VERSION 3.3)
 
 message(STATUS "Searching for libmagic")
 
-find_library(LIBMAGIC_A libmagic.a)
+find_library(LIBMAGIC_LIBRARIES magic)
 
-if(NOT LIBMAGIC_A)
-    message(FATAL_ERROR "libmagic.a not found")
+if(NOT LIBMAGIC_LIBRARIES)
+    message(FATAL_ERROR "libmagic not found")
 endif()
 
 find_path(LIBMAGIC_MAGIC_H_DIR
@@ -19,9 +19,6 @@ if(NOT LIBMAGIC_MAGIC_H_DIR)
     message(FATAL_ERROR "magic.h not found")
 endif()
 
-# on Debian-ish systems, libmagic depends on zlib
-find_package(ZLIB REQUIRED)
-
 add_library(libmagic_static INTERFACE IMPORTED)
 set_property(TARGET libmagic_static PROPERTY INTERFACE_INCLUDE_DIRECTORIES ${LIBMAGIC_MAGIC_H_DIR})
-set_property(TARGET libmagic_static PROPERTY INTERFACE_LINK_LIBRARIES ${LIBMAGIC_A};ZLIB::ZLIB)
+set_property(TARGET libmagic_static PROPERTY INTERFACE_LINK_LIBRARIES ${LIBMAGIC_LIBRARIES})
