@@ -31,7 +31,7 @@ install:
   - cd patchelf
   - ./bootstrap.sh
   - if [ "$ARCH" == "i386" ]; then echo "Cross compiling patchelf for i386"; export EXTRA_CONFIGURE_ARGS=("--build=i686-pc-linux-gnu" "CFLAGS=-m32" "CXXFLAGS=-m32" "LDFLAGS=-m32"); fi
-  - ./configure --prefix=/usr "${EXTRA_CONFIGURE_ARGS[@]}"
+  - sh -xc "./configure --prefix=/usr \"${EXTRA_CONFIGURE_ARGS[@]}\""
   - make -j$(nproc)
   - sudo make install
   - cd ..
