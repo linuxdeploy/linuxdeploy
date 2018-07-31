@@ -1,3 +1,6 @@
+# 3.5 is required for imported boost targets
+cmake_minimum_required(VERSION 3.5)
+
 # globally include own includes
 include_directories(${PROJECT_SOURCE_DIR}/include)
 

@@ -1,6 +1,4 @@
-# 3.5 is required for imported boost targets
-# 3.6 is required for the PkgConfig module's IMPORTED_TARGET library feature
-cmake_minimum_required(VERSION 3.6)
+cmake_minimum_required(VERSION 2.8)
 
 # include headers to make CLion happy
 file(GLOB HEADERS ${PROJECT_SOURCE_DIR}/include/linuxdeploy/core/*.h)
