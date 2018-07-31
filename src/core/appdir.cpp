@@ -701,7 +701,13 @@ namespace linuxdeploy {
                 for (const auto& iconPath : foundIconPaths) {
                     ldLog() << LD_DEBUG << "Icon found:" << iconPath << std::endl;
 
-                    if (iconPath.stem() == iconName) {
+                    const bool matchesFilenameWithExtension = iconPath.filename() == iconName;
+
+                    if (iconPath.stem() == iconName || matchesFilenameWithExtension) {
+                        if (matchesFilenameWithExtension) {
+                            ldLog() << LD_WARNING << "Icon= entry filename contains extension" << std::endl;
+                        }
+
                         ldLog() << "Deploying icon to AppDir root:" << iconPath << std::endl;
 
                         if (!d->symlinkFile(iconPath, path())) {
