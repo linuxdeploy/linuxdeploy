@@ -13,7 +13,7 @@
 #include "linuxdeploy/core/log.h"
 #include "linuxdeploy/plugin/base.h"
 #include "linuxdeploy/plugin/plugin.h"
-#include "util.h"
+#include "linuxdeploy/util/util.h"
 #include "plugin_type0.h"
 
 using namespace linuxdeploy::core;

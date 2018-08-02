@@ -13,7 +13,7 @@
 #include "linuxdeploy/core/appdir.h"
 #include "linuxdeploy/core/elf.h"
 #include "linuxdeploy/core/log.h"
-#include "util.h"
+#include "linuxdeploy/util/util.h"
 #include "excludelist.h"
 
 using namespace linuxdeploy::core;

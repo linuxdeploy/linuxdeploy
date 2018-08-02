@@ -8,7 +8,7 @@
 // local headers
 #include "linuxdeploy/core/elf.h"
 #include "linuxdeploy/core/log.h"
-#include "util.h"
+#include "linuxdeploy/util/util.h"
 
 using namespace linuxdeploy::core::log;
 
