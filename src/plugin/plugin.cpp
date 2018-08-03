@@ -46,7 +46,8 @@ namespace linuxdeploy {
             auto currentExeDir = bf::path(util::getOwnExecutablePath()).parent_path();
             paths.insert(paths.begin(), currentExeDir.string());
 
-            // if shipping as an AppImage, search for plugins in AppImage's location, too
+            // if shipping as an AppImage, search for plugins in AppImage's location first
+            // this way, plugins in the AppImage's directory take precedence over bundled ones
             if (getenv("APPIMAGE") != nullptr) {
                 auto appImageDir = bf::path(getenv("APPIMAGE")).parent_path();
                 paths.insert(paths.begin(), appImageDir.string());
@@ -71,7 +72,12 @@ namespace linuxdeploy {
                                     ldLog() << LD_DEBUG << "Failed to create instance for plugin" << i->path();
                                 } else {
                                     ldLog() << LD_DEBUG << "Found plugin '" << LD_NO_SPACE << name << LD_NO_SPACE << "':" << plugin->path() << std::endl;
-                                    foundPlugins[name] = plugin;
+
+                                    if (foundPlugins.find(name) != foundPlugins.end()) {
+                                        ldLog() << LD_DEBUG << "Already found" << name << "plugin in" << foundPlugins[name]->path() << std::endl;
+                                    } else {
+                                        foundPlugins[name] = plugin;
+                                    }
                                 }
                             } catch (const PluginError& e) {
                                 ldLog() << LD_WARNING << "Could not load plugin" << i->path() << LD_NO_SPACE << ": " << e.what();
