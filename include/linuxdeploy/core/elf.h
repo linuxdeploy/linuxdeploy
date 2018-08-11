@@ -16,6 +16,12 @@ namespace linuxdeploy {
                     explicit ElfFileParseError(const std::string& msg) : std::runtime_error(msg) {}
             };
 
+            // thrown by traceDynamicDependencies() if a dependency is missing
+            class DependencyNotFoundError : public std::runtime_error {
+                public:
+                    explicit DependencyNotFoundError(const std::string& msg) : std::runtime_error(msg) {}
+            };
+
             class ElfFile {
                 private:
                     class PrivateData;

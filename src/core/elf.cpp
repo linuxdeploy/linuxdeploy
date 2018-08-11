@@ -100,7 +100,12 @@ namespace linuxdeploy {
                         paths.push_back(bf::absolute(libraryPath));
                     } else {
                         if (util::stringContains(line, "not found")) {
-                            ldLog() << LD_ERROR << "Could not find dependency:" << line << std::endl;
+                            auto missingLib = line;
+                            static const std::string pattern = "=> not found";
+                            missingLib.erase(missingLib.find(pattern), pattern.size());
+                            util::trim(missingLib);
+                            util::trim(missingLib, '\t');
+                            throw DependencyNotFoundError("Could not find dependency: " + missingLib);
                         } else {
                             ldLog() << LD_DEBUG << "Invalid ldd output: " << line << std::endl;
                         }

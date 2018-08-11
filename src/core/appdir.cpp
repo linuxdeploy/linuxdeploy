@@ -308,12 +308,16 @@ namespace linuxdeploy {
                         auto logPrefix = getLogPrefix(recursionLevel);
 
                         ldLog() << logPrefix << LD_NO_SPACE << "Deploying dependencies for ELF file" << path << std::endl;
-                        
-                        for (const auto& dependencyPath : elf::ElfFile(path).traceDynamicDependencies()) {
-                            if (!deployLibrary(dependencyPath, recursionLevel + 1))
-                                return false;
+                        try {
+                            for (const auto &dependencyPath : elf::ElfFile(path).traceDynamicDependencies()) {
+                                if (!deployLibrary(dependencyPath, recursionLevel + 1))
+                                    return false;
+                            }
+                        } catch (const elf::DependencyNotFoundError& e) {
+                            ldLog() << LD_ERROR << e.what() << std::endl;
+                            return false;
                         }
-                        
+
                         return true;
                     }
 
