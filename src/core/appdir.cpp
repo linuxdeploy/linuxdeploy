@@ -148,6 +148,8 @@ namespace linuxdeploy {
                             ldLog() << LD_WARNING << "$NO_STRIP environment variable detected, not stripping binaries" << std::endl;
                             stripOperations.clear();
                         } else {
+                            const auto stripPath = getStripPath();
+
                             while (!stripOperations.empty()) {
                                 const auto& filePath = *(stripOperations.begin());
 
@@ -161,7 +163,7 @@ namespace linuxdeploy {
                                     env.insert(std::make_pair(std::string("LC_ALL"), std::string("C")));
 
                                     subprocess::Popen proc(
-                                        {getStripPath().c_str(), filePath.c_str()},
+                                        {stripPath.c_str(), filePath.c_str()},
                                         subprocess::output(subprocess::PIPE),
                                         subprocess::error(subprocess::PIPE),
                                         subprocess::environment(env)
@@ -322,19 +324,19 @@ namespace linuxdeploy {
                     }
 
                     static std::string getStripPath() {
-                        // by default, try to use a patchelf next to the linuxdeploy binary
-                        // if that isn't available, fall back to searching for patchelf in the PATH
-                        std::string patchelfPath = "strip";
+                        // by default, try to use a strip next to the linuxdeploy binary
+                        // if that isn't available, fall back to searching for strip in the PATH
+                        std::string stripPath = "strip";
 
-                        auto binDirPath = bf::path(util::getOwnExecutablePath());
-                        auto localStripPath = binDirPath.parent_path() / "strip";
+                        auto binDirPath = bf::path(util::getOwnExecutablePath()).parent_path();
+                        auto localStripPath = binDirPath / "strip";
 
                         if (bf::exists(localStripPath))
-                            patchelfPath = localStripPath.string();
+                            stripPath = localStripPath.string();
 
-                        ldLog() << LD_DEBUG << "Using strip:" << patchelfPath << std::endl;
+                        ldLog() << LD_DEBUG << "Using strip:" << stripPath << std::endl;
 
-                        return patchelfPath;
+                        return stripPath;
                     }
 
                     bool deployLibrary(const bf::path& path, int recursionLevel = 0, bool forceDeploy = false,const bf::path &destination = bf::path()) {
