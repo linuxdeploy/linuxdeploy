@@ -801,15 +801,9 @@ namespace linuxdeploy {
             }
 
             std::vector<bf::path> AppDir::listExecutables() {
-                util::magic::Magic magic;
-
                 std::vector<bf::path> executables;
 
                 for (const auto& file : listFilesInDirectory(path() / "usr" / "bin", false)) {
-                    auto fileType = magic.fileType(bf::absolute(file).string());
-
-                    ldLog() << LD_DEBUG << "Type of file" << file << LD_NO_SPACE << ":" << fileType << std::endl;
-
                     // make sure it's an ELF file
                     try {
                         elf::ElfFile elfFile(file);
@@ -818,23 +812,16 @@ namespace linuxdeploy {
                         continue;
                     }
 
-//                    if (util::stringStartsWith(fileType, "application/x-executable"))
-                        executables.push_back(file);
+                    executables.push_back(file);
                 }
 
                 return executables;
             }
 
             std::vector<bf::path> AppDir::listSharedLibraries() {
-                util::magic::Magic magic;
-
                 std::vector<bf::path> sharedLibraries;
 
                 for (const auto& file : listFilesInDirectory(path() / "usr" / "lib", true)) {
-                    auto fileType = magic.fileType(bf::absolute(file).string());
-
-                    ldLog() << LD_DEBUG << "Type of file" << file << LD_NO_SPACE << ":" << fileType << std::endl;
-
                     // make sure it's an ELF file
                     try {
                         elf::ElfFile elfFile(file);
@@ -843,8 +830,7 @@ namespace linuxdeploy {
                         continue;
                     }
 
-//                    if (util::stringStartsWith(fileType, "application/x-sharedlib"))
-                        sharedLibraries.push_back(file);
+                    sharedLibraries.push_back(file);
                 }
 
                 return sharedLibraries;

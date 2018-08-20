@@ -5,8 +5,6 @@ file(GLOB HEADERS ${PROJECT_SOURCE_DIR}/include/linuxdeploy/core/*.h)
 
 find_package(Threads)
 
-find_package(LibMagic REQUIRED)
-
 find_package(CImg REQUIRED)
 
 message(STATUS "Generating excludelist")
@@ -16,7 +14,7 @@ execute_process(
 )
 
 add_library(linuxdeploy_core STATIC elf.cpp log.cpp  appdir.cpp desktopfile.cpp ${HEADERS})
-target_link_libraries(linuxdeploy_core PUBLIC linuxdeploy_plugin linuxdeploy_util ${BOOST_LIBS} subprocess cpp-feather-ini-parser CImg libmagic_static ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(linuxdeploy_core PUBLIC linuxdeploy_plugin linuxdeploy_util ${BOOST_LIBS} subprocess cpp-feather-ini-parser CImg ${CMAKE_THREAD_LIBS_INIT})
 target_include_directories(linuxdeploy_core PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_include_directories(linuxdeploy_core PUBLIC ${PROJECT_SOURCE_DIR}/include)
 target_compile_definitions(linuxdeploy_core PUBLIC -DBOOST_NO_CXX11_SCOPED_ENUMS)

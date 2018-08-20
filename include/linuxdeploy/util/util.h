@@ -1,5 +1,4 @@
 // local includes
-#include "magicwrapper.h"
 #include "misc.h"
 
 // import functions from misc module for convenience
