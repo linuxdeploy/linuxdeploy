@@ -2,6 +2,7 @@
 
 AppDir creation and maintenance tool.
 
+
 ## About
 
 AppImages are a well known and quite popular format for distributing applications from developers to end users.
@@ -63,7 +64,7 @@ An example run could look like this:
 
 Of course both approaches can be combined, e.g., you can bundle additional executables with your main app.
 
-linuxdeploy doesn't mind being run on an AppDir more than once, as it recognize previous runs, and should not break files within the AppDir. This is to allow you debug issues allows you to run linuxdeploy after resolving an issue that it reports.
+linuxdeploy doesn't mind being run on an AppDir more than once, as it recognize previous runs, and should not break files within the AppDir. This is called an "iterative workflow". In case of errors, you can simply fix them, and re-run linuxdeploy afterwards.
 If you ever encounter issues when running linuxdeploy on an existing AppDir, please let us know by [creating an issue](https://github.com/TheAssassin/linuxdeploy/issues/new).
 
 
@@ -81,7 +82,7 @@ linuxdeploy looks for plugins in the following places:
 
 You can use `./linuxdeploy*.AppImage --list-plugins` to get a list of all the plugins linuxdeploy has detected on your system.
 
-linuxdeploy ships with some plugins
+linuxdeploy currently ships with some plugins. These are likely out of date. In case of issues, please download the latest version, which will take precendence over the bundled plugin.
 
 If you want to use a plugin to bundle additional resources, please add `./linuxdeploy*.AppImage --plugin <name>` to your linuxdeploy command. Output plugins can be activated using `./linuxdeploy*.AppImage --output <name>`.
 
@@ -91,6 +92,7 @@ If you want to use a plugin to bundle additional resources, please add `./linuxd
 > I bundled additional resources, but when I try to run them, either the system binary is called or the file is not found.
 
 linuxdeploy does not change any environment variables such as `$PATH`. Your application **must** search for additional resources such as icon files or executables relative to the main binary.
+
 
 ## Contact
 
