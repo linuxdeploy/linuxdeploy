@@ -28,7 +28,6 @@ int main(int argc, char** argv) {
     args::Flag showVersion(parser, "", "Print version and exit", {'V', "version"});
     args::ValueFlag<int> verbosity(parser, "verbosity", "Verbosity of log output (0 = debug, 1 = info (default), 2 = warning, 3 = error)", {'v', "verbosity"});
 
-    args::Flag initAppDir(parser, "", "Create basic AppDir structure", {"init-appdir"});
     args::ValueFlag<std::string> appDirPath(parser, "appdir", "Path to target AppDir", {"appdir"});
     args::ValueFlag<std::string> appName(parser, "app-name", "deprecated, please don't use it any more", {'n', "app-name"});
 
@@ -91,15 +90,14 @@ int main(int argc, char** argv) {
     appdir::AppDir appDir(appDirPath.Get());
 
     if (appName) {
-        ldLog() << LD_WARNING << std::endl << "--app-name parameter is deprecated, please don't use it any more" << std::endl;
+        ldLog() << LD_WARNING << "--app-name parameter is deprecated, please don't use it any more" << std::endl;
     }
 
-    // initialize AppDir with common directories on request
-    if (initAppDir) {
-        ldLog() << std::endl << "-- Creating basic AppDir structure --" << std::endl;
-
-        if (!appDir.createBasicStructure())
-            return 1;
+    // initialize AppDir with common directories
+    ldLog() << std::endl << "-- Creating basic AppDir structure --" << std::endl;
+    if (!appDir.createBasicStructure()) {
+        ldLog() << LD_ERROR << "Failed to create basic AppDir structure" << std::endl;
+        return 1;
     }
 
     ldLog() << std::endl << "-- Deploying dependencies for existing files in AppDir --" << std::endl;
