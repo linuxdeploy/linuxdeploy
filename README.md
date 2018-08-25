@@ -87,6 +87,11 @@ linuxdeploy currently ships with some plugins. These are likely out of date. In 
 If you want to use a plugin to bundle additional resources, please add `./linuxdeploy*.AppImage --plugin <name>` to your linuxdeploy command. Output plugins can be activated using `./linuxdeploy*.AppImage --output <name>`.
 
 
+## User guides and examples
+
+Please see the [linuxdeploy user guide](https://docs.appimage.org/packaging-guide/linuxdeploy-user-guide.html) and the [native binaries packaging guide](https://docs.appimage.org/packaging-guide/native-binaries.html) in the [AppImage documentation](https://docs.appimage.org). There's also an [examples section](https://docs.appimage.org/packaging-guide/native-binaries.html#Examples).
+
+
 ## Troubleshooting
 
 > I bundled additional resources, but when I try to run them, either the system binary is called or the file is not found.
