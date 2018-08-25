@@ -79,12 +79,6 @@ namespace linuxdeploy {
                     // create symlinks for AppRun, desktop file and icon in the AppDir root directory
                     bool createLinksInAppDirRoot(const desktopfile::DesktopFile& desktopFile, boost::filesystem::path customAppRunPath = "");
 
-                    // set application name of primary "entry point" application
-                    // icons and other resources will then automatically be renamed using this value in order to
-                    // make the deployment easier by not requiring special filenames
-                    // resources' filenames should be prefixed with this value (example: linuxdeploy_48x48.png)
-                    void setAppName(const std::string& appName);
-
                     // list all executables in <AppDir>/usr/bin
                     // this function does not perform a recursive search, but only searches the bin directory
                     std::vector<boost::filesystem::path> listExecutables();

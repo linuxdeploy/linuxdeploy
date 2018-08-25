@@ -30,7 +30,7 @@ int main(int argc, char** argv) {
 
     args::Flag initAppDir(parser, "", "Create basic AppDir structure", {"init-appdir"});
     args::ValueFlag<std::string> appDirPath(parser, "appdir", "Path to target AppDir", {"appdir"});
-    args::ValueFlag<std::string> appName(parser, "app-name", "Application name (used to initialize desktop file and name icons etc.)", {'n', "app-name"});
+    args::ValueFlag<std::string> appName(parser, "app-name", "deprecated, please don't use it any more", {'n', "app-name"});
 
     args::ValueFlagList<std::string> sharedLibraryPaths(parser, "library", "Shared library to deploy", {'l', "library"});
 
@@ -91,8 +91,7 @@ int main(int argc, char** argv) {
     appdir::AppDir appDir(appDirPath.Get());
 
     if (appName) {
-        ldLog() << std::endl << "-- Deploying application \"" << LD_NO_SPACE << appName.Get() << LD_NO_SPACE << "\" --" << std::endl;
-        appDir.setAppName(appName.Get());
+        ldLog() << LD_WARNING << std::endl << "--app-name parameter is deprecated, please don't use it any more" << std::endl;
     }
 
     // initialize AppDir with common directories on request

@@ -796,10 +796,6 @@ namespace linuxdeploy {
                 return d->deployFile(from, to, true);
             }
 
-            void AppDir::setAppName(const std::string& appName) {
-                d->appName = appName;
-            }
-
             std::vector<bf::path> AppDir::listExecutables() {
                 std::vector<bf::path> executables;
 
