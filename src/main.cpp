@@ -32,7 +32,7 @@ int main(int argc, char** argv) {
     args::ValueFlag<std::string> appDirPath(parser, "appdir", "Path to target AppDir", {"appdir"});
     args::ValueFlag<std::string> appName(parser, "app-name", "Application name (used to initialize desktop file and name icons etc.)", {'n', "app-name"});
 
-    args::ValueFlagList<std::string> sharedLibraryPaths(parser, "library", "Shared library to deploy", {'l', "lib", "library"});
+    args::ValueFlagList<std::string> sharedLibraryPaths(parser, "library", "Shared library to deploy", {'l', "library"});
 
     args::ValueFlagList<std::string> executablePaths(parser, "executable", "Executable to deploy", {'e', "executable"});
 
