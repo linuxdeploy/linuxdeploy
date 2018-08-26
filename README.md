@@ -59,7 +59,7 @@ If your build system cannot produce such install trees or you prefer to bundle e
 An example run could look like this:
 
 ```bash
-./linuxdeploy*.AppImage --appdir AppDir --init-appdir -e myapp -d myapp.desktop -i myapp_64x64.png
+./linuxdeploy*.AppImage --appdir AppDir -e myapp -d myapp.desktop -i myapp_64x64.png
 ```
 
 Of course both approaches can be combined, e.g., you can bundle additional executables with your main app.
