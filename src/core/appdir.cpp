@@ -836,6 +836,9 @@ namespace linuxdeploy {
 
             bool AppDir::deployDependenciesForExistingFiles() {
                 for (const auto& executable : listExecutables()) {
+                    if (bf::is_symlink(executable))
+                        continue;
+
                     if (!d->deployElfDependencies(executable))
                         return false;
 
@@ -843,6 +846,9 @@ namespace linuxdeploy {
                 }
 
                 for (const auto& sharedLibrary : listSharedLibraries()) {
+                    if (bf::is_symlink(sharedLibrary))
+                        continue;
+
                     if (!d->deployElfDependencies(sharedLibrary))
                         return false;
 
