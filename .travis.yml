@@ -25,6 +25,7 @@ matrix:
             - g++-multilib
             - automake  # required for patchelf
             - libfuse2:i386
+            - libcairo2:i386
 
 install:
   - git clone https://github.com/NixOS/patchelf.git -b 0.8
