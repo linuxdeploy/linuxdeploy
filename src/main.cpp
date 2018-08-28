@@ -214,8 +214,10 @@ int main(int argc, char** argv) {
         for (const auto& pluginName : inputPlugins.Get()) {
             auto it = foundPlugins.find(std::string(pluginName));
 
+            ldLog() << std::endl << "-- Running input plugin:" << pluginName << "--" << std::endl;
+
             if (it == foundPlugins.end()) {
-                ldLog() << std::endl << LD_ERROR << "Could not find plugin:" << pluginName;
+                ldLog() << LD_ERROR << "Could not find plugin:" << pluginName;
                 return 1;
             }
 
@@ -229,8 +231,6 @@ int main(int argc, char** argv) {
                 }
                 return 1;
             }
-
-            ldLog() << std::endl << "-- Running input plugin:" << pluginName << "--" << std::endl;
 
             auto retcode = plugin->run(appDir.path());
 
@@ -294,8 +294,10 @@ int main(int argc, char** argv) {
         for (const auto& pluginName : outputPlugins.Get()) {
             auto it = foundPlugins.find(std::string(pluginName));
 
+            ldLog() << std::endl << "-- Running output plugin:" << pluginName << "--" << std::endl;
+
             if (it == foundPlugins.end()) {
-                ldLog() << std::endl << LD_ERROR << "Could not find plugin:" << pluginName;
+                ldLog() << LD_ERROR << "Could not find plugin:" << pluginName;
                 return 1;
             }
 
@@ -309,8 +311,6 @@ int main(int argc, char** argv) {
                 }
                 return 1;
             }
-
-            ldLog() << std::endl << "-- Running output plugin:" << pluginName << "--" << std::endl;
 
             auto retcode = plugin->run(appDir.path());
 
