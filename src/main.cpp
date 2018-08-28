@@ -140,6 +140,40 @@ int main(int argc, char** argv) {
         }
     }
 
+    // run input plugins before deploying icons and desktop files
+    // the input plugins might even fetch these resources somewhere into the AppDir, and this way, the user can make use of that
+    if (inputPlugins) {
+        for (const auto& pluginName : inputPlugins.Get()) {
+            auto it = foundPlugins.find(std::string(pluginName));
+
+            ldLog() << std::endl << "-- Running input plugin:" << pluginName << "--" << std::endl;
+
+            if (it == foundPlugins.end()) {
+                ldLog() << LD_ERROR << "Could not find plugin:" << pluginName;
+                return 1;
+            }
+
+            auto plugin = it->second;
+
+            if (plugin->pluginType() != linuxdeploy::plugin::INPUT_TYPE) {
+                if (plugin->pluginType() == linuxdeploy::plugin::OUTPUT_TYPE) {
+                    ldLog() << LD_ERROR << "Plugin" << pluginName << "is an output plugin, please use like --output" << pluginName << std::endl;
+                } else {
+                    ldLog() << LD_ERROR << "Plugin" << pluginName << "has unkown type:" << plugin->pluginType() << std::endl;
+                }
+                return 1;
+            }
+
+            auto retcode = plugin->run(appDir.path());
+
+            if (retcode != 0) {
+                ldLog() << LD_ERROR << "Failed to run plugin:" << pluginName << std::endl;
+                ldLog() << LD_DEBUG << "Exited with return code:" << retcode << std::endl;
+                return 1;
+            }
+        }
+    }
+
     if (iconPaths) {
         ldLog() << std::endl << "-- Deploying icons --" << std::endl;
 
@@ -207,38 +241,6 @@ int main(int argc, char** argv) {
         if (!desktopFile.save()) {
             ldLog() << LD_ERROR << "Failed to save desktop file:" << desktopFilePath << std::endl;
             return 1;
-        }
-    }
-
-    if (inputPlugins) {
-        for (const auto& pluginName : inputPlugins.Get()) {
-            auto it = foundPlugins.find(std::string(pluginName));
-
-            ldLog() << std::endl << "-- Running input plugin:" << pluginName << "--" << std::endl;
-
-            if (it == foundPlugins.end()) {
-                ldLog() << LD_ERROR << "Could not find plugin:" << pluginName;
-                return 1;
-            }
-
-            auto plugin = it->second;
-
-            if (plugin->pluginType() != linuxdeploy::plugin::INPUT_TYPE) {
-                if (plugin->pluginType() == linuxdeploy::plugin::OUTPUT_TYPE) {
-                    ldLog() << LD_ERROR << "Plugin" << pluginName << "is an output plugin, please use like --output" << pluginName << std::endl;
-                } else {
-                    ldLog() << LD_ERROR << "Plugin" << pluginName << "has unkown type:" << plugin->pluginType() << std::endl;
-                }
-                return 1;
-            }
-
-            auto retcode = plugin->run(appDir.path());
-
-            if (retcode != 0) {
-                ldLog() << LD_ERROR << "Failed to run plugin:" << pluginName << std::endl;
-                ldLog() << LD_DEBUG << "Exited with return code:" << retcode << std::endl;
-                return 1;
-            }
         }
     }
 
