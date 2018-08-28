@@ -215,7 +215,7 @@ int main(int argc, char** argv) {
             auto it = foundPlugins.find(std::string(pluginName));
 
             if (it == foundPlugins.end()) {
-                ldLog() << LD_ERROR << "Could not find plugin:" << pluginName;
+                ldLog() << std::endl << LD_ERROR << "Could not find plugin:" << pluginName;
                 return 1;
             }
 
@@ -291,7 +291,7 @@ int main(int argc, char** argv) {
             auto it = foundPlugins.find(std::string(pluginName));
 
             if (it == foundPlugins.end()) {
-                ldLog() << LD_ERROR << "Could not find plugin:" << pluginName;
+                ldLog() << std::endl << LD_ERROR << "Could not find plugin:" << pluginName;
                 return 1;
             }
 
