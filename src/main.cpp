@@ -305,7 +305,7 @@ int main(int argc, char** argv) {
 
             if (plugin->pluginType() != linuxdeploy::plugin::OUTPUT_TYPE) {
                 if (plugin->pluginType() == linuxdeploy::plugin::INPUT_TYPE) {
-                    ldLog() << LD_ERROR << "Plugin" << pluginName << "is an input plugin, please use like --output" << pluginName << std::endl;
+                    ldLog() << LD_ERROR << "Plugin" << pluginName << "is an input plugin, please use like --plugin" << pluginName << std::endl;
                 } else {
                     ldLog() << LD_ERROR << "Plugin" << pluginName << "has unknown type:" << plugin->pluginType() << std::endl;
                 }
