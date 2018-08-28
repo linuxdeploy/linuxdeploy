@@ -19,6 +19,8 @@
 namespace linuxdeploy {
     namespace plugin {
         namespace base {
+            using namespace linuxdeploy::core::log;
+
             template<int API_LEVEL>
             class PluginBase<API_LEVEL>::PrivateData {
                 public:
@@ -127,7 +129,7 @@ namespace linuxdeploy {
                 auto pluginPath = path();
                 auto args = {pluginPath.c_str(), "--appdir", appDirPath.string().c_str()};
 
-                auto log = linuxdeploy::core::log::ldLog();
+                auto log = ldLog();
                 log << "Running process:";
                 for (const auto& arg : args) {
                     log << "" << arg;
@@ -147,41 +149,65 @@ namespace linuxdeploy {
                 epfd->fd = fileno(process.error());
                 epfd->events = POLLIN;
 
+                for (const auto& fd : {process.output(), process.error()}) {
+                    auto flags = fcntl(fileno(fd), F_GETFL, 0);
+                    flags |= O_NONBLOCK;
+                    fcntl(fileno(fd), F_SETFL, flags);
+                }
+
                 auto printOutput = [&pfds, opfd, epfd, this, &process]() {
                     poll(pfds.data(), pfds.size(), -1);
 
                     if (opfd->revents & POLLIN) {
+                        std::vector<char> lineBuf(16384);
+                        fgets(lineBuf.data(), static_cast<int>(lineBuf.size()), process.output());
+
+                        std::stringstream ss;
+                        ss << lineBuf.data();
+                        lineBuf.clear();
+
+                        std::string currentLine;
+
                         std::ostringstream oss;
-
-                        std::vector<char> buf(4096);
-                        auto* lineptr = buf.data();
-                        auto n = buf.size();
-
-                        while (getline(&lineptr, &n, process.output()) != -1) {
-                            oss << "[" << d->name << "/stdout] " << buf.data();
+                        while (std::getline(ss, currentLine)) {
+                            oss << "[" << d->name << "/stdout] " << currentLine << std::endl;
                         }
                         linuxdeploy::core::log::ldLog() << oss.str();
                     }
 
                     if (epfd->revents & POLLIN) {
+                        std::vector<char> lineBuf(16384);
+                        fgets(lineBuf.data(), static_cast<int>(lineBuf.size()), process.error());
+
+                        std::stringstream ss;
+                        ss << lineBuf.data();
+                        lineBuf.clear();
+
+                        std::string currentLine;
+
                         std::ostringstream oss;
-
-                        std::vector<char> buf(4096);
-                        auto* lineptr = buf.data();
-                        auto n = buf.size();
-
-                        while (getline(&lineptr, &n, process.error()) != -1) {
-                            oss << "[" << d->name << "/stderr] " << buf.data();
+                        while (std::getline(ss, currentLine)) {
+                            oss << "[" << d->name << "/stderr] " << currentLine << std::endl;
                         }
                         linuxdeploy::core::log::ldLog() << oss.str();
                     }
+
+                    return true;
                 };
 
                 do {
-                    printOutput();
+                    if (!printOutput()) {
+                        ldLog() << LD_ERROR << "Failed to communicate with process" << std::endl;
+                        process.kill();
+                        return -1;
+                    }
                 } while (process.poll() < 0);
 
-                printOutput();
+                if (!printOutput()) {
+                    ldLog() << LD_ERROR << "Failed to communicate with process" << std::endl;
+                    process.kill();
+                    return -1;
+                }
 
                 return process.retcode();
             }
