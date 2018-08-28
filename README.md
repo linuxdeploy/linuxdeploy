@@ -86,6 +86,8 @@ linuxdeploy currently ships with some plugins. These are likely out of date. In 
 
 If you want to use a plugin to bundle additional resources, please add `./linuxdeploy*.AppImage --plugin <name>` to your linuxdeploy command. Output plugins can be activated using `./linuxdeploy*.AppImage --output <name>`.
 
+**Note:** If you want to suggest a plugin for a specific framework, language etc., please feel free to [create a new issue](https://github.com/linuxdeploy/linuxdeploy/issues/new). Current plugin requests can be found [here](https://github.com/linuxdeploy/linuxdeploy/issues?utf8=%E2%9C%93&q=label%3A%22plugin+request%22).
+
 
 ## User guides and examples
 
