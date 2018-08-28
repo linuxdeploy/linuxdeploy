@@ -222,7 +222,11 @@ int main(int argc, char** argv) {
             auto plugin = it->second;
 
             if (plugin->pluginType() != linuxdeploy::plugin::INPUT_TYPE) {
-                ldLog() << LD_ERROR << "Plugin" << pluginName << "has wrong type:" << plugin->pluginType() << std::endl;
+                if (plugin->pluginType() == linuxdeploy::plugin::OUTPUT_TYPE) {
+                    ldLog() << LD_ERROR << "Plugin" << pluginName << "is an output plugin, please use like --output" << pluginName << std::endl;
+                } else {
+                    ldLog() << LD_ERROR << "Plugin" << pluginName << "has unkown type:" << plugin->pluginType() << std::endl;
+                }
                 return 1;
             }
 
@@ -298,7 +302,11 @@ int main(int argc, char** argv) {
             auto plugin = it->second;
 
             if (plugin->pluginType() != linuxdeploy::plugin::OUTPUT_TYPE) {
-                ldLog() << LD_ERROR << "Plugin" << pluginName << "has wrong type:" << plugin->pluginType() << std::endl;
+                if (plugin->pluginType() == linuxdeploy::plugin::INPUT_TYPE) {
+                    ldLog() << LD_ERROR << "Plugin" << pluginName << "is an input plugin, please use like --output" << pluginName << std::endl;
+                } else {
+                    ldLog() << LD_ERROR << "Plugin" << pluginName << "has unknown type:" << plugin->pluginType() << std::endl;
+                }
                 return 1;
             }
 
