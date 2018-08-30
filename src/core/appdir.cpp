@@ -14,6 +14,9 @@
 #include "linuxdeploy/core/elf.h"
 #include "linuxdeploy/core/log.h"
 #include "linuxdeploy/util/util.h"
+#include "copyright.h"
+
+// auto-generated headers
 #include "excludelist.h"
 
 using namespace linuxdeploy::core;
@@ -44,8 +47,12 @@ namespace linuxdeploy {
                     // used to automatically rename resources to improve the UX, e.g. icons
                     std::string appName;
 
+                    std::shared_ptr<copyright::ICopyrightFilesManager> copyrightFilesManager;
+
                 public:
-                    PrivateData() : copyOperations(), stripOperations(), setElfRPathOperations(), visitedFiles(), appDirPath(), appName() {};
+                    PrivateData() : copyOperations(), stripOperations(), setElfRPathOperations(), visitedFiles(), appDirPath(), appName() {
+                        copyrightFilesManager = copyright::ICopyrightFilesManager::getInstance();
+                    };
 
                 public:
                     // actually copy file
@@ -202,72 +209,14 @@ namespace linuxdeploy {
                         return true;
                     }
 
-                    // search for copyright file related to given file
-                    // this function utilizes distribution tools like dpkg-query to determine the paths of copyright
-                    // files
-                    std::vector<bf::path> searchForCopyrightFiles(const bf::path& from) {
-                        auto check_command = [](const std::string& command) {
-                            auto p = subprocess::Popen(
-                                command,
-                                subprocess::output(subprocess::PIPE),
-                                subprocess::error(subprocess::PIPE)
-                            );
-
-                            return p.wait();
-                        };
-
-                        // cannot deploy copyright files for files in AppDir
-                        if (!util::stringStartsWith(bf::absolute(from).string(), bf::absolute(appDirPath).string())) {
-                            if (check_command("which dpkg-query") == 0) {
-                                ldLog() << LD_DEBUG << "Using dpkg-query to search for copyright files" << std::endl;
-
-                                auto call = [](const std::initializer_list<const char*>& args) {
-                                    auto proc = subprocess::Popen(
-                                        args,
-                                        subprocess::output(subprocess::PIPE),
-                                        subprocess::error(subprocess::PIPE)
-                                    );
-
-                                    auto output = proc.communicate();
-                                    return std::make_pair(proc.retcode(), output.first);
-                                };
-
-                                auto dpkgQueryPackages = call({"dpkg-query", "-S", from.c_str()});
-
-                                if (dpkgQueryPackages.first != 0
-                                    || dpkgQueryPackages.second.buf.empty()
-                                    || dpkgQueryPackages.second.buf.front() == '\0') {
-                                    ldLog() << LD_WARNING << "Could not find copyright files for file" << from << "using dpkg-query" << std::endl;
-                                    return {};
-                                }
-
-                                auto packageName = util::split(util::splitLines(dpkgQueryPackages.second.buf.data())[0], ':')[0];
-
-                                if (!packageName.empty()) {
-
-                                    auto copyrightFilePath = bf::path("/usr/share/doc") / packageName / "copyright";
-
-                                    if (bf::is_regular_file(copyrightFilePath)) {
-                                        return {copyrightFilePath};
-                                    }
-                                } else {
-                                    ldLog() << LD_WARNING << "Could not find copyright files for file" << from << "using dpkg-query" << std::endl;
-                                }
-                            }
-                        } else {
-                            ldLog() << LD_DEBUG << "Cannot deploy copyright files for files in AppDir:" << from << std::endl;
-                        }
-
-                        ldLog() << LD_DEBUG << "Could not find suitable tool for copyright files deployment, skipping" << from << std::endl;
-
-                        return {};
-                    }
-
                     // search for copyright file for file and deploy it to AppDir
                     bool deployCopyrightFiles(const bf::path& from, const std::string& logPrefix = "") {
                         ldLog() << logPrefix << LD_NO_SPACE << "Deploying copyright files for file" << from << std::endl;
 
-                        auto copyrightFiles = searchForCopyrightFiles(from);
+                        if (copyrightFilesManager == nullptr)
+                            return false;
+
+                        auto copyrightFiles = copyrightFilesManager->getCopyrightFilesForPath(from);
 
                         if (copyrightFiles.empty())
                             return false;
@@ -389,7 +338,6 @@ namespace linuxdeploy {
                         if (destinationPath.string().back() == '/' || bf::is_directory(destinationPath)) {
                             destinationPath /= path.filename();
                         }
-
 
                         deployFile(path, destinationPath);
                         deployCopyrightFiles(path, logPrefix);
