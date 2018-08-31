@@ -86,7 +86,7 @@ namespace linuxdeploy {
                                 }
                                 break;
                             default:
-                                return;
+                                throw ElfFileParseError("Unknown ELF class: " + std::to_string(elfClass));
                         }
                     }
             };
