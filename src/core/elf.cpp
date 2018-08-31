@@ -1,9 +1,12 @@
 // system includes
 #include <fstream>
+#include <memory>
+#include <utility>
 
 // library includes
 #include <boost/regex.hpp>
 #include <subprocess.hpp>
+#include <sys/mman.h>
 
 // local headers
 #include "linuxdeploy/core/elf.h"
@@ -20,6 +23,8 @@ namespace linuxdeploy {
             class ElfFile::PrivateData {
                 public:
                     const bf::path path;
+                    uint8_t elfClass = ELFCLASSNONE;
+                    uint8_t elfABI = 0;
 
                 public:
                     explicit PrivateData(const bf::path& path) : path(path) {}
@@ -40,6 +45,50 @@ namespace linuxdeploy {
 
                         return patchelfPath;
                     }
+
+                public:
+
+                    void readDataUsingElfAPI() {
+                        int fd = open(path.c_str(), O_RDONLY);
+                        auto map_size = static_cast<size_t>(lseek(fd, 0, SEEK_END));
+
+                        std::shared_ptr<uint8_t> data(
+                            static_cast<uint8_t*>(mmap(nullptr, map_size, PROT_READ, MAP_SHARED, fd, 0)),
+                            [map_size](uint8_t* p) {
+                                if (munmap(static_cast<void*>(p), map_size) != 0) {
+                                    int error = errno;
+                                    throw ElfFileParseError(std::string("Failed to call munmap(): ") + strerror(error));
+                                }
+                                p = nullptr;
+                            }
+                        );
+                        close(fd);
+
+                        // check which ELF "class" (32-bit or 64-bit) to use
+                        // the "class" is available at a specific constant offset in the section e_ident, which
+                        // happens to be the first section, so just reading one byte at EI_CLASS yields the data we're
+                        // looking for
+                        char elfClass = data.get()[EI_CLASS];
+
+                        switch (elfClass) {
+                            case ELFCLASS32: {
+                                    auto* ehdr = reinterpret_cast<Elf32_Ehdr*>(data.get());
+                                    auto* shdr = reinterpret_cast<Elf32_Shdr*>(data.get() + ehdr->e_shoff);
+
+                                    elfABI = ehdr->e_ident[EI_OSABI];
+                                }
+                                break;
+                            case ELFCLASS64: {
+                                    auto* ehdr = reinterpret_cast<Elf32_Ehdr*>(data.get());
+                                    auto* shdr = reinterpret_cast<Elf32_Shdr*>(data.get() + ehdr->e_shoff);
+
+                                    elfABI = ehdr->e_ident[EI_OSABI];
+                                }
+                                break;
+                            default:
+                                return;
+                        }
+                    }
             };
 
             ElfFile::ElfFile(const boost::filesystem::path& path) {
@@ -59,6 +108,7 @@ namespace linuxdeploy {
                     throw ElfFileParseError("Invalid magic bytes in file header");
 
                 d = new PrivateData(path);
+                d->readDataUsingElfAPI();
             }
 
             ElfFile::~ElfFile() {
@@ -171,6 +221,50 @@ namespace linuxdeploy {
                 }
 
                 return true;
+            }
+
+            uint8_t ElfFile::getSystemElfABI() {
+                // the only way to get the system's ELF ABI is to read the own executable using the ELF header,
+                // and get the ELFOSABI flag
+                auto self = std::shared_ptr<char>(realpath("/proc/self/exe", nullptr), [](char* p) { free(p); });
+
+                if (self == nullptr)
+                    throw ElfFileParseError("Could not read /proc/self/exe");
+
+                std::ifstream ifs(self.get());
+
+                if (!ifs)
+                    throw ElfFileParseError("Could not open file: " + std::string(self.get()));
+
+                // the "class" is available at a specific constant offset in the section e_ident, which
+                // happens to be the first section, so just reading one byte at EI_CLASS yields the data we're
+                // looking for
+                ifs.seekg(EI_OSABI);
+
+                char buf;
+                ifs.read(&buf, 1);
+
+                return static_cast<uint8_t>(buf);
+            }
+
+            uint8_t ElfFile::getSystemElfClass() {
+                #if __SIZEOF_POINTER__ == 4
+                return ELFCLASS32
+                #elif __SIZEOF_POINTER__ == 8
+                return ELFCLASS64;
+                #else
+                #error "Invalid address size"
+                #endif
+            }
+
+            uint8_t ElfFile::getSystemElfEndianness() {
+                #if __BYTE_ORDER == __LITTLE_ENDIAN
+                return ELFDATA2LSB;
+                #elif __BYTE_ORDER == __BIG_ENDIAN
+                return ELFDATA2MSB;
+                #else
+                #error "Unknown machine endianness"
+                #endif
             }
         }
     }

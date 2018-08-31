@@ -1,6 +1,8 @@
 // system includes
 #include <vector>
 #include <string>
+// including system elf header, which allows for interpretation of the return values of the methods
+#include <elf.h>
 
 // library includes
 #include <boost/filesystem.hpp>
@@ -30,6 +32,16 @@ namespace linuxdeploy {
                 public:
                     explicit ElfFile(const boost::filesystem::path& path);
                     ~ElfFile();
+
+                public:
+                    // return system ELF OS ABI
+                    static uint8_t getSystemElfABI();
+
+                    // return system ELF class (32-bit or 64-bit)
+                    static uint8_t getSystemElfClass();
+
+                    // return system (ELF) endianness
+                    static uint8_t getSystemElfEndianness();
 
                 public:
                     // recursively trace dynamic library dependencies of a given ELF file
