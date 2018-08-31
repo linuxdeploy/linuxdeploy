@@ -14,9 +14,9 @@ execute_process(
 )
 
 add_library(linuxdeploy_core_copyright STATIC copyright.cpp copyright.h copyright_dpkgquery.cpp copyright_dpkgquery.h)
-target_link_libraries(linuxdeploy_core_copyright PUBLIC subprocess)
+target_link_libraries(linuxdeploy_core_copyright PUBLIC subprocess ${BOOST_LIBS})
 
-add_library(linuxdeploy_core STATIC elf.cpp log.cpp  appdir.cpp desktopfile.cpp ${HEADERS})
+add_library(linuxdeploy_core STATIC elf.cpp log.cpp appdir.cpp desktopfile.cpp ${HEADERS})
 target_link_libraries(linuxdeploy_core PUBLIC linuxdeploy_plugin linuxdeploy_util ${BOOST_LIBS} subprocess cpp-feather-ini-parser CImg ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(linuxdeploy_core PRIVATE linuxdeploy_core_copyright)
 target_include_directories(linuxdeploy_core PRIVATE ${CMAKE_CURRENT_BINARY_DIR})

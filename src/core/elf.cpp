@@ -249,7 +249,7 @@ namespace linuxdeploy {
 
             uint8_t ElfFile::getSystemElfClass() {
                 #if __SIZEOF_POINTER__ == 4
-                return ELFCLASS32
+                return ELFCLASS32;
                 #elif __SIZEOF_POINTER__ == 8
                 return ELFCLASS64;
                 #else
