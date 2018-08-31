@@ -68,7 +68,7 @@ namespace linuxdeploy {
                         // the "class" is available at a specific constant offset in the section e_ident, which
                         // happens to be the first section, so just reading one byte at EI_CLASS yields the data we're
                         // looking for
-                        char elfClass = data.get()[EI_CLASS];
+                        elfClass = data.get()[EI_CLASS];
 
                         switch (elfClass) {
                             case ELFCLASS32: {
