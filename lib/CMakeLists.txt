@@ -1,6 +1,7 @@
 add_library(subprocess INTERFACE)
 target_sources(subprocess INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/cpp-subprocess/subprocess.hpp)
 target_include_directories(subprocess INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/cpp-subprocess)
+target_compile_options(subprocess INTERFACE "-Wno-deprecated")
 
 add_library(args INTERFACE)
 target_sources(args INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/args/args.hxx)
