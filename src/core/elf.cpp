@@ -27,7 +27,7 @@ namespace linuxdeploy {
                     uint8_t elfABI = 0;
 
                 public:
-                    explicit PrivateData(const bf::path& path) : path(path) {}
+                    explicit PrivateData(bf::path path) : path(std::move(path)) {}
 
                 public:
                     static std::string getPatchelfPath() {
