@@ -327,12 +327,28 @@ namespace linuxdeploy {
                             return true;
                         }
 
+                        bf::path libraryDir = appDirPath / "usr";
+
+                        const auto systemElfClass = elf::ElfFile::getSystemElfClass();
+                        const auto elfClass = elf::ElfFile(path).getElfClass();
+
+                        // note for self: make sure to have a trailing slash in libraryDir, otherwise copyFile won't
+                        // create a directory
+                        if (systemElfClass != elfClass) {
+                            if (elfClass == ELFCLASS32)
+                                libraryDir /= "lib32/";
+                            else
+                                libraryDir /= "lib64/";
+                        } else {
+                            libraryDir /= "lib/";
+                        }
+
                         ldLog() << logPrefix << LD_NO_SPACE << "Deploying shared library" << path;
                         if (!destination.empty())
                             ldLog() << " (destination:" << destination << LD_NO_SPACE << ")";
                         ldLog() << std::endl;
 
-                        auto destinationPath = destination.empty() ? appDirPath / "usr/lib/" : destination;
+                        auto destinationPath = destination.empty() ? libraryDir : destination;
 
                         // not sure whether this is 100% bullet proof, but it simulates the cp command behavior
                         if (destinationPath.string().back() == '/' || bf::is_directory(destinationPath)) {
@@ -356,7 +372,7 @@ namespace linuxdeploy {
                                 rpathDestination = destination.parent_path().string();
                             }
 
-                            auto relPath = bf::relative(bf::absolute(appDirPath) / "usr/lib", bf::absolute(rpathDestination));
+                            auto relPath = bf::relative(bf::absolute(libraryDir), bf::absolute(rpathDestination));
                             rpath = "$ORIGIN/" + relPath.string() + ":$ORIGIN";
                         }
 
@@ -385,7 +401,21 @@ namespace linuxdeploy {
                         deployFile(path, destinationPath);
                         deployCopyrightFiles(path);
 
-                        std::string rpath = "$ORIGIN/../lib";
+                        const auto systemElfClass = elf::ElfFile::getSystemElfClass();
+                        const auto elfClass = elf::ElfFile(path).getElfClass();
+
+                        std::string libSuffix = "";
+
+                        // note for self: make sure to have a trailing slash in libraryDir, otherwise copyFile won't
+                        // create a directory
+                        if (systemElfClass != elfClass) {
+                            if (elfClass == ELFCLASS32)
+                                libSuffix = "32";
+                            else
+                                libSuffix = "64";
+                        }
+
+                        std::string rpath = "$ORIGIN/../lib" + libSuffix;
 
                         if (!destination.empty()) {
                             std::string rpathDestination = destination.string();
@@ -399,7 +429,7 @@ namespace linuxdeploy {
                                 rpathDestination = destination.parent_path().string();
                             }
 
-                            auto relPath = bf::relative(bf::absolute(appDirPath) / "usr/lib", bf::absolute(rpathDestination));
+                            auto relPath = bf::relative(bf::absolute(appDirPath) / ("usr/lib" + libSuffix), bf::absolute(rpathDestination));
                             rpath = "$ORIGIN/" + relPath.string();
                         }
 
