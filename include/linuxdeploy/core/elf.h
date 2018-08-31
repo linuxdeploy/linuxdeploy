@@ -58,6 +58,12 @@ namespace linuxdeploy {
                     // set rpath in ELF file
                     // returns true on success, false otherwise
                     bool setRPath(const std::string& value);
+
+                    // return ELF class
+                    uint8_t getElfClass();
+
+                    // return OS ABI
+                    uint8_t getElfABI();
             };
         }
     }

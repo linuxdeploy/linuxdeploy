@@ -168,7 +168,7 @@ namespace linuxdeploy {
             std::string ElfFile::getRPath() {
                 try {
                     subprocess::Popen patchelfProc(
-                        {d->getPatchelfPath().c_str(), "--print-rpath", d->path.c_str()},
+                        {PrivateData::getPatchelfPath().c_str(), "--print-rpath", d->path.c_str()},
                         subprocess::output(subprocess::PIPE),
                         subprocess::error(subprocess::PIPE)
                     );
@@ -203,7 +203,7 @@ namespace linuxdeploy {
             bool ElfFile::setRPath(const std::string& value) {
                 try {
                     subprocess::Popen patchelfProc(
-                        {d->getPatchelfPath().c_str(), "--set-rpath", value.c_str(), d->path.c_str()},
+                        {PrivateData::getPatchelfPath().c_str(), "--set-rpath", value.c_str(), d->path.c_str()},
                         subprocess::output(subprocess::PIPE),
                         subprocess::error(subprocess::PIPE)
                     );
@@ -265,6 +265,14 @@ namespace linuxdeploy {
                 #else
                 #error "Unknown machine endianness"
                 #endif
+            }
+
+            uint8_t ElfFile::getElfClass()  {
+                return d->elfClass;
+            }
+
+            uint8_t ElfFile::getElfABI() {
+                return d->elfABI;
             }
         }
     }
