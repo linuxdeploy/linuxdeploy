@@ -420,7 +420,7 @@ namespace linuxdeploy {
                                 rpathDestination = destination.parent_path().string();
                             }
 
-                            auto relPath = bf::relative(bf::absolute(appDirPath) / ("usr/lib" + libSuffix), bf::absolute(rpathDestination));
+                            auto relPath = bf::relative(bf::absolute(appDirPath) / "usr" / getLibraryDirName(path)), bf::absolute(rpathDestination));
                             rpath = "$ORIGIN/" + relPath.string();
                         }
 
