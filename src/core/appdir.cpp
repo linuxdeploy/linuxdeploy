@@ -55,6 +55,23 @@ namespace linuxdeploy {
                     };
 
                 public:
+                    // calculate library directory name for given ELF file, taking system architecture into account
+                    static std::string getLibraryDirName(const bf::path& path) {
+                        const auto systemElfClass = elf::ElfFile::getSystemElfClass();
+                        const auto elfClass = elf::ElfFile(path).getElfClass();
+
+                        std::string libDirName = "lib";
+
+                        if (systemElfClass != elfClass) {
+                            if (elfClass == ELFCLASS32)
+                                libDirName += "32";
+                            else
+                                libDirName += "64";
+                        }
+
+                         return libDirName;
+                    }
+
                     // actually copy file
                     // mimics cp command behavior
                     bool copyFile(const bf::path& from, bf::path to, bool overwrite = false) {
@@ -327,21 +344,9 @@ namespace linuxdeploy {
                             return true;
                         }
 
-                        bf::path libraryDir = appDirPath / "usr";
-
-                        const auto systemElfClass = elf::ElfFile::getSystemElfClass();
-                        const auto elfClass = elf::ElfFile(path).getElfClass();
-
                         // note for self: make sure to have a trailing slash in libraryDir, otherwise copyFile won't
                         // create a directory
-                        if (systemElfClass != elfClass) {
-                            if (elfClass == ELFCLASS32)
-                                libraryDir /= "lib32/";
-                            else
-                                libraryDir /= "lib64/";
-                        } else {
-                            libraryDir /= "lib/";
-                        }
+                        bf::path libraryDir = appDirPath / "usr" / getLibraryDirName(path) / "";
 
                         ldLog() << logPrefix << LD_NO_SPACE << "Deploying shared library" << path;
                         if (!destination.empty())
@@ -401,21 +406,7 @@ namespace linuxdeploy {
                         deployFile(path, destinationPath);
                         deployCopyrightFiles(path);
 
-                        const auto systemElfClass = elf::ElfFile::getSystemElfClass();
-                        const auto elfClass = elf::ElfFile(path).getElfClass();
-
-                        std::string libSuffix = "";
-
-                        // note for self: make sure to have a trailing slash in libraryDir, otherwise copyFile won't
-                        // create a directory
-                        if (systemElfClass != elfClass) {
-                            if (elfClass == ELFCLASS32)
-                                libSuffix = "32";
-                            else
-                                libSuffix = "64";
-                        }
-
-                        std::string rpath = "$ORIGIN/../lib" + libSuffix;
+                        std::string rpath = "$ORIGIN/../" + getLibraryDirName(path);
 
                         if (!destination.empty()) {
                             std::string rpathDestination = destination.string();
@@ -820,19 +811,7 @@ namespace linuxdeploy {
                     if (!d->deployElfDependencies(executable))
                         return false;
 
-                    const auto systemElfClass = elf::ElfFile::getSystemElfClass();
-                    const auto elfClass = elf::ElfFile(executable).getElfClass();
-
-                    std::string libSuffix = "";
-
-                    if (systemElfClass != elfClass) {
-                        if (elfClass == ELFCLASS32)
-                            libSuffix = "32";
-                        else
-                            libSuffix = "64";
-                    }
-
-                    std::string rpath = "$ORIGIN/../lib" + libSuffix;
+                    std::string rpath = "$ORIGIN/../" + PrivateData::getLibraryDirName(executable);
 
                     d->setElfRPathOperations[executable] = rpath;
                 }
