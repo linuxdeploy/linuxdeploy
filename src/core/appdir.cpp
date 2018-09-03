@@ -820,7 +820,21 @@ namespace linuxdeploy {
                     if (!d->deployElfDependencies(executable))
                         return false;
 
-                    d->setElfRPathOperations[executable] = "$ORIGIN/../lib";
+                    const auto systemElfClass = elf::ElfFile::getSystemElfClass();
+                    const auto elfClass = elf::ElfFile(executable).getElfClass();
+
+                    std::string libSuffix = "";
+
+                    if (systemElfClass != elfClass) {
+                        if (elfClass == ELFCLASS32)
+                            libSuffix = "32";
+                        else
+                            libSuffix = "64";
+                    }
+
+                    std::string rpath = "$ORIGIN/../lib" + libSuffix;
+
+                    d->setElfRPathOperations[executable] = rpath;
                 }
 
                 for (const auto& sharedLibrary : listSharedLibraries()) {
