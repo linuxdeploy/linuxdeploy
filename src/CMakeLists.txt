@@ -13,6 +13,34 @@ else()
     set(BOOST_LIBS boost_system boost_filesystem boost_regex)
 endif()
 
+
+
+# read Git revision ID
+# WARNING: this value will be stored in the CMake cache
+# to update it, you will have to reset the CMake cache
+# (doesn't matter for CI builds like Travis for instance, where there's no permanent CMake cache)
+execute_process(
+    COMMAND git rev-parse --short HEAD
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+    OUTPUT_VARIABLE GIT_COMMIT
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+# set version and build number
+set(VERSION 1-alpha)
+if("$ENV{TRAVIS_BUILD_NUMBER}" STREQUAL "")
+    set(BUILD_NUMBER "<local dev build>")
+else()
+    set(BUILD_NUMBER "Travis build $ENV{TRAVIS_BUILD_NUMBER}")
+endif()
+
+# get current date
+execute_process(
+    COMMAND env LC_ALL=C date -u "+%Y-%m-%d %H:%M:%S %Z"
+    OUTPUT_VARIABLE DATE
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
 add_subdirectory(util)
 add_subdirectory(plugin)
 add_subdirectory(core)
@@ -20,6 +48,11 @@ add_subdirectory(core)
 add_executable(linuxdeploy main.cpp)
 target_link_libraries(linuxdeploy linuxdeploy_core args)
 set_target_properties(linuxdeploy PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin")
+
+target_compile_definitions(linuxdeploy PRIVATE -DLD_GIT_COMMIT="${GIT_COMMIT}")
+target_compile_definitions(linuxdeploy PRIVATE -DLD_VERSION="${VERSION}")
+target_compile_definitions(linuxdeploy PRIVATE -DLD_BUILD_NUMBER="${BUILD_NUMBER}")
+target_compile_definitions(linuxdeploy PRIVATE -DLD_BUILD_DATE="${DATE}")
 
 add_executable(plugin_test plugin_test_main.cpp)
 target_link_libraries(plugin_test linuxdeploy_plugin)

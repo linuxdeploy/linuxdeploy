@@ -5,9 +5,6 @@ project(linuxdeploy C CXX)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(LINUXDEPLOY_VERSION 0.1-alpha-1)
-add_definitions(-DLINUXDEPLOY_VERSION="${LINUXDEPLOY_VERSION}")
-
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake/Modules/")
 
 set(USE_SYSTEM_BOOST OFF CACHE BOOL "Set to ON to use system boost libraries instead of building up to date boost libraries from source")

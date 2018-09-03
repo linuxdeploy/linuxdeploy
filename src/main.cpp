@@ -58,15 +58,18 @@ int main(int argc, char** argv) {
     }
 
     // always show version statement
-    std::cerr << "linuxdeploy version " << LINUXDEPLOY_VERSION << std::endl;
+    std::cerr << "linuxdeploy version " << LD_VERSION
+              << " (git commit ID " << LD_GIT_COMMIT << "), "
+              << LD_BUILD_NUMBER << " built on " << LD_BUILD_DATE << std::endl;
+
+    // if only the version should be shown, we can exit now
+    if (showVersion)
+        return 0;
 
     // set verbosity
     if (verbosity) {
         ldLog::setVerbosity((LD_LOGLEVEL) verbosity.Get());
     }
-
-    if (showVersion)
-        return 0;
 
     auto foundPlugins = linuxdeploy::plugin::findPlugins();
 
