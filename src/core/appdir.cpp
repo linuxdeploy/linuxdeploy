@@ -346,7 +346,7 @@ namespace linuxdeploy {
 
                         // note for self: make sure to have a trailing slash in libraryDir, otherwise copyFile won't
                         // create a directory
-                        bf::path libraryDir = appDirPath / "usr" / getLibraryDirName(path) / "";
+                        bf::path libraryDir = appDirPath / "usr" / (getLibraryDirName(path) + "/");
 
                         ldLog() << logPrefix << LD_NO_SPACE << "Deploying shared library" << path;
                         if (!destination.empty())
