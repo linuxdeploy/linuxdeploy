@@ -91,7 +91,7 @@ If you want to use a plugin to bundle additional resources, please add `./linuxd
 
 ## User guides and examples
 
-Please see the [linuxdeploy user guide](https://docs.appimage.org/packaging-guide/linuxdeploy-user-guide.html) and the [native binaries packaging guide](https://docs.appimage.org/packaging-guide/native-binaries.html) in the [AppImage documentation](https://docs.appimage.org). There's also an [examples section](https://docs.appimage.org/packaging-guide/native-binaries.html#Examples).
+Please see the [linuxdeploy user guide](https://docs.appimage.org/packaging-guide/linuxdeploy-user-guide.html) and the [native binaries packaging guide](https://docs.appimage.org/packaging-guide/native-binaries.html) in the [AppImage documentation](https://docs.appimage.org). There's also an [examples section](https://docs.appimage.org/packaging-guide/native-binaries.html#examples).
 
 
 ## Troubleshooting
