@@ -10,7 +10,7 @@ else
     TEMP_BASE=/tmp
 fi
 
-BUILD_DIR=$(mktemp -d -p "$TEMP_BASE" AppImageUpdate-build-XXXXXX)
+BUILD_DIR=$(mktemp -d -p "$TEMP_BASE" linuxdeploy-build-XXXXXX)
 
 cleanup () {
     if [ -d "$BUILD_DIR" ]; then
