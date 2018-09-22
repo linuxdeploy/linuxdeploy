@@ -123,10 +123,14 @@ namespace linuxdeploy {
 
                 std::vector<bf::path> paths;
 
+                std::map<std::string, std::string> env;
+                env.insert(std::make_pair(std::string("LC_ALL"), std::string("C")));
+
                 subprocess::Popen lddProc(
                     {"ldd", d->path.string().c_str()},
                     subprocess::output{subprocess::PIPE},
-                    subprocess::error{subprocess::PIPE}
+                    subprocess::error{subprocess::PIPE},
+                    subprocess::environment(env);
                 );
 
                 auto lddOutput = lddProc.communicate();
