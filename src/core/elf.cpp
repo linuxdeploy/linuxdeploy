@@ -130,7 +130,7 @@ namespace linuxdeploy {
                     {"ldd", d->path.string().c_str()},
                     subprocess::output{subprocess::PIPE},
                     subprocess::error{subprocess::PIPE},
-                    subprocess::environment(env);
+                    subprocess::environment(env)
                 );
 
                 auto lddOutput = lddProc.communicate();
