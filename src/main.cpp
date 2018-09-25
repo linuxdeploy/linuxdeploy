@@ -143,6 +143,13 @@ int main(int argc, char** argv) {
         }
     }
 
+    // perform deferred copy operations before running input plugins to make sure all files the plugins might expect
+    // are in place
+    ldLog() << std::endl << "-- Copying files into AppDir --" << std::endl;
+    if (!appDir.executeDeferredOperations()) {
+        return 1;
+    }
+
     // run input plugins before deploying icons and desktop files
     // the input plugins might even fetch these resources somewhere into the AppDir, and this way, the user can make use of that
     if (inputPlugins) {
