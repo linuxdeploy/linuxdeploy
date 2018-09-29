@@ -53,6 +53,11 @@ namespace linuxdeploy {
                 paths.insert(paths.begin(), appImageDir.string());
             }
 
+            // also, look for plugins in current working directory
+            // could be useful in a "use linuxdeploy centrally, but download plugins into project directory" scenario
+            std::shared_ptr<char> cwd(get_current_dir_name(), free);
+            paths.emplace_back(cwd.get());
+
             for (const auto& dir : paths) {
                 if (!bf::is_directory(dir))
                     continue;
