@@ -29,7 +29,6 @@ int main(int argc, char** argv) {
     args::ValueFlag<int> verbosity(parser, "verbosity", "Verbosity of log output (0 = debug, 1 = info (default), 2 = warning, 3 = error)", {'v', "verbosity"});
 
     args::ValueFlag<std::string> appDirPath(parser, "appdir", "Path to target AppDir", {"appdir"});
-    args::ValueFlag<std::string> appName(parser, "app-name", "deprecated, please don't use it any more", {'n', "app-name"});
 
     args::ValueFlagList<std::string> sharedLibraryPaths(parser, "library", "Shared library to deploy", {'l', "library"});
 
@@ -91,10 +90,6 @@ int main(int argc, char** argv) {
     }
 
     appdir::AppDir appDir(appDirPath.Get());
-
-    if (appName) {
-        ldLog() << LD_WARNING << "--app-name parameter is deprecated, please don't use it any more" << std::endl;
-    }
 
     // initialize AppDir with common directories
     ldLog() << std::endl << "-- Creating basic AppDir structure --" << std::endl;
@@ -218,7 +213,7 @@ int main(int argc, char** argv) {
         }
     }
 
-    // perform deferred copy operations before creating other files here or trying to copy the files to the AppDir root
+    // perform deferred copy operations before creating other files here before trying to copy the files to the AppDir root
     ldLog() << std::endl << "-- Copying files into AppDir --" << std::endl;
     if (!appDir.executeDeferredOperations()) {
         return 1;
@@ -265,22 +260,24 @@ int main(int argc, char** argv) {
         if (deployedDesktopFiles.empty()) {
             ldLog() << LD_WARNING << "Could not find desktop file in AppDir, cannot create links for AppRun, desktop file and icon in AppDir root" << std::endl;
         } else {
-            if (!appName.Get().empty()) {
+            if (!desktopFilePaths.Get().empty()) {
+                auto firstDeployedDesktopFilePath = bf::path(desktopFilePaths.Get().front());
+                auto firstDeployedDesktopFileName = bf::basename(firstDeployedDesktopFilePath);
+
                 auto desktopFileMatchingName = std::find_if(
                     deployedDesktopFiles.begin(),
                     deployedDesktopFiles.end(),
-                    [&appName](const desktopfile::DesktopFile& desktopFile) {
+                    [&firstDeployedDesktopFileName](const desktopfile::DesktopFile& desktopFile) {
                         auto fileName = desktopFile.path().filename().string();
-                        return stringStartsWith(fileName, appName.Get()) && stringEndsWith(fileName, ".desktop");
+                        return fileName == firstDeployedDesktopFileName;
                     }
                 );
 
                 if (desktopFileMatchingName != deployedDesktopFiles.end()) {
                     desktopFile = *desktopFileMatchingName;
-                    ldLog() << "Found desktop file matching app name:" << desktopFile.path() << std::endl;
                 } else {
-                    desktopFile = deployedDesktopFiles[0];
-                    ldLog() << LD_WARNING << "Could not find suitable desktop file for given app name" << appName << LD_NO_SPACE << ", using first desktop file found:" << desktopFile.path() << std::endl;
+                    ldLog() << LD_ERROR << "Could not find desktop file deployed earlier any more:" << firstDeployedDesktopFilePath << std::endl;
+                    return 1;
                 }
             } else {
                 desktopFile = deployedDesktopFiles[0];
