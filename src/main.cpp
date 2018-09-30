@@ -261,7 +261,7 @@ int main(int argc, char** argv) {
             ldLog() << LD_WARNING << "Could not find desktop file in AppDir, cannot create links for AppRun, desktop file and icon in AppDir root" << std::endl;
         } else {
             if (!desktopFilePaths.Get().empty()) {
-                auto firstDeployedDesktopFileName = bf::basename(desktopFilePaths.Get().front());
+                auto firstDeployedDesktopFileName = bf::path(desktopFilePaths.Get().front()).filename().string();
 
                 auto desktopFileMatchingName = std::find_if(
                     deployedDesktopFiles.begin(),
