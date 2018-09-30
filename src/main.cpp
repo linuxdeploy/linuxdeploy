@@ -261,8 +261,7 @@ int main(int argc, char** argv) {
             ldLog() << LD_WARNING << "Could not find desktop file in AppDir, cannot create links for AppRun, desktop file and icon in AppDir root" << std::endl;
         } else {
             if (!desktopFilePaths.Get().empty()) {
-                auto firstDeployedDesktopFilePath = bf::path(desktopFilePaths.Get().front());
-                auto firstDeployedDesktopFileName = bf::basename(firstDeployedDesktopFilePath);
+                auto firstDeployedDesktopFileName = bf::basename(desktopFilePaths.Get().front());
 
                 auto desktopFileMatchingName = std::find_if(
                     deployedDesktopFiles.begin(),
@@ -276,12 +275,12 @@ int main(int argc, char** argv) {
                 if (desktopFileMatchingName != deployedDesktopFiles.end()) {
                     desktopFile = *desktopFileMatchingName;
                 } else {
-                    ldLog() << LD_ERROR << "Could not find desktop file deployed earlier any more:" << firstDeployedDesktopFilePath << std::endl;
+                    ldLog() << LD_ERROR << "Could not find desktop file deployed earlier any more:" << firstDeployedDesktopFileName << std::endl;
                     return 1;
                 }
             } else {
                 desktopFile = deployedDesktopFiles[0];
-                ldLog() << LD_WARNING << "App name not specified, using first desktop file found:" << desktopFile.path() << std::endl;
+                ldLog() << LD_WARNING << "No desktop file specified, using first desktop file found:" << desktopFile.path() << std::endl;
             }
 
             ldLog() << "Deploying desktop file:" << desktopFile.path() << std::endl;
