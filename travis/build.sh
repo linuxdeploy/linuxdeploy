@@ -55,6 +55,8 @@ mv squashfs-root/ AppDir/plugins/linuxdeploy-plugin-appimage
 
 ln -s ../../plugins/linuxdeploy-plugin-appimage/AppRun AppDir/usr/bin/linuxdeploy-plugin-appimage
 
+export UPD_INFO="gh-releases-zsync|linuxdeploy|linuxdeploy|continuous|linuxdeploy*-$ARCH.AppImage"
+
 # build AppImage using plugin
 AppDir/usr/bin/linuxdeploy-plugin-appimage --appdir AppDir/
 
@@ -67,4 +69,4 @@ mv ./linuxdeploy-"$ARCH".AppImage test.AppImage
 # check whether AppImage plugin is found and works
 ./test.AppImage "${LINUXDEPLOY_ARGS[@]}" --output appimage
 
-mv linuxdeploy*.AppImage "$OLD_CWD"
+mv linuxdeploy-"$ARCH".AppImage "$OLD_CWD"
