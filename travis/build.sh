@@ -69,4 +69,4 @@ mv ./linuxdeploy-"$ARCH".AppImage test.AppImage
 # check whether AppImage plugin is found and works
 ./test.AppImage "${LINUXDEPLOY_ARGS[@]}" --output appimage
 
-mv linuxdeploy-"$ARCH".AppImage "$OLD_CWD"
+mv linuxdeploy-"$ARCH".AppImage* "$OLD_CWD"
