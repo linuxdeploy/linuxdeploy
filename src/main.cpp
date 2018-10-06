@@ -172,8 +172,7 @@ int main(int argc, char** argv) {
             auto retcode = plugin->run(appDir.path());
 
             if (retcode != 0) {
-                ldLog() << LD_ERROR << "Failed to run plugin:" << pluginName << std::endl;
-                ldLog() << LD_DEBUG << "Exited with return code:" << retcode << std::endl;
+                ldLog() << LD_ERROR << "Failed to run plugin:" << pluginName << "(exit code:" << retcode << LD_NO_SPACE << ")" << std::endl;
                 return 1;
             }
         }
@@ -250,9 +249,14 @@ int main(int argc, char** argv) {
     }
 
     // search for desktop file and deploy it to AppDir root
-    {
-        ldLog() << std::endl << "-- Deploying files into AppDir root directory --" << std::endl;
+    ldLog() << std::endl << "-- Deploying files into AppDir root directory --" << std::endl;
 
+    if (bf::is_regular_file(appDir.path() / "AppRun")) {
+        if (customAppRunPath)
+            ldLog() << LD_WARNING << "AppRun exists but custom AppRun specified, overwriting existing AppRun" << std::endl;
+        else
+            ldLog() << LD_WARNING << "AppRun exists, skipping deployment" << std::endl;
+    } else {
         auto deployedDesktopFiles = appDir.deployedDesktopFiles();
 
         desktopfile::DesktopFile desktopFile;
