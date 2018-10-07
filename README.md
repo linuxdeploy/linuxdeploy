@@ -94,6 +94,17 @@ If you want to use a plugin to bundle additional resources, please add `./linuxd
 Please see the [linuxdeploy user guide](https://docs.appimage.org/packaging-guide/linuxdeploy-user-guide.html) and the [native binaries packaging guide](https://docs.appimage.org/packaging-guide/native-binaries.html) in the [AppImage documentation](https://docs.appimage.org). There's also an [examples section](https://docs.appimage.org/packaging-guide/native-binaries.html#examples).
 
 
+## Projects using linuxdeploy
+
+This is an incomplete list of projects using linuxdeploy. You might want to read their build scripts to see how they use linuxdeploy.
+
+- [Pext](https://github.com/Pext/Pext)
+- [AppImageLauncher](https://github.com/TheAssassin/AppImageLauncher)
+- [OpenRCT2](https://github.com/OpenRCT2/OpenRCT2)
+- [AppImageUpdate](https://github.com/AppImage/AppImageUpdate)
+- [appimaged](https://github.com/AppImage/appimaged)
+
+
 ## Troubleshooting
 
 > I bundled additional resources, but when I try to run them, either the system binary is called or the file is not found.
