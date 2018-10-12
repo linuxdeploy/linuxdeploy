@@ -87,4 +87,28 @@ namespace AppDirUnitTests {
         if (!libsimple_library_found)
             FAIL();
     }
+
+    TEST_F(AppDirUnitTestsFixture, deployExecutable) {
+        path exePath = SIMPLE_EXECUTABLE_PATH;
+        appDir.deployExecutable(exePath);
+        appDir.executeDeferredOperations();
+
+        bool libsimple_library_found = false;
+        bool simple_executable_found = false;
+        recursive_directory_iterator end_itr; // default construction yields past-the-end
+        for (recursive_directory_iterator itr(tmpAppDir);
+             itr != end_itr && (!libsimple_library_found || !simple_executable_found);
+             itr++) {
+            const auto path = relative(itr->path(), tmpAppDir).filename().string();
+
+            if (path.find("libsimple_library") != std::string::npos)
+                libsimple_library_found = true;
+
+            if (path.find("simple_executable") != std::string::npos)
+                simple_executable_found = true;
+        }
+
+        if (!libsimple_library_found || !simple_executable_found)
+            FAIL();
+    }
 }

@@ -1,2 +1,2 @@
 add_library(simple_library SHARED simple_library.cpp)
-target_link_libraries(simple_library cairo)
+target_link_libraries(simple_library CImg)
