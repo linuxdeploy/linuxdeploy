@@ -12,6 +12,7 @@ target_include_directories(AppDirUnitTests PRIVATE ${PROJECT_SOURCE_DIR}/include
 target_compile_definitions(AppDirUnitTests PRIVATE
     -DSIMPLE_LIBRARY_PATH="$<TARGET_FILE:simple_library>"
     -DSIMPLE_EXECUTABLE_PATH="$<TARGET_FILE:simple_executable>"
+    -DSIMPLE_DESKTOP_ENTRY_PATH="${CMAKE_CURRENT_SOURCE_DIR}/data/SimpleApp.Desktop"
     )
 
 add_gtest(AppDirUnitTests)

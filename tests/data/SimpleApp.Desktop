@@ -1,0 +1,19 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Simple Application
+Comment=The most simple application available!
+TryExec=simple_executable
+Exec=simple_executable %F
+Icon=simple_icon
+MimeType=image/x-foo;
+Actions=SimpleAction;AnotherSimpleAction;
+
+[Desktop Action SimpleAction]
+Exec=simple_executable --do-it
+Name=Do something simple!
+
+[Desktop Action AnotherSimpleAction]
+Exec=simple_executable --do-it-again
+Name=Do another simple thing!
+Icon=simple_icon

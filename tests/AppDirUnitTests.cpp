@@ -2,6 +2,8 @@
 #include  "linuxdeploy/core/appdir.h"
 
 using namespace linuxdeploy::core::appdir;
+using namespace linuxdeploy::core::desktopfile;
+
 using namespace boost::filesystem;
 namespace AppDirUnitTests {
     class AppDirUnitTestsFixture : public ::testing::Test {
@@ -109,6 +111,24 @@ namespace AppDirUnitTests {
         }
 
         if (!libsimple_library_found || !simple_executable_found)
+            FAIL();
+    }
+
+    TEST_F(AppDirUnitTestsFixture, deployDesktopFile) {
+        DesktopFile desktopFile{SIMPLE_DESKTOP_ENTRY_PATH};
+        appDir.deployDesktopFile(desktopFile);
+        appDir.executeDeferredOperations();
+
+        bool simple_app_desktop_found = false;
+        recursive_directory_iterator end_itr; // default construction yields past-the-end
+        for (recursive_directory_iterator itr(tmpAppDir); itr != end_itr && (!simple_app_desktop_found); itr++) {
+            const auto path = relative(itr->path(), tmpAppDir).filename().string();
+
+            if (path.find("SimpleApp.Desktop") != std::string::npos)
+                simple_app_desktop_found = true;
+        }
+
+        if (!simple_app_desktop_found)
             FAIL();
     }
 }
