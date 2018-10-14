@@ -149,6 +149,24 @@ namespace AppDirUnitTests {
 
         if (!simple_icon_found)
             FAIL();
+    }
 
+
+    TEST_F(AppDirUnitTestsFixture, deployFile) {
+        path filePath = SIMPLE_FILE_PATH;
+        appDir.deployFile(filePath, tmpAppDir / "usr/share/doc/simple_application/");
+        appDir.executeDeferredOperations();
+
+        bool simple_file_found = false;
+        recursive_directory_iterator end_itr; // default construction yields past-the-end
+        for (recursive_directory_iterator itr(tmpAppDir); itr != end_itr && (!simple_file_found); itr++) {
+            const auto path = relative(itr->path(), tmpAppDir).filename().string();
+
+            if (path.find("simple_file.txt") != std::string::npos)
+                simple_file_found = true;
+        }
+
+        if (!simple_file_found)
+            FAIL();
     }
 }

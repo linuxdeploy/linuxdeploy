@@ -14,6 +14,7 @@ target_compile_definitions(AppDirUnitTests PRIVATE
     -DSIMPLE_EXECUTABLE_PATH="$<TARGET_FILE:simple_executable>"
     -DSIMPLE_DESKTOP_ENTRY_PATH="${CMAKE_CURRENT_SOURCE_DIR}/data/simple_app.Desktop"
     -DSIMPLE_ICON_PATH="${CMAKE_CURRENT_SOURCE_DIR}/data/simple_icon.svg"
+    -DSIMPLE_FILE_PATH="${CMAKE_CURRENT_SOURCE_DIR}/data/simple_file.txt"
     )
 
 add_gtest(AppDirUnitTests)
