@@ -153,7 +153,7 @@ namespace linuxdeploy {
                         util::trim(libraryPath);
                         paths.push_back(bf::absolute(libraryPath));
                     } else {
-                        if (util::stringContains(line, "not found")) {
+                        if (util::stringContains(line, "=> not found")) {
                             auto missingLib = line;
                             static const std::string pattern = "=> not found";
                             missingLib.erase(missingLib.find(pattern), pattern.size());
