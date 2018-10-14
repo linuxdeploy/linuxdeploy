@@ -124,11 +124,31 @@ namespace AppDirUnitTests {
         for (recursive_directory_iterator itr(tmpAppDir); itr != end_itr && (!simple_app_desktop_found); itr++) {
             const auto path = relative(itr->path(), tmpAppDir).filename().string();
 
-            if (path.find("SimpleApp.Desktop") != std::string::npos)
+            if (path.find("simple_app.Desktop") != std::string::npos)
                 simple_app_desktop_found = true;
         }
 
         if (!simple_app_desktop_found)
             FAIL();
+    }
+
+
+    TEST_F(AppDirUnitTestsFixture, deployIcon) {
+        path iconPath = SIMPLE_ICON_PATH;
+        appDir.deployIcon(iconPath);
+        appDir.executeDeferredOperations();
+
+        bool simple_icon_found = false;
+        recursive_directory_iterator end_itr; // default construction yields past-the-end
+        for (recursive_directory_iterator itr(tmpAppDir); itr != end_itr && (!simple_icon_found); itr++) {
+            const auto path = relative(itr->path(), tmpAppDir).filename().string();
+
+            if (path.find("simple_icon.svg") != std::string::npos)
+                simple_icon_found = true;
+        }
+
+        if (!simple_icon_found)
+            FAIL();
+
     }
 }
