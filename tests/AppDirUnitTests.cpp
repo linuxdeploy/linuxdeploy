@@ -69,4 +69,22 @@ namespace AppDirUnitTests {
             FAIL();
 
     }
+
+    TEST_F(AppDirUnitTestsFixture, depoloyLibrary) {
+        path libPath = SIMPLE_LIBRARY_PATH;
+        appDir.deployLibrary(libPath);
+        appDir.executeDeferredOperations();
+
+        bool libsimple_library_found = false;
+        recursive_directory_iterator end_itr; // default construction yields past-the-end
+        for (recursive_directory_iterator itr(tmpAppDir); itr != end_itr && (!libsimple_library_found); itr++) {
+            const auto path = relative(itr->path(), tmpAppDir).filename().string();
+
+            if (path.find("libsimple_library") != path.npos)
+                libsimple_library_found = true;
+        }
+
+        if (!libsimple_library_found)
+            FAIL();
+    }
 }
