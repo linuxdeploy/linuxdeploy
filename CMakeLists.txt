@@ -13,3 +13,9 @@ set(USE_SYSTEM_CIMG ON CACHE BOOL "Set to OFF to use CImg library bundled in lib
 add_subdirectory(lib)
 
 add_subdirectory(src)
+
+option(BUILD_TEST "Build the tests" ON)
+if(PACKAGE_TESTS)
+    enable_testing()
+    add_subdirectory(tests)
+endif()
