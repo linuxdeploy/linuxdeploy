@@ -15,7 +15,7 @@ add_subdirectory(lib)
 add_subdirectory(src)
 
 option(BUILD_TEST "Build the tests" ON)
-if(PACKAGE_TESTS)
+if(BUILD_TEST)
     enable_testing()
     add_subdirectory(tests)
 endif()

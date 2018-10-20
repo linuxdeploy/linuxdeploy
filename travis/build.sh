@@ -40,7 +40,7 @@ cmake "$REPO_ROOT" -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=RelWithDebInfo
 make -j$(nproc)
 
 ## Run Unit Tests
-ctest
+ctest -V
 
 # args are used more than once
 LINUXDEPLOY_ARGS=("--appdir" "AppDir" "-e" "bin/linuxdeploy" "-i" "$REPO_ROOT/resources/linuxdeploy.png" "--create-desktop-file" "-e" "/usr/bin/patchelf" "-e" "/usr/bin/strip")
