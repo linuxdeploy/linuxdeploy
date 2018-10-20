@@ -72,6 +72,12 @@ namespace AppDirUnitTests {
 
     }
 
+
+    TEST_F(AppDirUnitTestsFixture, depoloyLibraryWrongPath) {
+        path libPath = "/lib/fakelib.so";
+        ASSERT_THROW(appDir.deployLibrary(libPath), std::exception);
+    }
+
     TEST_F(AppDirUnitTestsFixture, depoloyLibrary) {
         path libPath = SIMPLE_LIBRARY_PATH;
         appDir.deployLibrary(libPath);
