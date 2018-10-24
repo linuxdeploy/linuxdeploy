@@ -14,8 +14,7 @@ add_subdirectory(lib)
 
 add_subdirectory(src)
 
-option(BUILD_TEST "Build the tests" ON)
-if(BUILD_TEST)
-    enable_testing()
+include(CTest)
+if(BUILD_TESTING)
     add_subdirectory(tests)
 endif()

@@ -109,4 +109,7 @@ if(NOT USE_SYSTEM_BOOST)
     )
 endif()
 
-add_subdirectory(googletest)
+include(CTest)
+if(BUILD_TESTING)
+    add_subdirectory(googletest)
+endif()
