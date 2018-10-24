@@ -8,6 +8,10 @@ using namespace boost::filesystem;
 namespace AppDirTest {
     class AppDirUnitTestsFixture : public ::testing::Test {
     public:
+        path tmpAppDir;
+        AppDir appDir;
+
+    public:
         AppDirUnitTestsFixture() :
             tmpAppDir(temp_directory_path() / unique_path("linuxdeploy-tests-%%%%-%%%%-%%%%")),
             appDir(tmpAppDir) {
@@ -29,9 +33,6 @@ namespace AppDirTest {
                 std::cout << relative(itr->path(), tmpAppDir).string() << std::endl;
             }
         }
-
-        path tmpAppDir;
-        AppDir appDir;
     };
 
     TEST_F(AppDirUnitTestsFixture, createBasicStructure) {
