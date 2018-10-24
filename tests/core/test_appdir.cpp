@@ -36,6 +36,7 @@ namespace AppDirTest {
     };
 
     TEST_F(AppDirUnitTestsFixture, createBasicStructure) {
+        // in this test case we expect the following exact directory set to be created in the AppDir
         std::set<std::string> expected = {
             "usr",
             "usr/bin",
@@ -80,16 +81,7 @@ namespace AppDirTest {
         appDir.deployLibrary(libPath);
         appDir.executeDeferredOperations();
 
-        bool libsimple_library_found = false;
-        recursive_directory_iterator end_itr; // default construction yields past-the-end
-        for (recursive_directory_iterator itr(tmpAppDir); itr != end_itr && (!libsimple_library_found); itr++) {
-            const auto path = relative(itr->path(), tmpAppDir).filename().string();
-
-            if (path.find("libsimple_library") != path.npos)
-                libsimple_library_found = true;
-        }
-
-        ASSERT_TRUE(libsimple_library_found);
+        ASSERT_TRUE(is_regular_file(tmpAppDir / "usr/lib" / libPath.filename()));
     }
 
     TEST_F(AppDirUnitTestsFixture, deployExecutable) {
@@ -97,22 +89,8 @@ namespace AppDirTest {
         appDir.deployExecutable(exePath);
         appDir.executeDeferredOperations();
 
-        bool libsimple_library_found = false;
-        bool simple_executable_found = false;
-        recursive_directory_iterator end_itr; // default construction yields past-the-end
-        for (recursive_directory_iterator itr(tmpAppDir);
-             itr != end_itr && (!libsimple_library_found || !simple_executable_found);
-             itr++) {
-            const auto path = relative(itr->path(), tmpAppDir).filename().string();
-
-            if (path.find("libsimple_library") != std::string::npos)
-                libsimple_library_found = true;
-
-            if (path.find("simple_executable") != std::string::npos)
-                simple_executable_found = true;
-        }
-
-        ASSERT_TRUE(libsimple_library_found && !simple_executable_found);
+        ASSERT_TRUE(is_regular_file(tmpAppDir / "usr/bin" / path(SIMPLE_EXECUTABLE_PATH).filename()));
+        ASSERT_TRUE(is_regular_file(tmpAppDir / "usr/lib" / path(SIMPLE_LIBRARY_PATH).filename()));
     }
 
     TEST_F(AppDirUnitTestsFixture, deployDesktopFile) {
@@ -120,16 +98,7 @@ namespace AppDirTest {
         appDir.deployDesktopFile(desktopFile);
         appDir.executeDeferredOperations();
 
-        bool simple_app_desktop_found = false;
-        recursive_directory_iterator end_itr; // default construction yields past-the-end
-        for (recursive_directory_iterator itr(tmpAppDir); itr != end_itr && (!simple_app_desktop_found); itr++) {
-            const auto path = relative(itr->path(), tmpAppDir).filename().string();
-
-            if (path.find("simple_app.desktop") != std::string::npos)
-                simple_app_desktop_found = true;
-        }
-
-        ASSERT_TRUE(simple_app_desktop_found);
+        ASSERT_TRUE(is_regular_file(tmpAppDir / "usr/share/applications" / path(SIMPLE_DESKTOP_ENTRY_PATH).filename()));
     }
 
 
@@ -138,34 +107,23 @@ namespace AppDirTest {
         appDir.deployIcon(iconPath);
         appDir.executeDeferredOperations();
 
-        bool simple_icon_found = false;
-        recursive_directory_iterator end_itr; // default construction yields past-the-end
-        for (recursive_directory_iterator itr(tmpAppDir); itr != end_itr && (!simple_icon_found); itr++) {
-            const auto path = relative(itr->path(), tmpAppDir).filename().string();
-
-            if (path.find("simple_icon.svg") != std::string::npos)
-                simple_icon_found = true;
-        }
-
-        ASSERT_TRUE(simple_icon_found);
+        ASSERT_TRUE(is_regular_file(tmpAppDir / "usr/share/icons/hicolor/scalable/apps" / path(SIMPLE_DESKTOP_ENTRY_PATH).filename()));
     }
 
-
-    TEST_F(AppDirUnitTestsFixture, deployFile) {
-        path filePath = SIMPLE_FILE_PATH;
-        appDir.deployFile(filePath, tmpAppDir / "usr/share/doc/simple_application/");
+    TEST_F(AppDirUnitTestsFixture, deployFileToDirectory) {
+        auto destination = tmpAppDir / "usr/share/doc/simple_application/";
+        appDir.deployFile(SIMPLE_FILE_PATH, destination);
         appDir.executeDeferredOperations();
 
-        bool simple_file_found = false;
-        recursive_directory_iterator end_itr; // default construction yields past-the-end
-        for (recursive_directory_iterator itr(tmpAppDir); itr != end_itr && (!simple_file_found); itr++) {
-            const auto path = relative(itr->path(), tmpAppDir).filename().string();
+        ASSERT_TRUE(is_regular_file(destination / path(SIMPLE_DESKTOP_ENTRY_PATH).filename()));
+    }
 
-            if (path.find("simple_file.txt") != std::string::npos)
-                simple_file_found = true;
-        }
+    TEST_F(AppDirUnitTestsFixture, deployFileToAbsoluteFilePath) {
+        auto destination = tmpAppDir / "usr/share/doc/simple_application/test123";
+        appDir.deployFile(SIMPLE_FILE_PATH, destination);
+        appDir.executeDeferredOperations();
 
-        ASSERT_TRUE(simple_file_found);
+        ASSERT_TRUE(is_regular_file(destination));
     }
 }
 
