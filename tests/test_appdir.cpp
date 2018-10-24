@@ -3,9 +3,9 @@
 
 using namespace linuxdeploy::core::appdir;
 using namespace linuxdeploy::core::desktopfile;
-
 using namespace boost::filesystem;
-namespace AppDirUnitTests {
+
+namespace AppDirTest {
     class AppDirUnitTestsFixture : public ::testing::Test {
     public:
         AppDirUnitTestsFixture() :
@@ -175,4 +175,9 @@ namespace AppDirUnitTests {
         if (!simple_file_found)
             FAIL();
     }
+}
+
+int main(int argc, char **argv) {
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }

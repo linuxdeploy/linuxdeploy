@@ -1,6 +1,5 @@
 #include <cstdio>
-
-extern "C" { void hello_world(); }
+#include <simple_library.h>
 
 int main() {
     printf("Hello World");
