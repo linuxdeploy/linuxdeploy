@@ -115,7 +115,7 @@ namespace AppDirTest {
         appDir.deployFile(SIMPLE_FILE_PATH, destination);
         appDir.executeDeferredOperations();
 
-        ASSERT_TRUE(is_regular_file(destination / path(SIMPLE_DESKTOP_ENTRY_PATH).filename()));
+        ASSERT_TRUE(is_regular_file(destination / path(SIMPLE_FILE_PATH).filename()));
     }
 
     TEST_F(AppDirUnitTestsFixture, deployFileToAbsoluteFilePath) {
