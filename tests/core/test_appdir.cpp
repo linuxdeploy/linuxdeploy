@@ -72,21 +72,18 @@ namespace AppDirTest {
 
 
     TEST_F(AppDirUnitTestsFixture, depoloyLibraryWrongPath) {
-        path libPath = "/lib/fakelib.so";
-        ASSERT_THROW(appDir.deployLibrary(libPath), std::exception);
+        ASSERT_THROW(appDir.deployLibrary("/lib/fakelib.so"), std::exception);
     }
 
     TEST_F(AppDirUnitTestsFixture, depoloyLibrary) {
-        path libPath = SIMPLE_LIBRARY_PATH;
-        appDir.deployLibrary(libPath);
+        appDir.deployLibrary(SIMPLE_LIBRARY_PATH);
         appDir.executeDeferredOperations();
 
-        ASSERT_TRUE(is_regular_file(tmpAppDir / "usr/lib" / libPath.filename()));
+        ASSERT_TRUE(is_regular_file(tmpAppDir / "usr/lib" / path(SIMPLE_LIBRARY_PATH).filename()));
     }
 
     TEST_F(AppDirUnitTestsFixture, deployExecutable) {
-        path exePath = SIMPLE_EXECUTABLE_PATH;
-        appDir.deployExecutable(exePath);
+        appDir.deployExecutable(SIMPLE_EXECUTABLE_PATH);
         appDir.executeDeferredOperations();
 
         ASSERT_TRUE(is_regular_file(tmpAppDir / "usr/bin" / path(SIMPLE_EXECUTABLE_PATH).filename()));
@@ -103,11 +100,10 @@ namespace AppDirTest {
 
 
     TEST_F(AppDirUnitTestsFixture, deployIcon) {
-        path iconPath = SIMPLE_ICON_PATH;
-        appDir.deployIcon(iconPath);
+        appDir.deployIcon(SIMPLE_ICON_PATH);
         appDir.executeDeferredOperations();
 
-        ASSERT_TRUE(is_regular_file(tmpAppDir / "usr/share/icons/hicolor/scalable/apps" / path(SIMPLE_DESKTOP_ENTRY_PATH).filename()));
+        ASSERT_TRUE(is_regular_file(tmpAppDir / "usr/share/icons/hicolor/scalable/apps" / path(SIMPLE_ICON_PATH).filename()));
     }
 
     TEST_F(AppDirUnitTestsFixture, deployFileToDirectory) {
