@@ -130,7 +130,7 @@ namespace AppDirTest {
         for (recursive_directory_iterator itr(tmpAppDir); itr != end_itr && (!simple_app_desktop_found); itr++) {
             const auto path = relative(itr->path(), tmpAppDir).filename().string();
 
-            if (path.find("simple_app.Desktop") != std::string::npos)
+            if (path.find("simple_app.desktop") != std::string::npos)
                 simple_app_desktop_found = true;
         }
 
