@@ -1,3 +1,5 @@
+include(CTest)
+
 add_library(subprocess INTERFACE)
 target_sources(subprocess INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/cpp-subprocess/subprocess.hpp)
 target_include_directories(subprocess INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/cpp-subprocess)
@@ -11,9 +13,11 @@ add_library(cpp-feather-ini-parser INTERFACE)
 target_sources(cpp-feather-ini-parser INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/cpp-feather-ini-parser/INI.h)
 target_include_directories(cpp-feather-ini-parser INTERFACE cpp-feather-ini-parser)
 
-add_executable(test_cpp_feather_ini_parser EXCLUDE_FROM_ALL ${CMAKE_CURRENT_SOURCE_DIR}/cpp-feather-ini-parser/example/example.cpp)
-target_link_libraries(test_cpp_feather_ini_parser PRIVATE cpp-feather-ini-parser)
-add_test(test_cpp_feather_ini_parser test_cpp_feather_ini_parser)
+if(BUILD_TESTING)
+    add_executable(test_cpp_feather_ini_parser ${CMAKE_CURRENT_SOURCE_DIR}/cpp-feather-ini-parser/example/example.cpp)
+    target_link_libraries(test_cpp_feather_ini_parser PRIVATE cpp-feather-ini-parser)
+    add_test(test_cpp_feather_ini_parser test_cpp_feather_ini_parser)
+endif()
 
 if(NOT USE_SYSTEM_BOOST)
     add_library(boost_config INTERFACE)
@@ -107,4 +111,8 @@ if(NOT USE_SYSTEM_BOOST)
         boost_config boost_predef boost_assert boost_throw_exception boost_smart_ptr boost_core boost_mpl
         boost_type_traits boost_static_assert boost_integer boost_preprocessor boost_functional boost_detail
     )
+endif()
+
+if(BUILD_TESTING)
+    add_subdirectory(googletest)
 endif()

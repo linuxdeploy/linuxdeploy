@@ -76,3 +76,6 @@
 [submodule "lib/CImg"]
 	path = lib/CImg
 	url = https://github.com/dtschump/CImg.git
+[submodule "lib/googletest"]
+	path = lib/googletest
+	url = https://github.com/google/googletest

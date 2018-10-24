@@ -1,0 +1,2 @@
+add_executable(simple_executable simple_executable.cpp)
+target_link_libraries(simple_executable simple_library pthread)

@@ -2,5 +2,4 @@ cmake-build-*/
 *build*/
 .idea/
 squashfs-root/
-tests/
 *.AppImage
