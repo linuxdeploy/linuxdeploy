@@ -1,7 +1,3 @@
-if(NOT TARGET gtest)
-    include(AddGoogleTest)
-endif()
-
 add_subdirectory(simple_library)
 add_subdirectory(simple_executable)
 
