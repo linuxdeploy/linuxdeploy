@@ -133,16 +133,45 @@ namespace linuxdeploy {
                     subprocess::environment(env)
                 );
 
-                auto lddOutput = lddProc.communicate();
-                auto& lddStdout = lddOutput.first;
-                auto& lddStderr = lddOutput.second;
+                std::vector<char> lddStdout, lddStderr;
+
+                // make file descriptors non-blocking
+                for (const auto& fd : {lddProc.output(), lddProc.error()}) {
+                    auto flags = fcntl(fileno(fd), F_GETFL, 0);
+                    flags |= O_NONBLOCK;
+                    fcntl(fileno(fd), F_SETFL, flags);
+                }
+
+                do {
+                    constexpr auto bufSize = 512*1024;
+                    std::vector<char> buf(bufSize, '\0');
+
+                    for (auto& fd : {lddProc.output(), lddProc.error()}) {
+                        auto& outBuf = fd == lddProc.output() ? lddStdout : lddStderr;
+
+                        auto size = fread(buf.data(), sizeof(char), buf.size(), fd);
+
+                        if (size < 0)
+                            throw std::runtime_error("Error reading fd");
+
+                        if (size == 0)
+                            continue;
+
+                        if (size > buf.size())
+                            throw std::runtime_error("Read more bytes than buffer size");
+
+                        auto outBufSize = outBuf.size();
+                        outBuf.reserve(outBufSize + size + 1);
+                        std::copy(buf.begin(), buf.begin() + size, std::back_inserter(outBuf));
+                    }
+                } while (lddProc.poll() < 0);
 
                 if (lddProc.retcode() != 0) {
-                    ldLog() << LD_ERROR << "Call to ldd failed:" << std::endl << lddStderr.buf.data() << std::endl;
+                    ldLog() << LD_ERROR << "Call to ldd failed:" << std::endl << lddStderr.data() << std::endl;
                     return {};
                 }
 
-                std::string lddStdoutContents(lddStdout.buf.data());
+                std::string lddStdoutContents(lddStdout.begin(), lddStdout.end());
 
                 const boost::regex expr(R"(\s*(.+)\s+\=>\s+(.+)\s+\((.+)\)\s*)");
                 boost::smatch what;
@@ -153,7 +182,7 @@ namespace linuxdeploy {
                         util::trim(libraryPath);
                         paths.push_back(bf::absolute(libraryPath));
                     } else {
-                        if (util::stringContains(line, "not found")) {
+                        if (util::stringContains(line, "=> not found")) {
                             auto missingLib = line;
                             static const std::string pattern = "=> not found";
                             missingLib.erase(missingLib.find(pattern), pattern.size());
