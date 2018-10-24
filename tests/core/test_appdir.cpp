@@ -62,14 +62,10 @@ namespace AppDirTest {
         recursive_directory_iterator end_itr; // default construction yields past-the-end
         for (recursive_directory_iterator itr(tmpAppDir); itr != end_itr; itr++) {
             std::string path = relative(itr->path(), tmpAppDir).string();
-            if (expected.find(path) == expected.end())
-                FAIL();
-            else
-                expected.erase(path);
+            ASSERT_NE(expected.find(path), expected.end());
+            expected.erase(path);
         }
-        if (!expected.empty())
-            FAIL();
-
+        ASSERT_TRUE(expected.empty());
     }
 
 
@@ -92,8 +88,7 @@ namespace AppDirTest {
                 libsimple_library_found = true;
         }
 
-        if (!libsimple_library_found)
-            FAIL();
+        ASSERT_TRUE(libsimple_library_found);
     }
 
     TEST_F(AppDirUnitTestsFixture, deployExecutable) {
@@ -116,8 +111,7 @@ namespace AppDirTest {
                 simple_executable_found = true;
         }
 
-        if (!libsimple_library_found || !simple_executable_found)
-            FAIL();
+        ASSERT_TRUE(libsimple_library_found && !simple_executable_found);
     }
 
     TEST_F(AppDirUnitTestsFixture, deployDesktopFile) {
@@ -134,8 +128,7 @@ namespace AppDirTest {
                 simple_app_desktop_found = true;
         }
 
-        if (!simple_app_desktop_found)
-            FAIL();
+        ASSERT_TRUE(simple_app_desktop_found);
     }
 
 
@@ -153,8 +146,7 @@ namespace AppDirTest {
                 simple_icon_found = true;
         }
 
-        if (!simple_icon_found)
-            FAIL();
+        ASSERT_TRUE(simple_icon_found);
     }
 
 
@@ -172,8 +164,7 @@ namespace AppDirTest {
                 simple_file_found = true;
         }
 
-        if (!simple_file_found)
-            FAIL();
+        ASSERT_TRUE(simple_file_found);
     }
 }
 
