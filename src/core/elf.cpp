@@ -163,7 +163,6 @@ namespace linuxdeploy {
                         auto outBufSize = outBuf.size();
                         outBuf.reserve(outBufSize + size + 1);
                         std::copy(buf.begin(), buf.begin() + size, std::back_inserter(outBuf));
-                        outBuf.push_back('\0');
                     }
                 } while (lddProc.poll() < 0);
 
