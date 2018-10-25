@@ -20,8 +20,7 @@ namespace linuxdeploy {
                 }
 
                 while (true) {
-                    constexpr auto bufSize = 1;
-//                    constexpr auto bufSize = 512*1024;
+                    constexpr auto bufSize = 4096;
                     std::vector<char> buf(bufSize, '\0');
 
                     for (auto& fd : {proc.output(), proc.error()}) {
