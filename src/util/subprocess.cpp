@@ -42,6 +42,7 @@ namespace linuxdeploy {
                         std::copy(buf.begin(), buf.begin() + size, std::back_inserter(outBuf));
                     }
 
+                    // make sure process exited and all data has been read from stdout and stderr
                     if (proc.poll() >= 0 && feof(proc.output()) != 0 && feof(proc.error()) != 0)
                         break;
                 }
