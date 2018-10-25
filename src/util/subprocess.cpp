@@ -19,7 +19,7 @@ namespace linuxdeploy {
                     fcntl(fileno(fd), F_SETFL, flags);
                 }
 
-                do {
+                while (true) {
                     constexpr auto bufSize = 1;
 //                    constexpr auto bufSize = 512*1024;
                     std::vector<char> buf(bufSize, '\0');
@@ -42,7 +42,10 @@ namespace linuxdeploy {
                         outBuf.reserve(outBufSize + size + 1);
                         std::copy(buf.begin(), buf.begin() + size, std::back_inserter(outBuf));
                     }
-                } while (proc.poll() < 0);
+
+                    if (proc.poll() >= 0 && feof(proc.output()) != 0 && feof(proc.error()) != 0)
+                        break;
+                }
 
                 std::string stdoutContents(procStdout.begin(), procStdout.end());
                 std::string stderrContents(procStderr.begin(), procStderr.end());
