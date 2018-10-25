@@ -198,12 +198,11 @@ namespace linuxdeploy {
                         subprocess::error(subprocess::PIPE)
                     );
 
-                    auto patchelfOutput = patchelfProc.communicate();
-                    auto& patchelfStdout = patchelfOutput.first;
-                    auto& patchelfStderr = patchelfOutput.second;
+                    const auto patchelfOutput = util::subprocess::check_output_error(patchelfProc);
+                    const auto& patchelfStderr = patchelfOutput.second;
 
                     if (patchelfProc.retcode() != 0) {
-                        ldLog() << LD_ERROR << "Call to patchelf failed:" << std::endl << patchelfStderr.buf;
+                        ldLog() << LD_ERROR << "Call to patchelf failed:" << std::endl << patchelfStderr << std::endl;
                         return false;
                     }
                 } catch (const std::exception&) {
