@@ -193,7 +193,7 @@ namespace linuxdeploy {
                                         subprocess::environment(env)
                                     );
 
-                                    std::string err = proc.communicate().second.buf.data();
+                                    std::string err = util::subprocess::check_output_error(proc).second;
 
                                     if (proc.retcode() != 0 &&
                                         !util::stringContains(err, "Not enough room for program headers")) {
