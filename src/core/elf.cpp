@@ -47,7 +47,6 @@ namespace linuxdeploy {
                     }
 
                 public:
-
                     void readDataUsingElfAPI() {
                         int fd = open(path.c_str(), O_RDONLY);
                         auto map_size = static_cast<size_t>(lseek(fd, 0, SEEK_END));
@@ -127,56 +126,18 @@ namespace linuxdeploy {
                 env.insert(std::make_pair(std::string("LC_ALL"), std::string("C")));
 
                 subprocess::Popen lddProc(
-                    {"ldd", d->path.string().c_str()},
-                    subprocess::output{subprocess::PIPE},
-                    subprocess::error{subprocess::PIPE},
-                    subprocess::environment(env)
+                        {"ldd", d->path.string().c_str()},
+                        subprocess::output{subprocess::PIPE},
+                        subprocess::error{subprocess::PIPE},
+                        subprocess::environment(env)
                 );
 
-                std::vector<char> lddStdout, lddStderr;
-
-                // make file descriptors non-blocking
-                for (const auto& fd : {lddProc.output(), lddProc.error()}) {
-                    auto flags = fcntl(fileno(fd), F_GETFL, 0);
-                    flags |= O_NONBLOCK;
-                    fcntl(fileno(fd), F_SETFL, flags);
-                }
-
-                do {
-                    constexpr auto bufSize = 512*1024;
-                    std::vector<char> buf(bufSize, '\0');
-
-                    for (auto& fd : {lddProc.output(), lddProc.error()}) {
-                        auto& outBuf = fd == lddProc.output() ? lddStdout : lddStderr;
-
-                        auto size = fread(buf.data(), sizeof(char), buf.size(), fd);
-
-                        if (size < 0)
-                            throw std::runtime_error("Error reading fd");
-
-                        if (size == 0)
-                            continue;
-
-                        if (size > buf.size())
-                            throw std::runtime_error("Read more bytes than buffer size");
-
-                        auto outBufSize = outBuf.size();
-                        outBuf.reserve(outBufSize + size + 1);
-                        std::copy(buf.begin(), buf.begin() + size, std::back_inserter(outBuf));
-                    }
-                } while (lddProc.poll() < 0);
-
-                if (lddProc.retcode() != 0) {
-                    ldLog() << LD_ERROR << "Call to ldd failed:" << std::endl << lddStderr.data() << std::endl;
-                    return {};
-                }
-
-                std::string lddStdoutContents(lddStdout.begin(), lddStdout.end());
+                auto outputAndError = util::subprocess::check_output_error(lddProc);
 
                 const boost::regex expr(R"(\s*(.+)\s+\=>\s+(.+)\s+\((.+)\)\s*)");
                 boost::smatch what;
 
-                for (const auto& line : util::splitLines(lddStdoutContents)) {
+                for (const auto& line : util::splitLines(outputAndError.first)) {
                     if (boost::regex_search(line, what, expr)) {
                         auto libraryPath = what[2].str();
                         util::trim(libraryPath);
@@ -206,28 +167,24 @@ namespace linuxdeploy {
                         subprocess::error(subprocess::PIPE)
                     );
 
-                    auto patchelfOutput = patchelfProc.communicate();
+                    auto patchelfOutput = util::subprocess::check_output_error(patchelfProc);
                     auto& patchelfStdout = patchelfOutput.first;
                     auto& patchelfStderr = patchelfOutput.second;
 
                     if (patchelfProc.retcode() != 0) {
-                        std::string errStr(patchelfStderr.buf.data());
-
                         // if file is not an ELF executable, there is no need for a detailed error message
-                        if (patchelfProc.retcode() == 1 && errStr.find("not an ELF executable")) {
+                        if (patchelfProc.retcode() == 1 && patchelfStderr.find("not an ELF executable")) {
                             return "";
                         } else {
-                            ldLog() << LD_ERROR << "Call to patchelf failed:" << std::endl << errStr;
+                            ldLog() << LD_ERROR << "Call to patchelf failed:" << std::endl << patchelfStderr;
                             return "";
                         }
                     }
 
+                    util::trim(patchelfStdout, '\n');
+                    util::trim(patchelfStdout);
 
-                    std::string retval = patchelfStdout.buf.data();
-                    util::trim(retval, '\n');
-                    util::trim(retval);
-
-                    return retval;
+                    return patchelfStdout;
                 } catch (const std::exception&) {
                     return "";
                 }
@@ -241,12 +198,11 @@ namespace linuxdeploy {
                         subprocess::error(subprocess::PIPE)
                     );
 
-                    auto patchelfOutput = patchelfProc.communicate();
-                    auto& patchelfStdout = patchelfOutput.first;
-                    auto& patchelfStderr = patchelfOutput.second;
+                    const auto patchelfOutput = util::subprocess::check_output_error(patchelfProc);
+                    const auto& patchelfStderr = patchelfOutput.second;
 
                     if (patchelfProc.retcode() != 0) {
-                        ldLog() << LD_ERROR << "Call to patchelf failed:" << std::endl << patchelfStderr.buf;
+                        ldLog() << LD_ERROR << "Call to patchelf failed:" << std::endl << patchelfStderr << std::endl;
                         return false;
                     }
                 } catch (const std::exception&) {

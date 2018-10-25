@@ -135,11 +135,11 @@ namespace linuxdeploy {
                             subprocess::error(subprocess::PIPE)
                         );
 
-                        auto outputs = proc.communicate();
+                        auto outputs = util::subprocess::check_output_error(proc);
 
                         if (proc.retcode() != 0) {
                             ldLog() << LD_ERROR << "ln subprocess failed:" << std::endl
-                                    << outputs.first.buf << std::endl << outputs.second.buf << std::endl;
+                                    << outputs.first << std::endl << outputs.second << std::endl;
                             return false;
                         }
 
@@ -193,7 +193,7 @@ namespace linuxdeploy {
                                         subprocess::environment(env)
                                     );
 
-                                    std::string err = proc.communicate().second.buf.data();
+                                    std::string err = util::subprocess::check_output_error(proc).second;
 
                                     if (proc.retcode() != 0 &&
                                         !util::stringContains(err, "Not enough room for program headers")) {
