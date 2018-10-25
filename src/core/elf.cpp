@@ -47,7 +47,6 @@ namespace linuxdeploy {
                     }
 
                 public:
-
                     void readDataUsingElfAPI() {
                         int fd = open(path.c_str(), O_RDONLY);
                         auto map_size = static_cast<size_t>(lseek(fd, 0, SEEK_END));
@@ -168,28 +167,24 @@ namespace linuxdeploy {
                         subprocess::error(subprocess::PIPE)
                     );
 
-                    auto patchelfOutput = patchelfProc.communicate();
+                    auto patchelfOutput = util::subprocess::check_output_error(patchelfProc);
                     auto& patchelfStdout = patchelfOutput.first;
                     auto& patchelfStderr = patchelfOutput.second;
 
                     if (patchelfProc.retcode() != 0) {
-                        std::string errStr(patchelfStderr.buf.data());
-
                         // if file is not an ELF executable, there is no need for a detailed error message
-                        if (patchelfProc.retcode() == 1 && errStr.find("not an ELF executable")) {
+                        if (patchelfProc.retcode() == 1 && patchelfStderr.find("not an ELF executable")) {
                             return "";
                         } else {
-                            ldLog() << LD_ERROR << "Call to patchelf failed:" << std::endl << errStr;
+                            ldLog() << LD_ERROR << "Call to patchelf failed:" << std::endl << patchelfStderr;
                             return "";
                         }
                     }
 
+                    util::trim(patchelfStdout, '\n');
+                    util::trim(patchelfStdout);
 
-                    std::string retval = patchelfStdout.buf.data();
-                    util::trim(retval, '\n');
-                    util::trim(retval);
-
-                    return retval;
+                    return patchelfStdout;
                 } catch (const std::exception&) {
                     return "";
                 }
