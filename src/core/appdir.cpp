@@ -135,11 +135,11 @@ namespace linuxdeploy {
                             subprocess::error(subprocess::PIPE)
                         );
 
-                        auto outputs = proc.communicate();
+                        auto outputs = util::subprocess::check_output_error(proc);
 
                         if (proc.retcode() != 0) {
                             ldLog() << LD_ERROR << "ln subprocess failed:" << std::endl
-                                    << outputs.first.buf << std::endl << outputs.second.buf << std::endl;
+                                    << outputs.first << std::endl << outputs.second << std::endl;
                             return false;
                         }
 
