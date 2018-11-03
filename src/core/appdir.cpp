@@ -20,6 +20,7 @@
 #include "excludelist.h"
 
 using namespace linuxdeploy::core;
+using namespace linuxdeploy::util::misc;
 using namespace linuxdeploy::core::log;
 
 using namespace cimg_library;
@@ -159,8 +160,10 @@ namespace linuxdeploy {
                             const auto& from = pair.first;
                             const auto& to = pair.second;
 
-                            if (!copyFile(from, to))
-                                success = false;
+                            if (path_contains_file(appDirPath, from)) {
+                                success = bf::exists(to) || symlinkFile(from, to, true); // create a symbolic link
+                            } else
+                                success = copyFile(from, to); // copy the file
 
                             copyOperations.erase(copyOperations.begin());
                         }
