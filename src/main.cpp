@@ -254,7 +254,7 @@ int main(int argc, char** argv) {
             return 1;
         }
     }
-    if (!linuxdeploy::deployAppDirRootFiles(desktopFilePaths, customAppRunPath, appDir))
+    if (!linuxdeploy::deployAppDirRootFiles(desktopFilePaths.Get(), customAppRunPath.Get(), appDir))
         return 1;
 
     if (outputPlugins) {

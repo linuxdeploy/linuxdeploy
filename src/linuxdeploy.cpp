@@ -14,13 +14,13 @@ using namespace linuxdeploy::util;
 namespace bf = boost::filesystem;
 
 namespace linuxdeploy {
-    int deployAppDirRootFiles(args::ValueFlagList<std::string>& desktopFilePaths,
-                              args::ValueFlag<std::string>& customAppRunPath, appdir::AppDir& appDir) {
+    int deployAppDirRootFiles(std::vector<std::string> desktopFilePaths,
+                              std::string customAppRunPath, appdir::AppDir& appDir) {
         // search for desktop file and deploy it to AppDir root
         ldLog() << std::endl << "-- Deploying files into AppDir root directory --" << std::endl;
 
         if (is_regular_file(appDir.path() / "AppRun")) {
-            if (customAppRunPath)
+            if (!customAppRunPath.empty())
                 ldLog() << LD_WARNING << "AppRun exists but custom AppRun specified, overwriting existing AppRun"
                         << std::endl;
             else
@@ -35,9 +35,9 @@ namespace linuxdeploy {
                         << "Could not find desktop file in AppDir, cannot create links for AppRun, desktop file and icon in AppDir root"
                         << std::endl;
             } else {
-                if (!desktopFilePaths.Get().empty()) {
+                if (!desktopFilePaths.empty()) {
                     auto firstDeployedDesktopFileName = boost::filesystem::path(
-                        desktopFilePaths.Get().front()).filename().string();
+                        desktopFilePaths.front()).filename().string();
 
                     auto desktopFileMatchingName = find_if(
                         deployedDesktopFiles.begin(),
@@ -65,8 +65,8 @@ namespace linuxdeploy {
 
                 bool rv;
 
-                if (customAppRunPath) {
-                    rv = appDir.createLinksInAppDirRoot(desktopFile, customAppRunPath.Get());
+                if (!customAppRunPath.empty()) {
+                    rv = appDir.createLinksInAppDirRoot(desktopFile, customAppRunPath);
                 } else {
                     rv = appDir.createLinksInAppDirRoot(desktopFile);
                 }
