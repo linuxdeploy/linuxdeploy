@@ -61,19 +61,20 @@ namespace linuxdeploy {
                             << desktopFile.path() << std::endl;
                 }
 
-                ldLog() << "Deploying desktop file:" << desktopFile.path() << std::endl;
+            }
 
-                bool rv;
+            ldLog() << "Deploying desktop file:" << desktopFile.path() << std::endl;
 
-                if (!customAppRunPath.empty()) {
-                    rv = appDir.createLinksInAppDirRoot(desktopFile, customAppRunPath);
-                } else {
-                    rv = appDir.createLinksInAppDirRoot(desktopFile);
-                }
+            bool rv;
 
-                if (!rv) {
-                    return 1;
-                }
+            if (!customAppRunPath.empty()) {
+                rv = appDir.createLinksInAppDirRoot(desktopFile, customAppRunPath);
+            } else {
+                rv = appDir.createLinksInAppDirRoot(desktopFile);
+            }
+
+            if (!rv) {
+                return 1;
             }
         }
         return true;
