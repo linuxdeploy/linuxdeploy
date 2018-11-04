@@ -2,18 +2,39 @@
 
 #include "linuxdeploy.h"
 
+using namespace std;
 using namespace boost::filesystem;
 
 namespace LinuxDeployTest {
     class LinuxDeployTestsFixture : public ::testing::Test {
     public:
         path tmpAppDir;
+        path source_executable_path;
+        path target_executable_path;
 
+        path source_desktop_path;
+        path target_desktop_path;
+
+        path source_icon_path;
+        path target_icon_path;
+
+        path source_apprun_path;
+        path target_apprun_path;
     public:
         LinuxDeployTestsFixture() = default;
 
         void SetUp() override {
             tmpAppDir = temp_directory_path() / unique_path("linuxdeploy-tests-%%%%-%%%%-%%%%");
+            source_executable_path = SIMPLE_EXECUTABLE_PATH;
+            target_executable_path = tmpAppDir / "usr/bin" / source_executable_path.filename();
+
+            source_desktop_path = SIMPLE_DESKTOP_ENTRY_PATH;
+            target_desktop_path = tmpAppDir / "usr/share/applications" / source_desktop_path.filename();
+            source_icon_path = SIMPLE_ICON_PATH;
+            target_icon_path = tmpAppDir / "usr/share/icons/hicolor/scalable/apps" / source_icon_path.filename();
+            source_apprun_path = SIMPLE_FILE_PATH;
+            target_apprun_path = tmpAppDir / "AppRun";
+
             create_directories(tmpAppDir);
         }
 
@@ -37,30 +58,24 @@ namespace LinuxDeployTest {
             add_icon();
         }
 
-        void add_executable() const {
-            path source_executable_path = SIMPLE_EXECUTABLE_PATH;
-            path target_executable_path = tmpAppDir / "usr/bin" / source_executable_path.filename();
+        path add_executable() const {
             create_directories(target_executable_path.parent_path());
             copy_file(source_executable_path, target_executable_path);
+
+            return target_executable_path;
         }
 
         void add_desktop() const {
-            path source_desktop_path = SIMPLE_DESKTOP_ENTRY_PATH;
-            path target_desktop_path = tmpAppDir / "usr/share/applications" / source_desktop_path.filename();
             create_directories(target_desktop_path.parent_path());
             copy_file(source_desktop_path, target_desktop_path);
         }
 
         void add_icon() const {
-            path source_icon_path = SIMPLE_ICON_PATH;
-            path target_icon_path = tmpAppDir / "usr/share/icons/hicolor/scalable/apps" / source_icon_path.filename();
             create_directories(target_icon_path.parent_path());
             copy_file(source_icon_path, target_icon_path);
         }
 
         void add_apprun() const {
-            path source_apprun_path = SIMPLE_FILE_PATH;
-            path target_apprun_path = tmpAppDir / "AppRun";
             copy_file(source_apprun_path, target_apprun_path);
         }
     };
@@ -69,6 +84,12 @@ namespace LinuxDeployTest {
         fillRegularAppDir();
         add_apprun();
 
-        listDeployedFiles();
+        linuxdeploy::core::appdir::AppDir appDir(tmpAppDir);
+        linuxdeploy::deployAppDirRootFiles({}, "", appDir);
+
+        ASSERT_TRUE(exists(tmpAppDir / source_desktop_path.filename()));
+        ASSERT_TRUE(exists(tmpAppDir / source_icon_path.filename()));
+        ASSERT_TRUE(exists(tmpAppDir / ".DirIcon"));
+        ASSERT_TRUE(exists(target_apprun_path));
     }
 }
