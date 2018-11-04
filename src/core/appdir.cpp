@@ -47,7 +47,11 @@ namespace linuxdeploy {
                     // used to automatically rename resources to improve the UX, e.g. icons
                     std::string appName;
 
+                    // platform dependent implementation of copyright files deployment
                     std::shared_ptr<copyright::ICopyrightFilesManager> copyrightFilesManager;
+
+                    // decides whether copyright files deployment is performed
+                    bool disableCopyrightFilesDeployment = false;
 
                 public:
                     PrivateData() : copyOperations(), stripOperations(), setElfRPathOperations(), visitedFiles(), appDirPath(), appName() {
@@ -228,6 +232,9 @@ namespace linuxdeploy {
 
                     // search for copyright file for file and deploy it to AppDir
                     bool deployCopyrightFiles(const bf::path& from, const std::string& logPrefix = "") {
+                        if (disableCopyrightFilesDeployment)
+                            return true;
+
                         ldLog() << logPrefix << LD_NO_SPACE << "Deploying copyright files for file" << from << std::endl;
 
                         if (copyrightFilesManager == nullptr)
@@ -827,6 +834,10 @@ namespace linuxdeploy {
                 }
 
                 return true;
+            }
+
+            bool AppDir::setDisableCopyrightFilesDeployment(bool disable) {
+                d->disableCopyrightFilesDeployment = disable;
             }
         }
     }
