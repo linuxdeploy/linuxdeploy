@@ -254,7 +254,7 @@ int main(int argc, char** argv) {
             return 1;
         }
     }
-    if (!deployAppDirRootFiles(desktopFilePaths, customAppRunPath, appDir))
+    if (!linuxdeploy::deployAppDirRootFiles(desktopFilePaths, customAppRunPath, appDir))
         return 1;
 
     if (outputPlugins) {

@@ -7,7 +7,8 @@
 #include <linuxdeploy/core/log.h>
 #include <linuxdeploy/util/util.h>
 #include <args.hxx>
-
-int deployAppDirRootFiles(args::ValueFlagList<std::string>& desktopFilePaths,
-                          args::ValueFlag<std::string>& customAppRunPath,
-                          linuxdeploy::core::appdir::AppDir& appDir);
+namespace linuxdeploy {
+    int deployAppDirRootFiles(args::ValueFlagList<std::string>& desktopFilePaths,
+                              args::ValueFlag<std::string>& customAppRunPath,
+                              linuxdeploy::core::appdir::AppDir& appDir);
+}
