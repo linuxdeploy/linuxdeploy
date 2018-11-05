@@ -20,7 +20,7 @@ namespace LinuxDeployTest {
 
         bf::path source_apprun_path;
         bf::path target_apprun_path;
-    public:
+
         LinuxDeployTestsFixture() = default;
 
         void SetUp() override {
