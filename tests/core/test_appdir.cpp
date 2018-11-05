@@ -135,6 +135,7 @@ namespace AppDirTest {
         auto expected = relative(destination, tmpAppDir);
         ASSERT_TRUE(res == expected);
 
+//        // Hard links are not supported yet by createSymlink that's why this test is commented
 //        appDir.createSymlink(destination,tmpAppDir / "hardlink", false);
 //        auto res = read_symlink(tmpAppDir / "hardlink");
 //        std::cout << destination << std::endl;
