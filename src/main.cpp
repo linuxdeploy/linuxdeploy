@@ -18,6 +18,7 @@ using namespace linuxdeploy::core;
 
 using namespace linuxdeploy::core::log;
 using namespace linuxdeploy::util;
+
 namespace bf = boost::filesystem;
 
 int main(int argc, char** argv) {
