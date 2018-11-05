@@ -42,6 +42,7 @@ namespace linuxdeploy {
             ldLog() << LD_WARNING
                     << "Could not find desktop file in AppDir, cannot create links for AppRun, desktop file and icon in AppDir root"
                     << std::endl;
+            throw std::runtime_error("Can't find desktop files in AppDir.");
         } else {
             if (!desktopFilePaths.empty()) {
                 auto firstDeployedDesktopFileName = boost::filesystem::path(
