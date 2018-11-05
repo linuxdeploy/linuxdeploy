@@ -30,7 +30,7 @@ target_compile_definitions(test_linuxdeploy PRIVATE
     -DSIMPLE_DESKTOP_ENTRY_PATH="${CMAKE_CURRENT_SOURCE_DIR}/../data/simple_app.desktop"
     -DSIMPLE_ICON_PATH="${CMAKE_CURRENT_SOURCE_DIR}/../data/simple_icon.svg"
     -DSIMPLE_FILE_PATH="${CMAKE_CURRENT_SOURCE_DIR}/../data/simple_file.txt"
-    )
+)
 
 # register in CTest
 add_test(test_linuxdeploy test_linuxdeploy)
