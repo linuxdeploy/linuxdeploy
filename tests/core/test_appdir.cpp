@@ -129,14 +129,14 @@ namespace AppDirTest {
 
         ASSERT_TRUE(is_regular_file(destination));
 
-        appDir.createSymlink(destination, tmpAppDir / "relative_link", true);
+        appDir.createRelativeSymlink(destination, tmpAppDir / "relative_link");
 
         auto res = read_symlink(tmpAppDir / "relative_link");
         auto expected = relative(destination, tmpAppDir);
         ASSERT_TRUE(res == expected);
 
-//        // Hard links are not supported yet by createSymlink that's why this test is commented
-//        appDir.createSymlink(destination,tmpAppDir / "hardlink", false);
+//        // Hard links are not supported yet by createRelativeSymlink that's why this test is commented
+//        appDir.createRelativeSymlink(destination,tmpAppDir / "hardlink", false);
 //        auto res = read_symlink(tmpAppDir / "hardlink");
 //        std::cout << destination << std::endl;
 //        std::cout << res << std::endl;
