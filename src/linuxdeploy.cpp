@@ -26,25 +26,15 @@ namespace linuxdeploy {
 
         try {
             desktopfile::DesktopFile desktopFile = getMainDesktopFile(desktopFilePaths, deployedDesktopFiles);
-
             ldLog() << "Deploying desktop file:" << desktopFile.path() << std::endl;
+            if (!appDir.createLinksInAppDirRoot(desktopFile, customAppRunPath))
+                return -1;
 
-            bool rv;
-
-            if (!customAppRunPath.empty()) {
-                rv = appDir.createLinksInAppDirRoot(desktopFile, customAppRunPath);
-            } else {
-                rv = appDir.createLinksInAppDirRoot(desktopFile);
-            }
-
-            if (!rv) {
-                return 1;
-            }
         } catch (const std::runtime_error& er) {
             return -1;
         }
-        
-        return true;
+
+        return 1;
     }
 
     desktopfile::DesktopFile getMainDesktopFile(std::vector<std::string>& desktopFilePaths,
