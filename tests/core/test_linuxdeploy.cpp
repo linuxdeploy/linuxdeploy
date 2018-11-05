@@ -89,7 +89,6 @@ namespace LinuxDeployTest {
 
         ASSERT_TRUE(exists(tmpAppDir / source_desktop_path.filename()));
         ASSERT_TRUE(exists(tmpAppDir / source_icon_path.filename()));
-        ASSERT_TRUE(exists(tmpAppDir / ".DirIcon"));
         ASSERT_TRUE(exists(target_apprun_path));
     }
 }
