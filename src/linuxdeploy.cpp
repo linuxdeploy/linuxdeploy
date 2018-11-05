@@ -17,8 +17,8 @@ namespace linuxdeploy {
     desktopfile::DesktopFile getMainDesktopFile(std::vector<std::string>& desktopFilePaths,
                                                 std::vector<desktopfile::DesktopFile>& deployedDesktopFiles);
 
-    int deployAppDirRootFiles(std::vector<std::string> desktopFilePaths,
-                              std::string customAppRunPath, appdir::AppDir& appDir) {
+    bool deployAppDirRootFiles(std::vector<std::string> desktopFilePaths,
+                               std::string customAppRunPath, appdir::AppDir& appDir) {
         // search for desktop file and deploy it to AppDir root
         ldLog() << std::endl << "-- Deploying files into AppDir root directory --" << std::endl;
 
@@ -28,13 +28,13 @@ namespace linuxdeploy {
             desktopfile::DesktopFile desktopFile = getMainDesktopFile(desktopFilePaths, deployedDesktopFiles);
             ldLog() << "Deploying desktop file:" << desktopFile.path() << std::endl;
             if (!appDir.createLinksInAppDirRoot(desktopFile, customAppRunPath))
-                return -1;
+                return false;
 
         } catch (const std::runtime_error& er) {
-            return -1;
+            return false;
         }
 
-        return 1;
+        return true;
     }
 
     desktopfile::DesktopFile getMainDesktopFile(std::vector<std::string>& desktopFilePaths,
