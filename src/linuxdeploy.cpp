@@ -11,8 +11,8 @@ using namespace linuxdeploy::core::log;
 namespace bf = boost::filesystem;
 
 namespace linuxdeploy {
-    desktopfile::DesktopFile getMainDesktopFile(std::vector<std::string>& desktopFilePaths,
-                                                std::vector<desktopfile::DesktopFile>& deployedDesktopFiles);
+    desktopfile::DesktopFile getMainDesktopFile(const std::vector<std::string>& desktopFilePaths,
+                                                const std::vector<desktopfile::DesktopFile>& deployedDesktopFiles);
 
     bool deployAppDirRootFiles(std::vector<std::string> desktopFilePaths,
                                std::string customAppRunPath, appdir::AppDir& appDir) {
@@ -34,8 +34,8 @@ namespace linuxdeploy {
         return true;
     }
 
-    desktopfile::DesktopFile getMainDesktopFile(std::vector<std::string>& desktopFilePaths,
-                                                std::vector<desktopfile::DesktopFile>& deployedDesktopFiles) {
+    desktopfile::DesktopFile getMainDesktopFile(const std::vector<std::string>& desktopFilePaths,
+                                                const std::vector<desktopfile::DesktopFile>& deployedDesktopFiles) {
         desktopfile::DesktopFile desktopFile;
 
         if (deployedDesktopFiles.empty()) {
