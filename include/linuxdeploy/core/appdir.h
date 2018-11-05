@@ -61,6 +61,9 @@ namespace linuxdeploy {
                     // deploy arbitrary file
                     void deployFile(const boost::filesystem::path& from, const boost::filesystem::path& to);
 
+                    // create a symlink to <target> at <symlink>
+                    void symlinkFile(const boost::filesystem::path& target, const boost::filesystem::path& symlink, const bool useRelativePath = true);
+
                     // execute deferred copy operations
                     bool executeDeferredOperations();
 

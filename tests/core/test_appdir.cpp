@@ -121,6 +121,29 @@ namespace AppDirTest {
 
         ASSERT_TRUE(is_regular_file(destination));
     }
+
+    TEST_F(AppDirUnitTestsFixture, symlinkFile) {
+        auto destination = tmpAppDir / "usr/share/doc/simple_application/test123";
+        appDir.deployFile(SIMPLE_FILE_PATH, destination);
+        appDir.executeDeferredOperations();
+
+        ASSERT_TRUE(is_regular_file(destination));
+
+
+        appDir.symlinkFile(destination,tmpAppDir / "relative_link", true);
+
+        auto res = read_symlink(tmpAppDir / "relative_link");
+        auto expected = relative(destination, tmpAppDir);
+        ASSERT_TRUE(res == expected);
+
+
+//        appDir.symlinkFile(destination,tmpAppDir / "absolute_link", false);
+//        auto res = read_symlink(tmpAppDir / "absolute_link");
+//        std::cout << destination << std::endl;
+//        std::cout << res << std::endl;
+//        ASSERT_TRUE(res == destination);
+
+    }
 }
 
 int main(int argc, char **argv) {
