@@ -8,7 +8,6 @@
 #include <linuxdeploy/util/util.h>
 
 namespace linuxdeploy {
-    bool deployAppDirRootFiles(std::vector<std::string> desktopFilePaths,
-                               std::string customAppRunPath,
+    bool deployAppDirRootFiles(std::vector<std::string> desktopFilePaths, std::string customAppRunPath,
                                linuxdeploy::core::appdir::AppDir& appDir);
 }
