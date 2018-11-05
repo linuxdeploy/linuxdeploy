@@ -11,6 +11,14 @@ using namespace linuxdeploy::core::log;
 namespace bf = boost::filesystem;
 
 namespace linuxdeploy {
+    /**
+     * Resolved the 'MAIN' desktop file from all the available.
+     *
+     * @param desktopFilePaths
+     * @param deployedDesktopFiles
+     * @return the MAIN DesktopFile
+     * @throw std::runtime_error in case of error
+     */
     desktopfile::DesktopFile getMainDesktopFile(const std::vector<std::string>& desktopFilePaths,
                                                 const std::vector<desktopfile::DesktopFile>& deployedDesktopFiles) {
         desktopfile::DesktopFile desktopFile;
