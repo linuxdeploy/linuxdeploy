@@ -769,7 +769,7 @@ namespace linuxdeploy {
                 return d->deployFile(from, to, true);
             }
 
-            void AppDir::symlinkFile(const bf::path& target, const bf::path& symlink, const bool useRelativePath) {
+            void AppDir::createSymlink(const bf::path& target, const bf::path& symlink, const bool useRelativePath) {
                 d->symlinkFile(target, symlink, useRelativePath);
             }
 
