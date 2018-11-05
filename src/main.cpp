@@ -15,7 +15,6 @@
 #include "linuxdeploy.h"
 
 using namespace linuxdeploy::core;
-
 using namespace linuxdeploy::core::log;
 using namespace linuxdeploy::util;
 
