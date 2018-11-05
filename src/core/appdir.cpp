@@ -8,7 +8,6 @@
 #include <CImg.h>
 #include <fnmatch.h>
 #include <subprocess.hpp>
-#include <linuxdeploy/core/appdir.h>
 
 
 // local headers
