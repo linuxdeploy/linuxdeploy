@@ -3,28 +3,28 @@
 #include "linuxdeploy.h"
 
 using namespace std;
-using namespace boost::filesystem;
+namespace bf = boost::filesystem;
 
 namespace LinuxDeployTest {
     class LinuxDeployTestsFixture : public ::testing::Test {
     public:
-        path tmpAppDir;
-        path source_executable_path;
-        path target_executable_path;
+        bf::path tmpAppDir;
+        bf::path source_executable_path;
+        bf::path target_executable_path;
 
-        path source_desktop_path;
-        path target_desktop_path;
+        bf::path source_desktop_path;
+        bf::path target_desktop_path;
 
-        path source_icon_path;
-        path target_icon_path;
+        bf::path source_icon_path;
+        bf::path target_icon_path;
 
-        path source_apprun_path;
-        path target_apprun_path;
+        bf::path source_apprun_path;
+        bf::path target_apprun_path;
     public:
         LinuxDeployTestsFixture() = default;
 
         void SetUp() override {
-            tmpAppDir = temp_directory_path() / unique_path("linuxdeploy-tests-%%%%-%%%%-%%%%");
+            tmpAppDir = bf::temp_directory_path() / bf::unique_path("linuxdeploy-tests-%%%%-%%%%-%%%%");
             source_executable_path = SIMPLE_EXECUTABLE_PATH;
             target_executable_path = tmpAppDir / "usr/bin" / source_executable_path.filename();
 
@@ -46,8 +46,8 @@ namespace LinuxDeployTest {
 
         void listDeployedFiles() {
             std::cout << "Files deployed in AppDir:" << std::endl;
-            recursive_directory_iterator end_itr; // default construction yields past-the-end
-            for (recursive_directory_iterator itr(tmpAppDir); itr != end_itr; itr++) {
+            bf::recursive_directory_iterator end_itr; // default construction yields past-the-end
+            for (bf::recursive_directory_iterator itr(tmpAppDir); itr != end_itr; itr++) {
                 std::cout << relative(itr->path(), tmpAppDir).string() << std::endl;
             }
         }
@@ -58,7 +58,7 @@ namespace LinuxDeployTest {
             add_icon();
         }
 
-        path add_executable() const {
+        bf::path add_executable() const {
             create_directories(target_executable_path.parent_path());
             copy_file(source_executable_path, target_executable_path);
 
