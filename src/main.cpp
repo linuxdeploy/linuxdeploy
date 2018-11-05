@@ -91,6 +91,12 @@ int main(int argc, char** argv) {
 
     appdir::AppDir appDir(appDirPath.Get());
 
+    // allow disabling copyright files deployment via environment variable
+    if (getenv("DISABLE_COPYRIGHT_FILES_DEPLOYMENT") != nullptr) {
+        ldLog() << std::endl << LD_WARNING << "Copyright files deployment disabled" << std::endl;
+        appDir.setDisableCopyrightFilesDeployment(true);
+    }
+
     // initialize AppDir with common directories
     ldLog() << std::endl << "-- Creating basic AppDir structure --" << std::endl;
     if (!appDir.createBasicStructure()) {

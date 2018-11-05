@@ -94,6 +94,9 @@ namespace linuxdeploy {
                     // calling this function can turn sure file trees created by make install commands into working
                     // AppDirs
                     bool deployDependenciesForExistingFiles();
+
+                    // disable deployment of copyright files for this instance
+                    bool setDisableCopyrightFilesDeployment(bool disable);
             };
         }
     }
