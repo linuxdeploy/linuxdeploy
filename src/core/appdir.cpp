@@ -9,6 +9,7 @@
 #include <fnmatch.h>
 #include <subprocess.hpp>
 
+
 // local headers
 #include "linuxdeploy/core/appdir.h"
 #include "linuxdeploy/core/elf.h"
@@ -772,6 +773,10 @@ namespace linuxdeploy {
 
             void AppDir::deployFile(const boost::filesystem::path& from, const boost::filesystem::path& to) {
                 return d->deployFile(from, to, true);
+            }
+
+            bool AppDir::createRelativeSymlink(const bf::path& target, const bf::path& symlink) {
+                d->symlinkFile(target, symlink, true);
             }
 
             std::vector<bf::path> AppDir::listExecutables() {

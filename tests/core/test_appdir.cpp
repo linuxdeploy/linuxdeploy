@@ -121,6 +121,20 @@ namespace AppDirTest {
 
         ASSERT_TRUE(is_regular_file(destination));
     }
+
+    TEST_F(AppDirUnitTestsFixture, createSymlink) {
+        auto destination = tmpAppDir / "usr/share/doc/simple_application/test123";
+        appDir.deployFile(SIMPLE_FILE_PATH, destination);
+        appDir.executeDeferredOperations();
+
+        ASSERT_TRUE(is_regular_file(destination));
+
+        appDir.createRelativeSymlink(destination, tmpAppDir / "relative_link");
+
+        auto res = read_symlink(tmpAppDir / "relative_link");
+        auto expected = relative(destination, tmpAppDir);
+        ASSERT_TRUE(res == expected);
+    }
 }
 
 int main(int argc, char **argv) {
