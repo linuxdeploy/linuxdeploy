@@ -122,7 +122,7 @@ namespace AppDirTest {
         ASSERT_TRUE(is_regular_file(destination));
     }
 
-    TEST_F(AppDirUnitTestsFixture, symlinkFile) {
+    TEST_F(AppDirUnitTestsFixture, createSymlink) {
         auto destination = tmpAppDir / "usr/share/doc/simple_application/test123";
         appDir.deployFile(SIMPLE_FILE_PATH, destination);
         appDir.executeDeferredOperations();
