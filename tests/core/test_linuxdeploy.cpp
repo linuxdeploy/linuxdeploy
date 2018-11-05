@@ -21,8 +21,6 @@ namespace LinuxDeployTest {
         bf::path source_apprun_path;
         bf::path target_apprun_path;
 
-        LinuxDeployTestsFixture() = default;
-
         void SetUp() override {
             tmpAppDir = bf::temp_directory_path() / bf::unique_path("linuxdeploy-tests-%%%%-%%%%-%%%%");
             source_executable_path = SIMPLE_EXECUTABLE_PATH;
