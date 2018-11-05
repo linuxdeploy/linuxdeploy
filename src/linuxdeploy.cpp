@@ -12,29 +12,6 @@ namespace bf = boost::filesystem;
 
 namespace linuxdeploy {
     desktopfile::DesktopFile getMainDesktopFile(const std::vector<std::string>& desktopFilePaths,
-                                                const std::vector<desktopfile::DesktopFile>& deployedDesktopFiles);
-
-    bool deployAppDirRootFiles(std::vector<std::string> desktopFilePaths,
-                               std::string customAppRunPath, appdir::AppDir& appDir) {
-        // search for desktop file and deploy it to AppDir root
-        ldLog() << std::endl << "-- Deploying files into AppDir root directory --" << std::endl;
-
-        auto deployedDesktopFiles = appDir.deployedDesktopFiles();
-
-        try {
-            desktopfile::DesktopFile desktopFile = getMainDesktopFile(desktopFilePaths, deployedDesktopFiles);
-            ldLog() << "Deploying desktop file:" << desktopFile.path() << std::endl;
-            if (!appDir.createLinksInAppDirRoot(desktopFile, customAppRunPath))
-                return false;
-
-        } catch (const std::runtime_error& er) {
-            return false;
-        }
-
-        return true;
-    }
-
-    desktopfile::DesktopFile getMainDesktopFile(const std::vector<std::string>& desktopFilePaths,
                                                 const std::vector<desktopfile::DesktopFile>& deployedDesktopFiles) {
         desktopfile::DesktopFile desktopFile;
 
@@ -72,5 +49,25 @@ namespace linuxdeploy {
 
         }
         return desktopFile;
+    }
+
+    bool deployAppDirRootFiles(std::vector<std::string> desktopFilePaths,
+                               std::string customAppRunPath, appdir::AppDir& appDir) {
+        // search for desktop file and deploy it to AppDir root
+        ldLog() << std::endl << "-- Deploying files into AppDir root directory --" << std::endl;
+
+        auto deployedDesktopFiles = appDir.deployedDesktopFiles();
+
+        try {
+            desktopfile::DesktopFile desktopFile = getMainDesktopFile(desktopFilePaths, deployedDesktopFiles);
+            ldLog() << "Deploying desktop file:" << desktopFile.path() << std::endl;
+            if (!appDir.createLinksInAppDirRoot(desktopFile, customAppRunPath))
+                return false;
+
+        } catch (const std::runtime_error& er) {
+            return false;
+        }
+
+        return true;
     }
 }
