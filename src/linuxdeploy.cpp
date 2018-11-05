@@ -3,14 +3,11 @@
 
 #include <linuxdeploy/core/appdir.h>
 #include <linuxdeploy/core/log.h>
-#include <linuxdeploy/util/util.h>
 
 #include "linuxdeploy.h"
 
 using namespace linuxdeploy::core;
-
 using namespace linuxdeploy::core::log;
-using namespace linuxdeploy::util;
 namespace bf = boost::filesystem;
 
 namespace linuxdeploy {
