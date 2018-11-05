@@ -22,35 +22,28 @@ namespace linuxdeploy {
         // search for desktop file and deploy it to AppDir root
         ldLog() << std::endl << "-- Deploying files into AppDir root directory --" << std::endl;
 
-        if (is_regular_file(appDir.path() / "AppRun")) {
-            if (!customAppRunPath.empty())
-                ldLog() << LD_WARNING << "AppRun exists but custom AppRun specified, overwriting existing AppRun"
-                        << std::endl;
-            else
-                ldLog() << LD_WARNING << "AppRun exists, skipping deployment" << std::endl;
-        } else {
-            auto deployedDesktopFiles = appDir.deployedDesktopFiles();
+        auto deployedDesktopFiles = appDir.deployedDesktopFiles();
 
-            try {
-                desktopfile::DesktopFile desktopFile = getMainDesktopFile(desktopFilePaths, deployedDesktopFiles);
+        try {
+            desktopfile::DesktopFile desktopFile = getMainDesktopFile(desktopFilePaths, deployedDesktopFiles);
 
-                ldLog() << "Deploying desktop file:" << desktopFile.path() << std::endl;
+            ldLog() << "Deploying desktop file:" << desktopFile.path() << std::endl;
 
-                bool rv;
+            bool rv;
 
-                if (!customAppRunPath.empty()) {
-                    rv = appDir.createLinksInAppDirRoot(desktopFile, customAppRunPath);
-                } else {
-                    rv = appDir.createLinksInAppDirRoot(desktopFile);
-                }
-
-                if (!rv) {
-                    return 1;
-                }
-            } catch (const std::runtime_error& er) {
-                return -1;
+            if (!customAppRunPath.empty()) {
+                rv = appDir.createLinksInAppDirRoot(desktopFile, customAppRunPath);
+            } else {
+                rv = appDir.createLinksInAppDirRoot(desktopFile);
             }
+
+            if (!rv) {
+                return 1;
+            }
+        } catch (const std::runtime_error& er) {
+            return -1;
         }
+        
         return true;
     }
 
