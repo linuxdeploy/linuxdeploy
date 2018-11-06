@@ -59,6 +59,13 @@ namespace linuxdeploy {
 
         if (!customAppRunPath.empty()) {
             ldLog() << LD_INFO << "Deploying custom AppRun: " << customAppRunPath << std::endl;
+
+            const auto& appRunPathInAppDir = appDir.path() / "AppRun";
+            if (bf::exists(appRunPathInAppDir)) {
+                ldLog() << LD_WARNING << "File exists, replacing with custom AppRun" << std::endl;
+                bf::remove(appRunPathInAppDir);
+            }
+
             appDir.deployFile(customAppRunPath, appDir.path() / "AppRun");
             appDir.executeDeferredOperations();
         }
