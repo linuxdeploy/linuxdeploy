@@ -4,7 +4,7 @@
 #include <linuxdeploy/core/appdir.h>
 #include <linuxdeploy/core/log.h>
 
-#include "linuxdeploy.h"
+#include "core.h"
 
 using namespace linuxdeploy::core;
 using namespace linuxdeploy::core::log;

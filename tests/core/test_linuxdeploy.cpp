@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 
-#include "linuxdeploy.h"
+#include "core.h"
 
 using namespace std;
 namespace bf = boost::filesystem;

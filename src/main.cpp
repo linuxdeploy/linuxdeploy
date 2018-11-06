@@ -12,7 +12,7 @@
 #include "linuxdeploy/core/log.h"
 #include "linuxdeploy/plugin/plugin.h"
 #include "linuxdeploy/util/util.h"
-#include "linuxdeploy.h"
+#include "core.h"
 
 using namespace linuxdeploy::core;
 using namespace linuxdeploy::core::log;

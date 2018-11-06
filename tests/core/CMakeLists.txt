@@ -19,7 +19,7 @@ add_dependencies(test_appdir simple_library simple_executable)
 
 
 
-add_executable(test_linuxdeploy test_linuxdeploy.cpp ../../src/linuxdeploy.cpp)
+add_executable(test_linuxdeploy test_linuxdeploy.cpp ../../src/core.cpp)
 target_link_libraries(test_linuxdeploy PRIVATE linuxdeploy_core args gtest gtest_main)
 target_include_directories(test_linuxdeploy PRIVATE ${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/src)
 
