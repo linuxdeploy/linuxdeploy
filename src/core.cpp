@@ -57,6 +57,12 @@ namespace linuxdeploy {
                                std::string customAppRunPath, appdir::AppDir& appDir) {
         ldLog() << std::endl << "-- Deploying files into AppDir root directory --" << std::endl;
 
+        if (!customAppRunPath.empty()) {
+            ldLog() << LD_WARNING << "Deploying custom AppRun: " << customAppRunPath << std::endl;
+            appDir.deployFile(customAppRunPath, appDir.path() / "AppRun");
+            appDir.executeDeferredOperations();
+        }
+
         auto deployedDesktopFiles = appDir.deployedDesktopFiles();
         if (deployedDesktopFiles.empty()) {
             ldLog() << LD_WARNING << "Could not find desktop file in AppDir, cannot create links for AppRun, "

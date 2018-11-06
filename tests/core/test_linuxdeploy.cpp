@@ -89,4 +89,11 @@ namespace LinuxDeployTest {
         ASSERT_TRUE(exists(tmpAppDir / source_icon_path.filename()));
         ASSERT_TRUE(exists(target_apprun_path));
     }
+
+    TEST_F(LinuxDeployTestsFixture, deployAppDirRootFilesWithCustomAppRun) {
+        linuxdeploy::core::appdir::AppDir appDir(tmpAppDir);
+        linuxdeploy::deployAppDirRootFiles({}, source_apprun_path.string(), appDir);
+
+        ASSERT_TRUE(exists(target_apprun_path));
+    }
 }
