@@ -45,7 +45,7 @@ add_subdirectory(util)
 add_subdirectory(plugin)
 add_subdirectory(core)
 
-add_executable(linuxdeploy main.cpp)
+add_executable(linuxdeploy main.cpp core.cpp)
 target_link_libraries(linuxdeploy linuxdeploy_core args)
 set_target_properties(linuxdeploy PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin")
 

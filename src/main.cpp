@@ -12,6 +12,7 @@
 #include "linuxdeploy/core/log.h"
 #include "linuxdeploy/plugin/plugin.h"
 #include "linuxdeploy/util/util.h"
+#include "core.h"
 
 using namespace linuxdeploy::core;
 using namespace linuxdeploy::core::log;
@@ -253,60 +254,8 @@ int main(int argc, char** argv) {
             return 1;
         }
     }
-
-    // search for desktop file and deploy it to AppDir root
-    ldLog() << std::endl << "-- Deploying files into AppDir root directory --" << std::endl;
-
-    if (bf::is_regular_file(appDir.path() / "AppRun")) {
-        if (customAppRunPath)
-            ldLog() << LD_WARNING << "AppRun exists but custom AppRun specified, overwriting existing AppRun" << std::endl;
-        else
-            ldLog() << LD_WARNING << "AppRun exists, skipping deployment" << std::endl;
-    } else {
-        auto deployedDesktopFiles = appDir.deployedDesktopFiles();
-
-        desktopfile::DesktopFile desktopFile;
-
-        if (deployedDesktopFiles.empty()) {
-            ldLog() << LD_WARNING << "Could not find desktop file in AppDir, cannot create links for AppRun, desktop file and icon in AppDir root" << std::endl;
-        } else {
-            if (!desktopFilePaths.Get().empty()) {
-                auto firstDeployedDesktopFileName = bf::path(desktopFilePaths.Get().front()).filename().string();
-
-                auto desktopFileMatchingName = std::find_if(
-                    deployedDesktopFiles.begin(),
-                    deployedDesktopFiles.end(),
-                    [&firstDeployedDesktopFileName](const desktopfile::DesktopFile& desktopFile) {
-                        auto fileName = desktopFile.path().filename().string();
-                        return fileName == firstDeployedDesktopFileName;
-                    }
-                );
-
-                if (desktopFileMatchingName != deployedDesktopFiles.end()) {
-                    desktopFile = *desktopFileMatchingName;
-                } else {
-                    ldLog() << LD_ERROR << "Could not find desktop file deployed earlier any more:" << firstDeployedDesktopFileName << std::endl;
-                    return 1;
-                }
-            } else {
-                desktopFile = deployedDesktopFiles[0];
-                ldLog() << LD_WARNING << "No desktop file specified, using first desktop file found:" << desktopFile.path() << std::endl;
-            }
-
-            ldLog() << "Deploying desktop file:" << desktopFile.path() << std::endl;
-
-            bool rv;
-
-            if (customAppRunPath) {
-                rv = appDir.createLinksInAppDirRoot(desktopFile, customAppRunPath.Get());
-            } else {
-                rv = appDir.createLinksInAppDirRoot(desktopFile);
-            }
-
-            if (!rv)
-                return 1;
-        }
-    }
+    if (!linuxdeploy::deployAppDirRootFiles(desktopFilePaths.Get(), customAppRunPath.Get(), appDir))
+        return 1;
 
     if (outputPlugins) {
         for (const auto& pluginName : outputPlugins.Get()) {
@@ -342,3 +291,4 @@ int main(int argc, char** argv) {
 
     return 0;
 }
+
