@@ -58,7 +58,7 @@ namespace linuxdeploy {
         ldLog() << std::endl << "-- Deploying files into AppDir root directory --" << std::endl;
 
         if (!customAppRunPath.empty()) {
-            ldLog() << LD_WARNING << "Deploying custom AppRun: " << customAppRunPath << std::endl;
+            ldLog() << LD_INFO << "Deploying custom AppRun: " << customAppRunPath << std::endl;
             appDir.deployFile(customAppRunPath, appDir.path() / "AppRun");
             appDir.executeDeferredOperations();
         }
