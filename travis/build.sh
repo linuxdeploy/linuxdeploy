@@ -35,9 +35,6 @@ else
     exit 1
 fi
 
-# FIXME: remove this after INI parser has been fixed properly
-sed -i "s|FINI_BUFFER_SIZE \([0-9]\+\)|FINI_BUFFER_SIZE 4096|" "$REPO_ROOT"/lib/cpp-feather-ini-parser/INI.h
-
 cmake "$REPO_ROOT" -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=RelWithDebInfo "${EXTRA_CMAKE_ARGS[@]}"
 
 make -j$(nproc)
