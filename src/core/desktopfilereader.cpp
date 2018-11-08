@@ -58,7 +58,7 @@ DesktopFileReader& DesktopFileReader::operator=(DesktopFileReader&& other) noexc
     return *this;
 }
 
-bool DesktopFileReader::isEmpty() {
+bool DesktopFileReader::isEmpty() const {
     return d->isEmpty();
 }
 
@@ -70,6 +70,6 @@ bool DesktopFileReader::operator!=(const DesktopFileReader& other) const {
     return !operator==(other);
 }
 
-boost::filesystem::path DesktopFileReader::path() {
+boost::filesystem::path DesktopFileReader::path() const {
     return d->path;
 }

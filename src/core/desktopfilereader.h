@@ -36,8 +36,8 @@ public:
 
 public:
     // checks whether a file has been read already
-    bool isEmpty();
+    bool isEmpty() const;
 
     // returns desktop file path
-    boost::filesystem::path path();
+    boost::filesystem::path path() const;
 };
