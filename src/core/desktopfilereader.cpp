@@ -1,6 +1,12 @@
+// system includes
+#include <fstream>
+#include <sstream>
+#include <unordered_map>
 #include <utility>
 
 // local headers
+#include "linuxdeploy/util/util.h"
+#include "desktopfileentry.h"
 #include "desktopfilereader.h"
 
 namespace bf = boost::filesystem;
@@ -25,6 +31,8 @@ public:
     void copyData(const std::shared_ptr<PrivateData>& other) {
         path = other->path;
     }
+
+    void parse(std::istream& file) {}
 };
 
 DesktopFileReader::DesktopFileReader() : d(new PrivateData) {}
@@ -32,6 +40,12 @@ DesktopFileReader::DesktopFileReader() : d(new PrivateData) {}
 DesktopFileReader::DesktopFileReader(boost::filesystem::path path) : DesktopFileReader() {
     d->path = std::move(path);
     d->assertPathIsNotEmptyAndFileExists();
+
+    std::ifstream ifs(path.string());
+    if (!ifs)
+        throw std::runtime_error("could not open file: " + d->path.string());
+
+    d->parse(ifs);
 }
 
 DesktopFileReader::DesktopFileReader(const DesktopFileReader& other) : DesktopFileReader() {
