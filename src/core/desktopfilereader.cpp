@@ -11,9 +11,16 @@
 
 namespace bf = boost::filesystem;
 
+// describes a single section
+typedef std::unordered_map<std::string, DesktopFileEntry> section_t;
+
+// describes all sections in the desktop file
+typedef std::unordered_map<std::string, section_t> sections_t;
+
 class DesktopFileReader::PrivateData {
 public:
     bf::path path;
+    sections_t sections;
 
 public:
     bool isEmpty()  {
