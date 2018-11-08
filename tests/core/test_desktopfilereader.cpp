@@ -21,7 +21,7 @@ TEST_F(DesktopFileReaderFixture, testPathConstructor) {
     bf::path path = "/dev/null";
 
     DesktopFileReader reader(path);
-    EXPECT_FALSE(reader.isEmpty());
+    EXPECT_TRUE(reader.isEmpty());
 
     ASSERT_THROW(DesktopFileReader("/no/such/file/or/directory"), std::invalid_argument);
 }
@@ -51,10 +51,10 @@ TEST_F(DesktopFileReaderFixture, testCopyConstructor) {
     bf::path path = "/dev/null";
 
     DesktopFileReader reader(path);
-    EXPECT_FALSE(reader.isEmpty());
+    EXPECT_TRUE(reader.isEmpty());
 
     DesktopFileReader copy = reader;
-    EXPECT_FALSE(copy.isEmpty());
+    EXPECT_TRUE(copy.isEmpty());
 
     EXPECT_EQ(reader, copy);
 }
@@ -66,7 +66,7 @@ TEST_F(DesktopFileReaderFixture, testCopyAssignmentConstructor) {
     EXPECT_TRUE(reader.isEmpty());
 
     DesktopFileReader otherReader(path);
-    EXPECT_FALSE(otherReader.isEmpty());
+    EXPECT_TRUE(otherReader.isEmpty());
 
     reader = otherReader;
     EXPECT_EQ(reader.path(), path);
@@ -82,7 +82,7 @@ TEST_F(DesktopFileReaderFixture, testMoveAssignmentConstructor) {
     EXPECT_TRUE(reader.isEmpty());
 
     DesktopFileReader otherReader(path);
-    EXPECT_FALSE(otherReader.isEmpty());
+    EXPECT_TRUE(otherReader.isEmpty());
 
     reader = std::move(otherReader);
     EXPECT_EQ(reader.path(), path);

@@ -24,7 +24,7 @@ public:
 
 public:
     bool isEmpty()  {
-        return path.empty();
+        return sections.empty();
     }
 
     void assertPathIsNotEmptyAndFileExists() {

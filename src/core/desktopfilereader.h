@@ -39,7 +39,7 @@ public:
     bool operator!=(const DesktopFileReader& other) const;
 
 public:
-    // checks whether a file has been read already
+    // checks whether parsed data is available
     bool isEmpty() const;
 
     // returns desktop file path
