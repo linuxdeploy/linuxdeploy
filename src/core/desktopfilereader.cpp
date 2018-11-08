@@ -48,6 +48,10 @@ DesktopFileReader::DesktopFileReader(boost::filesystem::path path) : DesktopFile
     d->parse(ifs);
 }
 
+DesktopFileReader::DesktopFileReader(std::istream& is) : DesktopFileReader() {
+    d->parse(is);
+}
+
 DesktopFileReader::DesktopFileReader(const DesktopFileReader& other) : DesktopFileReader() {
     d->copyData(other.d);
 }

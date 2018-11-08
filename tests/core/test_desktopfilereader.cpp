@@ -25,6 +25,13 @@ TEST_F(DesktopFileReaderFixture, testPathConstructor) {
     EXPECT_FALSE(reader.isEmpty());
 }
 
+TEST_F(DesktopFileReaderFixture, testStreamConstructor) {
+    std::stringstream ss;
+    DesktopFileReader reader(ss);
+
+    EXPECT_TRUE(reader.isEmpty());
+}
+
 TEST_F(DesktopFileReaderFixture, testPathConstructorWithEmptyPath) {
     ASSERT_THROW(DesktopFileReader(""), std::invalid_argument);
 }

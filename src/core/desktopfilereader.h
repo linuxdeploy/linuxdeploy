@@ -2,6 +2,7 @@
 
 // system includes
 #include <memory>
+#include <istream>
 
 // library includes
 #include <boost/filesystem.hpp>
@@ -18,6 +19,9 @@ public:
 
     // construct from path
     explicit DesktopFileReader(boost::filesystem::path path);
+
+    // construct from existing istream
+    explicit DesktopFileReader(std::istream& is);
 
     // copy constructor
     DesktopFileReader(const DesktopFileReader& other);
