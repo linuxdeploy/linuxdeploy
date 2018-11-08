@@ -37,3 +37,8 @@ add_test(test_linuxdeploy test_linuxdeploy)
 
 # make sure library and executable are built before test_appdir
 add_dependencies(test_linuxdeploy simple_library simple_executable)
+
+add_executable(test_desktopfilereader test_desktopfilereader.cpp)
+target_link_libraries(test_desktopfilereader PRIVATE linuxdeploy_core gtest gtest_main)
+
+add_test(test_desktopfilereader test_desktopfilereader)
