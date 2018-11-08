@@ -103,6 +103,10 @@ if(NOT USE_SYSTEM_BOOST)
         boost_config boost_predef boost_assert boost_throw_exception boost_smart_ptr boost_core boost_mpl
         boost_type_traits boost_static_assert boost_integer boost_preprocessor boost_functional boost_detail
     )
+
+    add_library(boost_lexical_cast INTERFACE)
+    set_property(TARGET boost_lexical_cast PROPERTY INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/boost-lexical_cast/include>")
+    set_property(TARGET boost_lexical_cast PROPERTY INTERFACE_LINK_LIBRARIES "boost_config")
 endif()
 
 if(BUILD_TESTING)

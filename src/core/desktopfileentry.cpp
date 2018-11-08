@@ -1,7 +1,13 @@
+// library headers
+#include <boost/lexical_cast.hpp>
+
 // local headers
+#include "linuxdeploy/core/log.h"
 #include "../../src/core/desktopfileentry.h"
 #include "desktopfileentry.h"
 
+using boost::lexical_cast;
+using namespace linuxdeploy::core::log;
 
 class DesktopFileEntry::PrivateData {
 public:
@@ -12,6 +18,11 @@ public:
     void copyData(const std::shared_ptr<PrivateData>& other) {
         key = other->key;
         value = other->value;
+    }
+
+    void assertValueNotEmpty() {
+        if (value.empty())
+            throw std::invalid_argument("value is empty");
     }
 };
 
@@ -62,4 +73,44 @@ const std::string& DesktopFileEntry::key() const {
 
 const std::string& DesktopFileEntry::value() const {
     return d->value;
+}
+
+int DesktopFileEntry::asInt() const {
+    d->assertValueNotEmpty();
+
+    return lexical_cast<int>(value());
+}
+
+long DesktopFileEntry::asLong() const {
+    d->assertValueNotEmpty();
+
+    return lexical_cast<long>(value());
+}
+
+std::vector<std::string> DesktopFileEntry::parseStringList() const {
+    const auto& value = this->value();
+
+    if (value.empty())
+        return {};
+
+    if (value.back() != ';')
+        ldLog() << LD_DEBUG << "desktop file string list does not end with semicolon:" << value << std::endl;
+
+    std::vector<std::string> list;
+
+    std::stringstream ss(value);
+
+    std::string currentVal;
+    while (std::getline(ss, currentVal, ';')) {
+        // the last value will be empty, as in desktop files, lists shall end with a semicolon
+        // therefore we skip all empty values (assuming that empty values in lists in desktop files don't make sense anyway)
+        if (!currentVal.empty())
+            list.emplace_back(currentVal);
+    }
+
+    return list;
+}
+
+DesktopFileEntry::operator std::string() const {
+    return value();
 }
