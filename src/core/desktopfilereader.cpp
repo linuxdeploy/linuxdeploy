@@ -23,9 +23,6 @@ public:
     void assertPathIsNotEmptyAndFileExists() {
         if (path.empty())
             throw std::invalid_argument("empty path is not permitted");
-
-        if (!bf::exists(path))
-            throw std::runtime_error("path does not exist: " + path.string());
     }
 
     void copyData(const std::shared_ptr<PrivateData>& other) {
@@ -41,9 +38,9 @@ DesktopFileReader::DesktopFileReader(boost::filesystem::path path) : DesktopFile
     d->path = std::move(path);
     d->assertPathIsNotEmptyAndFileExists();
 
-    std::ifstream ifs(path.string());
+    std::ifstream ifs(d->path.string());
     if (!ifs)
-        throw std::runtime_error("could not open file: " + d->path.string());
+        throw std::invalid_argument("could not open file: " + d->path.string());
 
     d->parse(ifs);
 }

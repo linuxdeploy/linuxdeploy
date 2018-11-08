@@ -21,8 +21,9 @@ TEST_F(DesktopFileReaderFixture, testPathConstructor) {
     bf::path path = "/dev/null";
 
     DesktopFileReader reader(path);
-
     EXPECT_FALSE(reader.isEmpty());
+
+    ASSERT_THROW(DesktopFileReader("/no/such/file/or/directory"), std::invalid_argument);
 }
 
 TEST_F(DesktopFileReaderFixture, testStreamConstructor) {
@@ -37,7 +38,7 @@ TEST_F(DesktopFileReaderFixture, testPathConstructorWithEmptyPath) {
 }
 
 TEST_F(DesktopFileReaderFixture, testPathConstructorWithNonExistingPath) {
-    ASSERT_THROW(DesktopFileReader("/no/such/path/42"), std::runtime_error);
+    ASSERT_THROW(DesktopFileReader("/no/such/path/42"), std::invalid_argument);
 }
 
 TEST_F(DesktopFileReaderFixture, testEqualityAndInequalityOperators) {
