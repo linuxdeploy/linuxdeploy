@@ -35,7 +35,7 @@ DesktopFileReader::DesktopFileReader(boost::filesystem::path path) : DesktopFile
 }
 
 DesktopFileReader::DesktopFileReader(const DesktopFileReader& other) : DesktopFileReader() {
-    d->path = other.d->path;
+    d->copyData(other.d);
 }
 
 DesktopFileReader& DesktopFileReader::operator=(const DesktopFileReader& other) {
