@@ -4,9 +4,6 @@
 [submodule "lib/args"]
 	path = lib/args
 	url = https://github.com/Taywee/args.git
-[submodule "lib/cpp-feather-ini-parser"]
-	path = lib/cpp-feather-ini-parser
-	url = https://github.com/Turbine1991/cpp-feather-ini-parser.git
 [submodule "lib/boost-filesystem"]
 	path = lib/boost-filesystem
 	url = https://github.com/boostorg/filesystem.git
