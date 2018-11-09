@@ -166,3 +166,24 @@ TEST_F(DesktopFileReaderFixture, testParseFileWithLeadingAndTrailingWhitespaceIn
     EXPECT_EQ(section["Name"].value(), "name");
     EXPECT_EQ(section["Exec"].value(), "exec");
 }
+
+TEST_F(DesktopFileReaderFixture, testDataGetter) {
+    std::stringstream ss;
+    ss << "[Desktop File]" << std::endl
+       << "Name= name" << std::endl
+       << "Exec =exec" << std::endl;
+
+    DesktopFileReader reader(ss);
+
+    auto section = reader["Desktop File"];
+    EXPECT_FALSE(section.empty());
+
+    auto data = reader.data();
+
+    auto expected = DesktopFile::section_t({
+        {"Name", DesktopFileEntry("Name", "name")},
+        {"Exec", DesktopFileEntry("Exec", "exec")},
+    });
+
+    EXPECT_EQ(data["Desktop File"], expected);
+}

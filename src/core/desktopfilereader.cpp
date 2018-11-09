@@ -146,6 +146,10 @@ namespace linuxdeploy {
                 return d->path;
             }
 
+            DesktopFile::sections_t DesktopFileReader::data() const {
+                return d->sections;
+            }
+
             DesktopFile::section_t DesktopFileReader::operator[](const std::string& name) const {
                 auto it = d->sections.find(name);
 
