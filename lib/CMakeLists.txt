@@ -102,9 +102,35 @@ if(NOT USE_SYSTEM_BOOST)
         boost_type_traits boost_static_assert boost_integer boost_preprocessor boost_functional boost_detail
     )
 
+    add_library(boost_numeric_conversion INTERFACE)
+    set_property(TARGET boost_numeric_conversion PROPERTY INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/boost-numeric_conversion/include>")
+    set_property(TARGET boost_numeric_conversion PROPERTY INTERFACE_LINK_LIBRARIES "boost_config")
+
+    add_library(boost_concept_check INTERFACE)
+    set_property(TARGET boost_concept_check PROPERTY INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/boost-concept_check/include>")
+    set_property(TARGET boost_concept_check PROPERTY INTERFACE_LINK_LIBRARIES "boost_config")
+    target_link_libraries(boost_concept_check INTERFACE boost_numeric_conversion)
+
+    add_library(boost_array INTERFACE)
+    set_property(TARGET boost_array PROPERTY INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/boost-array/include>")
+    set_property(TARGET boost_array PROPERTY INTERFACE_LINK_LIBRARIES "boost_config")
+
+    add_library(boost_move INTERFACE)
+    set_property(TARGET boost_move PROPERTY INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/boost-move/include>")
+    set_property(TARGET boost_move PROPERTY INTERFACE_LINK_LIBRARIES "boost_config")
+
+    add_library(boost_container INTERFACE)
+    set_property(TARGET boost_container PROPERTY INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/boost-container/include>")
+    set_property(TARGET boost_container PROPERTY INTERFACE_LINK_LIBRARIES boost_config boost_move)
+
+    add_library(boost_math INTERFACE)
+    set_property(TARGET boost_math PROPERTY INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/boost-math/include>")
+    set_property(TARGET boost_math PROPERTY INTERFACE_LINK_LIBRARIES boost_config boost_move)
+
     add_library(boost_lexical_cast INTERFACE)
     set_property(TARGET boost_lexical_cast PROPERTY INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/boost-lexical_cast/include>")
     set_property(TARGET boost_lexical_cast PROPERTY INTERFACE_LINK_LIBRARIES "boost_config")
+    target_link_libraries(boost_lexical_cast INTERFACE boost_concept_check boost_numeric_conversion boost_array boost_container boost_math)
 endif()
 
 if(BUILD_TESTING)
