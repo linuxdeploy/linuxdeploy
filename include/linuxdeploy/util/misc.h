@@ -5,6 +5,7 @@
 #include <cstring>
 #include <sstream>
 #include <string>
+#include <unistd.h>
 #include <vector>
 
 namespace linuxdeploy {

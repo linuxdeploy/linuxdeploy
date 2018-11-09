@@ -244,12 +244,12 @@ int main(int argc, char** argv) {
             ldLog() << "Creating new desktop file:" << desktopFilePath << std::endl;
         }
 
-        desktopfile::DesktopFile desktopFile(desktopFilePath);
+        desktopfile::DesktopFile desktopFile;
         if (!desktopFile.addDefaultKeys(executableName)) {
             ldLog() << LD_WARNING << "Tried to overwrite existing entries in desktop file:" << desktopFilePath << std::endl;
         }
 
-        if (!desktopFile.save()) {
+        if (!desktopFile.save(desktopFilePath)) {
             ldLog() << LD_ERROR << "Failed to save desktop file:" << desktopFilePath << std::endl;
             return 1;
         }

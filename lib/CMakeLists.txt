@@ -9,16 +9,6 @@ add_library(args INTERFACE)
 target_sources(args INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/args/args.hxx)
 target_include_directories(args INTERFACE args)
 
-add_library(cpp-feather-ini-parser INTERFACE)
-target_sources(cpp-feather-ini-parser INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/cpp-feather-ini-parser/INI.h)
-target_include_directories(cpp-feather-ini-parser INTERFACE cpp-feather-ini-parser)
-
-if(BUILD_TESTING)
-    add_executable(test_cpp_feather_ini_parser ${CMAKE_CURRENT_SOURCE_DIR}/cpp-feather-ini-parser/example/example.cpp)
-    target_link_libraries(test_cpp_feather_ini_parser PRIVATE cpp-feather-ini-parser)
-    add_test(test_cpp_feather_ini_parser test_cpp_feather_ini_parser)
-endif()
-
 if(NOT USE_SYSTEM_BOOST)
     add_library(boost_config INTERFACE)
     set_property(TARGET boost_config PROPERTY INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/boost-config/include>")
@@ -111,6 +101,36 @@ if(NOT USE_SYSTEM_BOOST)
         boost_config boost_predef boost_assert boost_throw_exception boost_smart_ptr boost_core boost_mpl
         boost_type_traits boost_static_assert boost_integer boost_preprocessor boost_functional boost_detail
     )
+
+    add_library(boost_numeric_conversion INTERFACE)
+    set_property(TARGET boost_numeric_conversion PROPERTY INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/boost-numeric_conversion/include>")
+    set_property(TARGET boost_numeric_conversion PROPERTY INTERFACE_LINK_LIBRARIES "boost_config")
+
+    add_library(boost_concept_check INTERFACE)
+    set_property(TARGET boost_concept_check PROPERTY INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/boost-concept_check/include>")
+    set_property(TARGET boost_concept_check PROPERTY INTERFACE_LINK_LIBRARIES "boost_config")
+    target_link_libraries(boost_concept_check INTERFACE boost_numeric_conversion)
+
+    add_library(boost_array INTERFACE)
+    set_property(TARGET boost_array PROPERTY INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/boost-array/include>")
+    set_property(TARGET boost_array PROPERTY INTERFACE_LINK_LIBRARIES "boost_config")
+
+    add_library(boost_move INTERFACE)
+    set_property(TARGET boost_move PROPERTY INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/boost-move/include>")
+    set_property(TARGET boost_move PROPERTY INTERFACE_LINK_LIBRARIES "boost_config")
+
+    add_library(boost_container INTERFACE)
+    set_property(TARGET boost_container PROPERTY INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/boost-container/include>")
+    set_property(TARGET boost_container PROPERTY INTERFACE_LINK_LIBRARIES boost_config boost_move)
+
+    add_library(boost_math INTERFACE)
+    set_property(TARGET boost_math PROPERTY INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/boost-math/include>")
+    set_property(TARGET boost_math PROPERTY INTERFACE_LINK_LIBRARIES boost_config boost_move)
+
+    add_library(boost_lexical_cast INTERFACE)
+    set_property(TARGET boost_lexical_cast PROPERTY INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/boost-lexical_cast/include>")
+    set_property(TARGET boost_lexical_cast PROPERTY INTERFACE_LINK_LIBRARIES "boost_config")
+    target_link_libraries(boost_lexical_cast INTERFACE boost_concept_check boost_numeric_conversion boost_array boost_container boost_math)
 endif()
 
 if(BUILD_TESTING)

@@ -4,9 +4,6 @@
 [submodule "lib/args"]
 	path = lib/args
 	url = https://github.com/Taywee/args.git
-[submodule "lib/cpp-feather-ini-parser"]
-	path = lib/cpp-feather-ini-parser
-	url = https://github.com/Turbine1991/cpp-feather-ini-parser.git
 [submodule "lib/boost-filesystem"]
 	path = lib/boost-filesystem
 	url = https://github.com/boostorg/filesystem.git
@@ -79,3 +76,24 @@
 [submodule "lib/googletest"]
 	path = lib/googletest
 	url = https://github.com/google/googletest
+[submodule "lib/boost-lexical_cast"]
+	path = lib/boost-lexical_cast
+	url = https://github.com/boostorg/lexical_cast
+[submodule "lib/boost-concept_check"]
+	path = lib/boost-concept_check
+	url = https://github.com/boostorg/concept_check
+[submodule "lib/boost-numeric_conversion"]
+	path = lib/boost-numeric_conversion
+	url = https://github.com/boostorg/numeric_conversion
+[submodule "lib/boost-array"]
+	path = lib/boost-array
+	url = https://github.com/boostorg/array
+[submodule "lib/boost-container"]
+	path = lib/boost-container
+	url = https://github.com/boostorg/container
+[submodule "lib/boost-move"]
+	path = lib/boost-move
+	url = https://github.com/boostorg/move
+[submodule "lib/boost-math"]
+	path = lib/boost-math
+	url = https://github.com/boostorg/math
