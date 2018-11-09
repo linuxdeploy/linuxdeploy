@@ -36,7 +36,60 @@ public:
         path = other->path;
     }
 
-    void parse(std::istream& file) {}
+    void parse(std::istream& file) {
+        std::string line;
+        bool first = true;
+
+        std::string currentSectionName;
+
+        while (std::getline(file, line)) {
+            if (first) {
+                first = false;
+                // said to allow handling of UTF-16/32 documents, not entirely sure why
+                if (line[0] == static_cast<std::string::value_type>(0xEF))
+                {
+                    line.erase(0, 3);
+                    return;
+                }
+            }
+
+            if (!line.empty()) {
+                auto len = line.length();
+                if (len > 0 && !((len >= 2 && (line[0] == '/' && line[1] == '/')) || (len >= 1 && line[0] == '#'))) {
+                    if (line[0] == '[') {
+                        // this line apparently introduces a new section
+                        size_t length = len - 2;
+                        auto title = line.substr(1, line.find(']') - 1);
+
+                        // set up the new section
+                        sections.insert(std::make_pair(title, section_t()));
+                        currentSectionName = std::move(title);
+                    } else {
+                        // we require at least one section to be present in the desktop file
+                        if (currentSectionName.empty())
+                            throw std::invalid_argument("No section in desktop file");
+
+                        // this line should be a normal key-value pair
+                        std::string key = line.substr(0, line.find('='));
+                        std::string value = line.substr(line.find('=') + 1, line.size());
+
+                        // we can strip away any sort of leading or trailing whitespace safely
+                        linuxdeploy::util::trim(key);
+                        linuxdeploy::util::trim(value);
+
+                        // empty keys are not allowed for obvious reasons
+                        if (key.empty())
+                            throw std::invalid_argument("Empty keys are not allowed");
+
+                        // who are we to judge whether empty values are an issue
+                        // that'd require checking the key names and implementing checks per key according to the
+                        // freedesktop.org spec
+                        sections[currentSectionName][key] = DesktopFileEntry(key, value);
+                    }
+                }
+            }
+        }
+    }
 };
 
 DesktopFileReader::DesktopFileReader() : d(new PrivateData) {}

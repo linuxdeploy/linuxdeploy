@@ -90,3 +90,41 @@ TEST_F(DesktopFileReaderFixture, testMoveAssignmentConstructor) {
     // test self-assignment
     reader = std::move(reader);
 }
+
+TEST_F(DesktopFileReaderFixture, testParseSimpleDesktopFile) {
+    std::stringstream ss;
+    ss << "[Desktop File]" << std::endl
+       << "Name=name" << std::endl
+       << "Exec=exec" << std::endl
+       << "Icon=icon" << std::endl
+       << "Type=Application" << std::endl
+       << "Categories=Utility;Multimedia;" << std::endl;
+
+    DesktopFileReader reader;
+    reader = DesktopFileReader(ss);
+}
+
+TEST_F(DesktopFileReaderFixture, testParseFileMissingSectionHeader) {
+    std::stringstream ss;
+    ss << "Name=name" << std::endl
+       << "Exec=exec" << std::endl
+       << "Icon=icon" << std::endl
+       << "Type=Application" << std::endl
+       << "Categories=Utility;Multimedia;" << std::endl;
+
+    DesktopFileReader reader;
+    ASSERT_THROW(reader = DesktopFileReader(ss), std::invalid_argument);
+}
+
+TEST_F(DesktopFileReaderFixture, testParseFileEmptyKey) {
+    std::stringstream ss;
+    ss << "[Desktop File]" << std::endl
+       << "=name" << std::endl
+       << "Exec=exec" << std::endl
+       << "Icon=icon" << std::endl
+       << "Type=Application" << std::endl
+       << "Categories=Utility;Multimedia;" << std::endl;
+
+    DesktopFileReader reader;
+    ASSERT_THROW(reader = DesktopFileReader(ss), std::invalid_argument);
+}
