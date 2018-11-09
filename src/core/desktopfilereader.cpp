@@ -148,3 +148,14 @@ bool DesktopFileReader::operator!=(const DesktopFileReader& other) const {
 boost::filesystem::path DesktopFileReader::path() const {
     return d->path;
 }
+
+section_t DesktopFileReader::operator[](const std::string& name) {
+    auto it = d->sections.find(name);
+
+    // the map would lazy-initialize a new entry in case the section doesn't exist
+    // therefore explicitly checking whether the section exists, throwing an exception in case it does not
+    if (it == d->sections.end())
+        throw std::range_error("could not find section " + name);
+
+    return it->second;
+}

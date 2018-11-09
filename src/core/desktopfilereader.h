@@ -1,11 +1,15 @@
 #pragma once
 
 // system includes
-#include <memory>
 #include <istream>
+#include <memory>
+#include <unordered_map>
 
 // library includes
 #include <boost/filesystem.hpp>
+
+// local includes
+#include "desktopfileentry.h"
 
 class DesktopFileReader {
 private:
@@ -44,4 +48,8 @@ public:
 
     // returns desktop file path
     boost::filesystem::path path() const;
+
+    // get a specific section from the parsed data
+    // throws std::range_error if section does not exist
+    std::unordered_map<std::string, DesktopFileEntry> operator[](const std::string& name);
 };

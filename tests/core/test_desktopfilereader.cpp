@@ -104,6 +104,16 @@ TEST_F(DesktopFileReaderFixture, testParseSimpleDesktopFile) {
     reader = DesktopFileReader(ss);
 }
 
+TEST_F(DesktopFileReaderFixture, testParseFileGetNonExistingSection) {
+    std::stringstream ss;
+    ss << "[Desktop File]" << std::endl;
+
+    DesktopFileReader reader;
+    reader = DesktopFileReader(ss);
+
+    ASSERT_THROW(reader["Non-existing Section"], std::range_error);
+}
+
 TEST_F(DesktopFileReaderFixture, testParseFileMissingSectionHeader) {
     std::stringstream ss;
     ss << "Name=name" << std::endl
