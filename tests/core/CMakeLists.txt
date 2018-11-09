@@ -48,3 +48,9 @@ add_executable(test_desktopfileentry test_desktopfileentry.cpp)
 target_link_libraries(test_desktopfileentry PRIVATE linuxdeploy_core gtest gtest_main)
 
 add_test(test_desktopfileentry test_desktopfileentry)
+
+
+add_executable(test_desktopfilewriter test_desktopfilewriter.cpp)
+target_link_libraries(test_desktopfilewriter PRIVATE linuxdeploy_core gtest gtest_main)
+
+add_test(test_desktopfileentry test_desktopfilewriter)
