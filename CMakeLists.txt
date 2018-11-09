@@ -18,7 +18,10 @@ if(ENABLE_COVERAGE)
     append_coverage_compiler_flags()
 
     set(COVERAGE_GCOVR_EXCLUDES ${PROJECT_SOURCE_DIR}/lib ${PROJECT_BINARY_DIR})
-    setup_target_for_coverage_gcovr_html(NAME coverage EXECUTABLE ctest -V -j ${PROCESSOR_COUNT})
+    set(command ctest -V -j ${PROCESSOR_COUNT})
+    setup_target_for_coverage_gcovr_html(NAME coverage EXECUTABLE "${command}")
+    setup_target_for_coverage_gcovr_xml(NAME coverage_xml EXECUTABLE "${command}")
+    setup_target_for_coverage_lcov(NAME coverage_lcov EXECUTABLE "${command}")
 endif()
 
 add_subdirectory(lib)
