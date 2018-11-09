@@ -649,7 +649,7 @@ namespace linuxdeploy {
                 }), paths.end());
 
                 for (const auto& path : paths) {
-                    desktopFiles.push_back(desktopfile::DesktopFile(path));
+                    desktopFiles.emplace_back(path);
                 }
 
                 return desktopFiles;
