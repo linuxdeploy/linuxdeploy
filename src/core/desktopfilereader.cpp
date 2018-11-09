@@ -146,7 +146,7 @@ namespace linuxdeploy {
                 return d->path;
             }
 
-            DesktopFile::section_t DesktopFileReader::operator[](const std::string& name) {
+            DesktopFile::section_t DesktopFileReader::operator[](const std::string& name) const {
                 auto it = d->sections.find(name);
 
                 // the map would lazy-initialize a new entry in case the section doesn't exist

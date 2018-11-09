@@ -55,7 +55,7 @@ namespace linuxdeploy {
 
                 // get a specific section from the parsed data
                 // throws std::range_error if section does not exist
-                DesktopFile::section_t operator[](const std::string& name);
+                DesktopFile::section_t operator[](const std::string& name) const;
             };
         }
     }
