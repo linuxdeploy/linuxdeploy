@@ -94,6 +94,7 @@ TEST_F(DesktopFileReaderFixture, testMoveAssignmentConstructor) {
 TEST_F(DesktopFileReaderFixture, testParseSimpleDesktopFile) {
     std::stringstream ss;
     ss << "[Desktop File]" << std::endl
+       << "Version=1.0" << std::endl
        << "Name=name" << std::endl
        << "Exec=exec" << std::endl
        << "Icon=icon" << std::endl
@@ -102,6 +103,17 @@ TEST_F(DesktopFileReaderFixture, testParseSimpleDesktopFile) {
 
     DesktopFileReader reader;
     reader = DesktopFileReader(ss);
+
+    auto section = reader["Desktop File"];
+    EXPECT_FALSE(section.empty());
+
+    EXPECT_NEAR(section["Version"].asDouble(), 1.0f, 0.000001);
+    EXPECT_EQ(section["Name"].value(), "name");
+    EXPECT_EQ(section["Exec"].value(), "exec");
+    EXPECT_EQ(section["Icon"].value(), "icon");
+    EXPECT_EQ(section["Type"].value(), "Application");
+    EXPECT_EQ(section["Name"].value(), "name");
+    EXPECT_EQ(section["Categories"].parseStringList(), std::vector<std::string>({"Utility", "Multimedia"}));
 }
 
 TEST_F(DesktopFileReaderFixture, testParseFileGetNonExistingSection) {
