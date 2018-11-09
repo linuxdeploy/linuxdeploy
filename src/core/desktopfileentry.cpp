@@ -3,15 +3,14 @@
 
 // local headers
 #include "linuxdeploy/core/log.h"
-#include "../../src/core/desktopfileentry.h"
-#include "desktopfileentry.h"
+#include "linuxdeploy/core/desktopfileentry.h"
 
 using boost::lexical_cast;
 
 namespace linuxdeploy {
     namespace core {
         using namespace log;
-        
+
         namespace desktopfile {
             class DesktopFileEntry::PrivateData {
             public:
