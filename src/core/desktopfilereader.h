@@ -6,9 +6,9 @@
 
 // library includes
 #include <boost/filesystem.hpp>
-#include <linuxdeploy/core/desktopfile.h>
 
 // local includes
+#include "linuxdeploy/core/desktopfile.h"
 #include "linuxdeploy/core/desktopfileentry.h"
 
 namespace linuxdeploy {
