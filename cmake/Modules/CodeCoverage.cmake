@@ -296,6 +296,56 @@ function(SETUP_TARGET_FOR_COVERAGE_GCOVR_HTML)
 
 endfunction() # SETUP_TARGET_FOR_COVERAGE_GCOVR_HTML
 
+# Defines a target for running and collection code coverage information
+# Builds dependencies, runs the given executable and outputs reports.
+# NOTE! The executable should always have a ZERO as exit code otherwise
+# the coverage generation will not complete.
+#
+# SETUP_TARGET_FOR_COVERAGE_GCOVR_TEXT(
+#     NAME ctest_coverage                    # New target name
+#     EXECUTABLE ctest -j ${PROCESSOR_COUNT} # Executable in PROJECT_BINARY_DIR
+#     DEPENDENCIES executable_target         # Dependencies to build first
+# )
+function(SETUP_TARGET_FOR_COVERAGE_GCOVR_TEXT)
+
+    set(options NONE)
+    set(oneValueArgs NAME)
+    set(multiValueArgs EXECUTABLE EXECUTABLE_ARGS DEPENDENCIES)
+    cmake_parse_arguments(Coverage "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+
+    if(NOT SIMPLE_PYTHON_EXECUTABLE)
+        message(FATAL_ERROR "python not found! Aborting...")
+    endif() # NOT SIMPLE_PYTHON_EXECUTABLE
+
+    if(NOT GCOVR_PATH)
+        message(FATAL_ERROR "gcovr not found! Aborting...")
+    endif() # NOT GCOVR_PATH
+
+    # Combine excludes to several -e arguments
+    set(GCOVR_EXCLUDES "")
+    foreach(EXCLUDE ${COVERAGE_GCOVR_EXCLUDES})
+        list(APPEND GCOVR_EXCLUDES "-e")
+        list(APPEND GCOVR_EXCLUDES "${EXCLUDE}")
+    endforeach()
+
+    add_custom_target(${Coverage_NAME}
+        # Run tests
+        ${Coverage_EXECUTABLE} ${Coverage_EXECUTABLE_ARGS}
+
+        # Create folder
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/${Coverage_NAME}
+
+        # Running gcovr
+        COMMAND ${GCOVR_PATH}
+            -r ${PROJECT_SOURCE_DIR} ${GCOVR_EXCLUDES}
+            --object-directory=${PROJECT_BINARY_DIR}
+        WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+        DEPENDS ${Coverage_DEPENDENCIES}
+        COMMENT "Running gcovr to produce HTML code coverage report."
+    )
+
+endfunction() # SETUP_TARGET_FOR_COVERAGE_GCOVR_TEXT
+
 function(APPEND_COVERAGE_COMPILER_FLAGS)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${COVERAGE_COMPILER_FLAGS}" PARENT_SCOPE)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COVERAGE_COMPILER_FLAGS}" PARENT_SCOPE)
