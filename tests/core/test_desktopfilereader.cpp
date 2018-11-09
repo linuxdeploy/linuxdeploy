@@ -187,3 +187,16 @@ TEST_F(DesktopFileReaderFixture, testDataGetter) {
 
     EXPECT_EQ(data["Desktop File"], expected);
 }
+
+TEST_F(DesktopFileReaderFixture, testParseLinesWithMultipleSpaces) {
+    std::stringstream ss;
+    ss << "[Desktop File]" << std::endl
+       << "Name= What a great  name    " << std::endl;
+
+    DesktopFileReader reader(ss);
+
+    auto section = reader["Desktop File"];
+    EXPECT_FALSE(section.empty());
+
+    EXPECT_EQ(section["Name"].value(), "What a great  name");
+}
