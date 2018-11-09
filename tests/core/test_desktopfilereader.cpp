@@ -150,3 +150,18 @@ TEST_F(DesktopFileReaderFixture, testParseFileEmptyKey) {
     DesktopFileReader reader;
     ASSERT_THROW(reader = DesktopFileReader(ss), std::invalid_argument);
 }
+
+TEST_F(DesktopFileReaderFixture, testParseFileWithLeadingAndTrailingWhitespaceInLines) {
+    std::stringstream ss;
+    ss << "[Desktop File]" << std::endl
+       << "Name= name" << std::endl
+       << "Exec =exec" << std::endl;
+
+    DesktopFileReader reader(ss);
+
+    auto section = reader["Desktop File"];
+    EXPECT_FALSE(section.empty());
+
+    EXPECT_EQ(section["Name"].value(), "name");
+    EXPECT_EQ(section["Exec"].value(), "exec");
+}
