@@ -54,3 +54,12 @@ add_executable(test_desktopfilewriter test_desktopfilewriter.cpp)
 target_link_libraries(test_desktopfilewriter PRIVATE linuxdeploy_core gtest gtest_main)
 
 add_test(test_desktopfileentry test_desktopfilewriter)
+
+
+add_executable(test_desktopfile test_desktopfile.cpp)
+target_link_libraries(test_desktopfile PRIVATE linuxdeploy_core gtest gtest_main)
+set_property(TARGET test_desktopfile
+    PROPERTY COMPILE_FLAGS "-DDESKTOP_FILE_PATH=\\\"${CMAKE_CURRENT_SOURCE_DIR}/../data/simple_app.desktop\\\""
+)
+
+add_test(test_desktopfileentry test_desktopfilewriter)
