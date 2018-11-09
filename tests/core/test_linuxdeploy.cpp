@@ -3,6 +3,7 @@
 #include "core.h"
 
 using namespace std;
+using namespace linuxdeploy::core;
 namespace bf = boost::filesystem;
 
 namespace LinuxDeployTest {
@@ -83,11 +84,11 @@ namespace LinuxDeployTest {
         add_apprun();
 
         linuxdeploy::core::appdir::AppDir appDir(tmpAppDir);
-        linuxdeploy::deployAppDirRootFiles({}, "", appDir);
+        ASSERT_TRUE(linuxdeploy::deployAppDirRootFiles({}, "", appDir));
 
-        ASSERT_TRUE(exists(tmpAppDir / source_desktop_path.filename()));
-        ASSERT_TRUE(exists(tmpAppDir / source_icon_path.filename()));
-        ASSERT_TRUE(exists(target_apprun_path));
+        EXPECT_TRUE(exists(tmpAppDir / source_desktop_path.filename()));
+        EXPECT_TRUE(exists(tmpAppDir / source_icon_path.filename()));
+        EXPECT_TRUE(exists(target_apprun_path));
     }
 
     TEST_F(LinuxDeployTestsFixture, deployAppDirRootFilesWithCustomAppRun) {
