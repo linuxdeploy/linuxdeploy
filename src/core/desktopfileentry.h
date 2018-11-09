@@ -7,62 +7,69 @@
 // library headers
 #include <boost/lexical_cast.hpp>
 
-class DesktopFileEntry {
-private:
-    // opaque data class pattern
-    class PrivateData;
-    std::shared_ptr<PrivateData> d;
+namespace linuxdeploy {
+    namespace core {
+        namespace desktopfile {
+            class DesktopFileEntry {
+            private:
+                // opaque data class pattern
+                class PrivateData;
 
-public:
-    // default constructor
-    DesktopFileEntry();
+                std::shared_ptr<PrivateData> d;
 
-    // construct from key and value
-    explicit DesktopFileEntry(std::string key, std::string value);
+            public:
+                // default constructor
+                DesktopFileEntry();
 
-    // copy constructor
-    DesktopFileEntry(const DesktopFileEntry& other);
+                // construct from key and value
+                explicit DesktopFileEntry(std::string key, std::string value);
 
-    // copy assignment constructor
-    DesktopFileEntry& operator=(const DesktopFileEntry& other);
+                // copy constructor
+                DesktopFileEntry(const DesktopFileEntry& other);
 
-    // move assignment operator
-    DesktopFileEntry& operator=(DesktopFileEntry&& other) noexcept;
+                // copy assignment constructor
+                DesktopFileEntry& operator=(const DesktopFileEntry& other);
 
-    // equality operator
-    bool operator==(const DesktopFileEntry& other) const;
+                // move assignment operator
+                DesktopFileEntry& operator=(DesktopFileEntry&& other) noexcept;
 
-    // inequality operator
-    bool operator!=(const DesktopFileEntry& other) const;
+                // equality operator
+                bool operator==(const DesktopFileEntry& other) const;
 
-public:
-    // checks whether a key and value have been set
-    bool isEmpty() const;
+                // inequality operator
+                bool operator!=(const DesktopFileEntry& other) const;
 
-    // return entry's key
-    const std::string& key() const;
+            public:
+                // checks whether a key and value have been set
+                bool isEmpty() const;
 
-    // return entry's value
-    const std::string& value() const;
+                // return entry's key
+                const std::string& key() const;
 
-public:
-    // allow conversion of entry to string
-    // returns value
-    explicit operator std::string() const;
+                // return entry's value
+                const std::string& value() const;
 
-    // convert value to integer
-    // throws boost::bad_lexical_cast in case of type errors
-    int asInt() const;
+            public:
+                // allow conversion of entry to string
+                // returns value
+                explicit operator std::string() const;
 
-    // convert value to long
-    // throws boost::bad_lexical_cast in case of type errors
-    long asLong() const;
+                // convert value to integer
+                // throws boost::bad_lexical_cast in case of type errors
+                int asInt() const;
 
-    // convert value to double
-    // throws boost::bad_lexical_cast in case of type errors
-    double asDouble() const;
+                // convert value to long
+                // throws boost::bad_lexical_cast in case of type errors
+                long asLong() const;
 
-    // split CSV list value into vector
-    // the separator used to split the string is a semicolon as per desktop file spec
-    std::vector<std::string> parseStringList() const;
-};
+                // convert value to double
+                // throws boost::bad_lexical_cast in case of type errors
+                double asDouble() const;
+
+                // split CSV list value into vector
+                // the separator used to split the string is a semicolon as per desktop file spec
+                std::vector<std::string> parseStringList() const;
+            };
+        }
+    }
+}

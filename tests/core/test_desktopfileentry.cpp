@@ -7,6 +7,7 @@
 #include "../../src/core/desktopfileentry.h"
 
 using boost::bad_lexical_cast;
+using namespace linuxdeploy::core::desktopfile;
 
 namespace bf = boost::filesystem;
 

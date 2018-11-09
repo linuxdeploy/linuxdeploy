@@ -11,45 +11,52 @@
 // local includes
 #include "desktopfileentry.h"
 
-class DesktopFileReader {
-private:
-    // opaque data class pattern
-    class PrivateData;
-    std::shared_ptr<PrivateData> d;
+namespace linuxdeploy {
+    namespace core {
+        namespace desktopfile {
+            class DesktopFileReader {
+            private:
+                // opaque data class pattern
+                class PrivateData;
 
-public:
-    // default constructor
-    DesktopFileReader();
+                std::shared_ptr<PrivateData> d;
 
-    // construct from path
-    explicit DesktopFileReader(boost::filesystem::path path);
+            public:
+                // default constructor
+                DesktopFileReader();
 
-    // construct from existing istream
-    explicit DesktopFileReader(std::istream& is);
+                // construct from path
+                explicit DesktopFileReader(boost::filesystem::path path);
 
-    // copy constructor
-    DesktopFileReader(const DesktopFileReader& other);
+                // construct from existing istream
+                explicit DesktopFileReader(std::istream& is);
 
-    // copy assignment constructor
-    DesktopFileReader& operator=(const DesktopFileReader& other);
+                // copy constructor
+                DesktopFileReader(const DesktopFileReader& other);
 
-    // move assignment operator
-    DesktopFileReader& operator=(DesktopFileReader&& other) noexcept;
+                // copy assignment constructor
+                DesktopFileReader& operator=(const DesktopFileReader& other);
 
-    // equality operator
-    bool operator==(const DesktopFileReader& other) const;
+                // move assignment operator
+                DesktopFileReader& operator=(DesktopFileReader&& other) noexcept;
 
-    // inequality operator
-    bool operator!=(const DesktopFileReader& other) const;
+                // equality operator
+                bool operator==(const DesktopFileReader& other) const;
 
-public:
-    // checks whether parsed data is available
-    bool isEmpty() const;
+                // inequality operator
+                bool operator!=(const DesktopFileReader& other) const;
 
-    // returns desktop file path
-    boost::filesystem::path path() const;
+            public:
+                // checks whether parsed data is available
+                bool isEmpty() const;
 
-    // get a specific section from the parsed data
-    // throws std::range_error if section does not exist
-    std::unordered_map<std::string, DesktopFileEntry> operator[](const std::string& name);
-};
+                // returns desktop file path
+                boost::filesystem::path path() const;
+
+                // get a specific section from the parsed data
+                // throws std::range_error if section does not exist
+                std::unordered_map<std::string, DesktopFileEntry> operator[](const std::string& name);
+            };
+        }
+    }
+}

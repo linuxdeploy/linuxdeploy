@@ -5,6 +5,7 @@
 // local headers
 #include "../../src/core/desktopfilereader.h"
 
+using namespace linuxdeploy::core::desktopfile;
 namespace bf = boost::filesystem;
 
 class DesktopFileReaderFixture : public ::testing::Test {
