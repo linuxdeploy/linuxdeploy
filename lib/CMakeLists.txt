@@ -9,8 +9,6 @@ add_library(args INTERFACE)
 target_sources(args INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/args/args.hxx)
 target_include_directories(args INTERFACE args)
 
-add_subdirectory(cpp-feather-ini-parser)
-
 if(NOT USE_SYSTEM_BOOST)
     add_library(boost_config INTERFACE)
     set_property(TARGET boost_config PROPERTY INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/boost-config/include>")
