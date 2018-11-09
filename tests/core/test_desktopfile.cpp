@@ -66,7 +66,8 @@ TEST_F(DesktopFileFixture, testDefaultConstructor) {
 }
 
 TEST_F(DesktopFileFixture, testPathConstructor) {
-    EXPECT_THROW(DesktopFile("/a/b/c/d/e/f/g/h/1/2/3/4/5/6/7/8"), std::invalid_argument);
+    DesktopFile nonExistingPath("/a/b/c/d/e/f/g/h/1/2/3/4/5/6/7/8");
+    EXPECT_TRUE(nonExistingPath.isEmpty());
 
     DesktopFile emptyFile("/dev/null");
     EXPECT_TRUE(emptyFile.isEmpty());

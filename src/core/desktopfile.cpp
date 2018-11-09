@@ -36,8 +36,10 @@ namespace linuxdeploy {
             DesktopFile::DesktopFile() : d(std::make_shared<PrivateData>()) {}
 
             DesktopFile::DesktopFile(const bf::path& path) : DesktopFile() {
-                // will throw exceptions in case of issues
-                read(path);
+                if (bf::exists(path)) {
+                    // will throw exceptions in case of issues
+                    read(path);
+                }
             };
 
             DesktopFile::DesktopFile(std::istream& is) : DesktopFile() {

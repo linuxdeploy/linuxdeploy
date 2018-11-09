@@ -33,7 +33,8 @@ namespace linuxdeploy {
                     DesktopFile();
 
                     // construct from existing desktop file
-                    // file must exist, otherwise std::runtime_error is thrown
+                    // if the file exists, it will be read using DesktopFileReader
+                    // if reading fails, exceptions will be thrown (see DesktopFileReader for more information)
                     explicit DesktopFile(const boost::filesystem::path& path);
 
                     // construct by reading an existing stream
