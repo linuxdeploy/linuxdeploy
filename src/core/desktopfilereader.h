@@ -3,13 +3,13 @@
 // system includes
 #include <istream>
 #include <memory>
-#include <unordered_map>
 
 // library includes
 #include <boost/filesystem.hpp>
+#include <linuxdeploy/core/desktopfile.h>
 
 // local includes
-#include "desktopfileentry.h"
+#include "linuxdeploy/core/desktopfileentry.h"
 
 namespace linuxdeploy {
     namespace core {
@@ -20,13 +20,6 @@ namespace linuxdeploy {
                 class PrivateData;
 
                 std::shared_ptr<PrivateData> d;
-
-            public:
-                // describes a single section
-                typedef std::unordered_map<std::string, DesktopFileEntry> section_t;
-
-                // describes all sections in the desktop file
-                typedef std::unordered_map<std::string, section_t> sections_t;
 
             public:
                 // default constructor
@@ -62,7 +55,7 @@ namespace linuxdeploy {
 
                 // get a specific section from the parsed data
                 // throws std::range_error if section does not exist
-                section_t operator[](const std::string& name);
+                DesktopFile::section_t operator[](const std::string& name);
             };
         }
     }

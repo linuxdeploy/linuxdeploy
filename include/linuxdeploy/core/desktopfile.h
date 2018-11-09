@@ -1,7 +1,11 @@
 // system includes
+#include <unordered_map>
 
 // library includes
 #include <boost/filesystem.hpp>
+
+// local includes
+#include "desktopfileentry.h"
 
 #pragma once
 
@@ -12,7 +16,14 @@ namespace linuxdeploy {
              * Parse and read desktop files.
              */
             class DesktopFile {
-                private:
+            public:
+                // describes a single section
+                typedef std::unordered_map<std::string, DesktopFileEntry> section_t;
+
+                // describes all sections in the desktop file
+                typedef std::unordered_map<std::string, section_t> sections_t;
+
+            private:
                     // private data class pattern
                     class PrivateData;
                     PrivateData* d;

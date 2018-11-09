@@ -4,7 +4,7 @@
 #include <boost/lexical_cast.hpp>
 
 // local headers
-#include "../../src/core/desktopfileentry.h"
+#include "linuxdeploy/core/desktopfileentry.h"
 
 using boost::bad_lexical_cast;
 using namespace linuxdeploy::core::desktopfile;

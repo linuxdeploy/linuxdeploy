@@ -6,7 +6,7 @@
 
 // local headers
 #include "linuxdeploy/util/util.h"
-#include "desktopfileentry.h"
+#include "linuxdeploy/core/desktopfileentry.h"
 #include "desktopfilereader.h"
 
 namespace bf = boost::filesystem;
@@ -17,7 +17,7 @@ namespace linuxdeploy {
             class DesktopFileReader::PrivateData {
             public:
                 bf::path path;
-                sections_t sections;
+                DesktopFile::sections_t sections;
 
             public:
                 bool isEmpty() {
@@ -59,7 +59,7 @@ namespace linuxdeploy {
                                     auto title = line.substr(1, line.find(']') - 1);
 
                                     // set up the new section
-                                    sections.insert(std::make_pair(title, section_t()));
+                                    sections.insert(std::make_pair(title, DesktopFile::section_t()));
                                     currentSectionName = std::move(title);
                                 } else {
                                     // we require at least one section to be present in the desktop file
@@ -146,7 +146,7 @@ namespace linuxdeploy {
                 return d->path;
             }
 
-            DesktopFileReader::section_t DesktopFileReader::operator[](const std::string& name) {
+            DesktopFile::section_t DesktopFileReader::operator[](const std::string& name) {
                 auto it = d->sections.find(name);
 
                 // the map would lazy-initialize a new entry in case the section doesn't exist
