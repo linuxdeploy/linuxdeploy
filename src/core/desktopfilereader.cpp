@@ -14,12 +14,6 @@ namespace bf = boost::filesystem;
 namespace linuxdeploy {
     namespace core {
         namespace desktopfile {
-            // describes a single section
-            typedef std::unordered_map<std::string, DesktopFileEntry> section_t;
-
-            // describes all sections in the desktop file
-            typedef std::unordered_map<std::string, section_t> sections_t;
-
             class DesktopFileReader::PrivateData {
             public:
                 bf::path path;
@@ -152,7 +146,7 @@ namespace linuxdeploy {
                 return d->path;
             }
 
-            section_t DesktopFileReader::operator[](const std::string& name) {
+            DesktopFileReader::section_t DesktopFileReader::operator[](const std::string& name) {
                 auto it = d->sections.find(name);
 
                 // the map would lazy-initialize a new entry in case the section doesn't exist
