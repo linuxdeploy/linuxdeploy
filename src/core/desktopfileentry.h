@@ -58,6 +58,10 @@ public:
     // throws boost::bad_lexical_cast in case of type errors
     long asLong() const;
 
+    // convert value to double
+    // throws boost::bad_lexical_cast in case of type errors
+    double asDouble() const;
+
     // split CSV list value into vector
     // the separator used to split the string is a semicolon as per desktop file spec
     std::vector<std::string> parseStringList() const;

@@ -116,6 +116,17 @@ TEST_F(DesktopFileEntryFixture, testConversionToLong) {
     ASSERT_THROW(emptyEntry.asLong(), std::invalid_argument);
 }
 
+TEST_F(DesktopFileEntryFixture, testConversionToDouble) {
+    DesktopFileEntry doubleEntry(key, "1.234567");
+    EXPECT_NEAR(doubleEntry.asDouble(), 1.234567, 0.00000001);
+
+    DesktopFileEntry brokenValueEntry(key, "abcd");
+    ASSERT_THROW(brokenValueEntry.asDouble(), bad_lexical_cast);
+
+    DesktopFileEntry emptyEntry(key, "");
+    ASSERT_THROW(emptyEntry.asDouble(), std::invalid_argument);
+}
+
 TEST_F(DesktopFileEntryFixture, testConversionToString) {
     DesktopFileEntry entry(key, value);
     auto result = static_cast<std::string>(entry);

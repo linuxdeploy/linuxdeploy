@@ -87,6 +87,12 @@ long DesktopFileEntry::asLong() const {
     return lexical_cast<long>(value());
 }
 
+double DesktopFileEntry::asDouble() const {
+    d->assertValueNotEmpty();
+
+    return lexical_cast<double>(value());
+}
+
 std::vector<std::string> DesktopFileEntry::parseStringList() const {
     const auto& value = this->value();
 
