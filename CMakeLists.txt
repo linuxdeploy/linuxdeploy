@@ -10,6 +10,20 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake/Modules/
 set(USE_SYSTEM_BOOST OFF CACHE BOOL "Set to ON to use system boost libraries instead of building up to date boost libraries from source")
 set(USE_SYSTEM_CIMG ON CACHE BOOL "Set to OFF to use CImg library bundled in lib directory")
 
+# support for ccache
+# call CMake with -DUSE_CCACHE=ON to make use of it
+set(USE_CCACHE ON CACHE BOOL "")
+if(USE_CCACHE)
+    find_program(CCACHE ccache)
+    if(CCACHE)
+        message(STATUS "Using ccache")
+        set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ${CCACHE})
+        set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ${CCACHE})
+    else()
+        message(WARNING "USE_CCACHE set, but could not find ccache")
+    endif()
+endif()
+
 set(ENABLE_COVERAGE OFF CACHE BOOL "Enable coverage measurements")
 if(ENABLE_COVERAGE)
     include(CodeCoverage)
@@ -20,14 +34,13 @@ if(ENABLE_COVERAGE)
     set(COVERAGE_GCOVR_EXCLUDES ${PROJECT_SOURCE_DIR}/lib ${PROJECT_BINARY_DIR})
 
     include(ProcessorCount)
-    ProcessorCount(PROCESSOR_COUNT)
+    ProcessorCount(processor_count)
 
-    set(command ctest -V -j ${PROCESSOR_COUNT})
+    set(command cmake --build . --target all -- -j ${processor_count} && ctest -V)
 
     setup_target_for_coverage_gcovr_html(NAME coverage EXECUTABLE "${command}")
     setup_target_for_coverage_gcovr_xml(NAME coverage_xml EXECUTABLE "${command}")
     setup_target_for_coverage_gcovr_text(NAME coverage_text EXECUTABLE "${command}")
-    setup_target_for_coverage_lcov(NAME coverage_lcov EXECUTABLE "${command}")
 endif()
 
 add_subdirectory(lib)

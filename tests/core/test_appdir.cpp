@@ -71,11 +71,11 @@ namespace AppDirTest {
     }
 
 
-    TEST_F(AppDirUnitTestsFixture, depoloyLibraryWrongPath) {
+    TEST_F(AppDirUnitTestsFixture, deployLibraryWrongPath) {
         ASSERT_THROW(appDir.deployLibrary("/lib/fakelib.so"), std::exception);
     }
 
-    TEST_F(AppDirUnitTestsFixture, depoloyLibrary) {
+    TEST_F(AppDirUnitTestsFixture, deployLibrary) {
         appDir.deployLibrary(SIMPLE_LIBRARY_PATH);
         appDir.executeDeferredOperations();
 
