@@ -22,7 +22,7 @@ if(ENABLE_COVERAGE)
     include(ProcessorCount)
     ProcessorCount(PROCESSOR_COUNT)
 
-    set(command ctest -V -j ${PROCESSOR_COUNT})
+    set(command cmake --build . --target all && ctest -V -j ${PROCESSOR_COUNT})
 
     setup_target_for_coverage_gcovr_html(NAME coverage EXECUTABLE "${command}")
     setup_target_for_coverage_gcovr_xml(NAME coverage_xml EXECUTABLE "${command}")
