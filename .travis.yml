@@ -39,7 +39,7 @@ matrix:
           - cimg-dev
       install:
         # we don't need patchelf for building and running the tests
-        - pip install gcovr
+        - sudo pip install gcovr
       script: travis/test-coverage.sh
       after_success: true  # also, we don't intend to upload release binaries
     - env:
@@ -58,7 +58,7 @@ matrix:
           - libcairo2:i386
       install: true
           don't need patchelf for building and running the tests
-        - pip install gcovr
+        - sudo pip install gcovr
       script: travis/test-coverage.sh
       after_success: true  # also, we don't intend to upload release binaries
 
