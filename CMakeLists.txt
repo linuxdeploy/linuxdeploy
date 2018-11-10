@@ -27,7 +27,6 @@ if(ENABLE_COVERAGE)
     setup_target_for_coverage_gcovr_html(NAME coverage EXECUTABLE "${command}")
     setup_target_for_coverage_gcovr_xml(NAME coverage_xml EXECUTABLE "${command}")
     setup_target_for_coverage_gcovr_text(NAME coverage_text EXECUTABLE "${command}")
-    setup_target_for_coverage_lcov(NAME coverage_lcov EXECUTABLE "${command}")
 endif()
 
 add_subdirectory(lib)
