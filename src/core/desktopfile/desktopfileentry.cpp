@@ -3,7 +3,7 @@
 
 // local headers
 #include "linuxdeploy/core/log.h"
-#include "linuxdeploy/core/desktopfileentry.h"
+#include "linuxdeploy/core/desktopfile/desktopfileentry.h"
 
 using boost::lexical_cast;
 
