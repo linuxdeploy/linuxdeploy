@@ -10,18 +10,29 @@
 
 set -e
 
-# download excludelist
-blacklisted=($(wget --quiet https://raw.githubusercontent.com/probonopd/AppImages/master/excludelist -O - | sort | uniq | grep -v "^#.*" | grep "[^-\s]"))
+filename=excludelist.h
+
+tempfile=$(mktemp -t linuxdeploy-excludelist.h-XXXXXX)
+
+log_prefix="-- [$(basename $0)]"
+
+echo "$log_prefix downloading excludelist from GitHub"
+url="https://raw.githubusercontent.com/probonopd/AppImages/master/excludelist"
+blacklisted=($(wget --quiet "$url" -O - | sort | uniq | grep -v "^#.*" | grep "[^-\s]"))
 
 # sanity check
 if [ "$blacklisted" == "" ]; then
     exit 1;
 fi
 
-filename=excludelist.h
+# make sure to clean up tempfile in case of errors and on exit
+_cleanup() {
+    [ -f "$tempfile" ] && rm "$tempfile"
+}
+trap _cleanup EXIT
 
 # overwrite existing source file
-cat > "$filename" <<EOF
+cat > "$tempfile" <<\EOF
 /*
  * List of libraries to exclude for different reasons.
  *
@@ -42,10 +53,19 @@ cat > "$filename" <<EOF
 static const std::vector<std::string> generatedExcludelist = {
 EOF
 
-# Create array
+# create array
 for item in ${blacklisted[@]:0:${#blacklisted[@]}-1}; do
-    echo -e '    "'"$item"'",' >> "$filename"
+    echo -e '    "'"$item"'",' >> "$tempfile"
 done
-echo -e '    "'"${blacklisted[$((${#blacklisted[@]}-1))]}"'"' >> "$filename"
+echo -e '    "'"${blacklisted[$((${#blacklisted[@]}-1))]}"'"' >> "$tempfile"
 
-echo "};" >> "$filename"
+echo "};" >> "$tempfile"
+
+# avoid overwriting if the contents have not changed
+# this prevents CMake having to recompile half of linuxdeploy even if nothing changed
+if [ "$(sha256sum $filename | awk '{print $1}')" != "$(sha256sum $tempfile | awk '{print $1}')" ]; then
+    echo "$log_prefix changes detected, updating $filename"
+    cp "$tempfile" "$filename"
+else
+    echo "$log_prefix no changes detected, not touching $filename"
+fi
