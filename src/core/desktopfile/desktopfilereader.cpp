@@ -6,7 +6,7 @@
 
 // local headers
 #include "linuxdeploy/util/util.h"
-#include "linuxdeploy/core/desktopfileentry.h"
+#include "linuxdeploy/core/desktopfile/desktopfileentry.h"
 #include "desktopfilereader.h"
 
 namespace bf = boost::filesystem;

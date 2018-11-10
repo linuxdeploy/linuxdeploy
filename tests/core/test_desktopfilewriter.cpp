@@ -3,8 +3,8 @@
 #include <boost/filesystem.hpp>
 
 // local headers
-#include "../../src/core/desktopfilewriter.h"
-#include "../../src/core/desktopfilereader.h"
+#include "../../src/core/desktopfile/desktopfilewriter.h"
+#include "../../src/core/desktopfile/desktopfilereader.h"
 
 using namespace linuxdeploy::core::desktopfile;
 namespace bf = boost::filesystem;

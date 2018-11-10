@@ -3,8 +3,8 @@
 #include <boost/filesystem.hpp>
 
 // local headers
-#include "linuxdeploy/core/desktopfile.h"
-#include "../../src/core/desktopfilereader.h"
+#include "linuxdeploy/core/desktopfile/desktopfile.h"
+#include "../../src/core/desktopfile/desktopfilereader.h"
 
 using boost::bad_lexical_cast;
 using namespace linuxdeploy::core::desktopfile;

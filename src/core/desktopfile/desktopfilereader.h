@@ -8,8 +8,8 @@
 #include <boost/filesystem.hpp>
 
 // local includes
-#include "linuxdeploy/core/desktopfile.h"
-#include "linuxdeploy/core/desktopfileentry.h"
+#include "linuxdeploy/core/desktopfile/desktopfile.h"
+#include "linuxdeploy/core/desktopfile/desktopfileentry.h"
 
 namespace linuxdeploy {
     namespace core {

@@ -13,11 +13,17 @@ execute_process(
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
 )
 
-add_library(linuxdeploy_core_copyright STATIC copyright.cpp copyright.h copyright_dpkgquery.cpp copyright_dpkgquery.h)
-target_link_libraries(linuxdeploy_core_copyright PUBLIC subprocess ${BOOST_LIBS})
+add_library(linuxdeploy_core_log STATIC log.cpp)
+target_include_directories(linuxdeploy_core_log PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
-add_library(linuxdeploy_core STATIC elf.cpp log.cpp appdir.cpp desktopfile.cpp desktopfilereader.cpp desktopfileentry.cpp desktopfilewriter.cpp ${HEADERS})
-target_link_libraries(linuxdeploy_core PUBLIC linuxdeploy_plugin linuxdeploy_util ${BOOST_LIBS} subprocess CImg ${CMAKE_THREAD_LIBS_INIT})
+add_subdirectory(copyright)
+add_subdirectory(desktopfile)
+
+add_library(linuxdeploy_core STATIC elf.cpp appdir.cpp ${HEADERS})
+target_link_libraries(linuxdeploy_core PUBLIC
+    linuxdeploy_plugin linuxdeploy_core_log linuxdeploy_util linuxdeploy_core_desktopfile
+    ${BOOST_LIBS} CImg ${CMAKE_THREAD_LIBS_INIT}
+)
 target_link_libraries(linuxdeploy_core PRIVATE linuxdeploy_core_copyright)
 target_include_directories(linuxdeploy_core PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_include_directories(linuxdeploy_core PUBLIC ${PROJECT_SOURCE_DIR}/include)

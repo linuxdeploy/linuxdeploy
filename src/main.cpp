@@ -7,7 +7,7 @@
 
 // local headers
 #include "linuxdeploy/core/appdir.h"
-#include "linuxdeploy/core/desktopfile.h"
+#include "linuxdeploy/core/desktopfile/desktopfile.h"
 #include "linuxdeploy/core/elf.h"
 #include "linuxdeploy/core/log.h"
 #include "linuxdeploy/plugin/plugin.h"

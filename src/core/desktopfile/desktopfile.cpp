@@ -1,5 +1,5 @@
 // local headers
-#include "linuxdeploy/core/desktopfile.h"
+#include "linuxdeploy/core/desktopfile/desktopfile.h"
 #include "linuxdeploy/core/log.h"
 #include "desktopfilereader.h"
 #include "desktopfilewriter.h"
