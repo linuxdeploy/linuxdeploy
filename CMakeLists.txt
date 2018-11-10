@@ -20,9 +20,9 @@ if(ENABLE_COVERAGE)
     set(COVERAGE_GCOVR_EXCLUDES ${PROJECT_SOURCE_DIR}/lib ${PROJECT_BINARY_DIR})
 
     include(ProcessorCount)
-    ProcessorCount(PROCESSOR_COUNT)
+    ProcessorCount(processor_count)
 
-    set(command cmake --build . --target all && ctest -V -j ${PROCESSOR_COUNT})
+    set(command cmake --build . --target all -j ${processor_count} && ctest -V)
 
     setup_target_for_coverage_gcovr_html(NAME coverage EXECUTABLE "${command}")
     setup_target_for_coverage_gcovr_xml(NAME coverage_xml EXECUTABLE "${command}")
