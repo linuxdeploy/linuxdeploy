@@ -56,8 +56,8 @@ matrix:
           - g++-multilib
           - libfuse2:i386
           - libcairo2:i386
-      install: true
-          don't need patchelf for building and running the tests
+      install:
+        # we don't need patchelf for building and running the tests
         - sudo pip install gcovr
       script: travis/test-coverage.sh
       after_success: true  # also, we don't intend to upload release binaries
