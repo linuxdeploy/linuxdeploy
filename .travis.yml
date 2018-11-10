@@ -37,7 +37,9 @@ matrix:
           - libjpeg-dev
           - libpng-dev
           - cimg-dev
-      install: true  # we don't need patchelf for building and running the tests
+      install:
+        # we don't need patchelf for building and running the tests
+        - pip install gcovr
       script: travis/test-coverage.sh
       after_success: true  # also, we don't intend to upload release binaries
     - env:
@@ -54,7 +56,9 @@ matrix:
           - g++-multilib
           - libfuse2:i386
           - libcairo2:i386
-      install: true  # we don't need patchelf for building and running the tests
+      install: true
+          don't need patchelf for building and running the tests
+        - pip install gcovr
       script: travis/test-coverage.sh
       after_success: true  # also, we don't intend to upload release binaries
 
