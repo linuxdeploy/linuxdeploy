@@ -31,12 +31,11 @@ matrix:
         apt:
           update: true
           packages:
-          - libmagic-dev
-          - libjpeg-dev
-          - libpng-dev
-          - cimg-dev
-      install:
-        # we don't need patchelf for building and running the tests
+            - libmagic-dev
+            - libjpeg-dev
+            - libpng-dev
+            - cimg-dev
+      before_script:
         - sudo pip install gcovr
       script: travis/test-coverage.sh
       after_success: true  # also, we don't intend to upload release binaries
@@ -45,15 +44,14 @@ matrix:
         apt:
           update: true
           packages:
-          - libmagic-dev:i386
-          - libjpeg-dev:i386
-          - libpng-dev:i386
-          - gcc-multilib
-          - g++-multilib
-          - libfuse2:i386
-          - libcairo2:i386
-      install:
-        # we don't need patchelf for building and running the tests
+            - libmagic-dev:i386
+            - libjpeg-dev:i386
+            - libpng-dev:i386
+            - gcc-multilib
+            - g++-multilib
+            - libfuse2:i386
+            - libcairo2:i386
+      before_script:
         - sudo pip install gcovr
       script: travis/test-coverage.sh
       after_success: true  # also, we don't intend to upload release binaries
