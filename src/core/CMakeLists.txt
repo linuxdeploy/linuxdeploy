@@ -15,6 +15,7 @@ execute_process(
 
 add_library(linuxdeploy_core_log STATIC log.cpp)
 target_include_directories(linuxdeploy_core_log PUBLIC ${PROJECT_SOURCE_DIR}/include)
+target_link_libraries(linuxdeploy_core_log PUBLIC ${BOOST_LIBS})
 
 add_subdirectory(copyright)
 add_subdirectory(desktopfile)
