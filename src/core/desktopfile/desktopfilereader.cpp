@@ -56,10 +56,13 @@ namespace linuxdeploy {
                                 !((len >= 2 && (line[0] == '/' && line[1] == '/')) || (len >= 1 && line[0] == '#'))) {
                                 if (line[0] == '[') {
                                     // this line apparently introduces a new section
-                                    auto closingBracketPos = line.find_last_of(']');
+                                    auto closingBracketPos = line.find(']');
+                                    auto lastClosingBracketPos = line.find_last_of(']');
 
                                     if (closingBracketPos == std::string::npos)
                                         throw ParseError("No closing ] bracket in section header");
+                                    else if (closingBracketPos != lastClosingBracketPos)
+                                        throw ParseError("Two or more closing ] brackets in section header");
 
                                     size_t length = len - 2;
                                     auto title = line.substr(1, closingBracketPos - 1);
