@@ -163,6 +163,16 @@ TEST_F(DesktopFileReaderFixture, testParseFileMissingDelimiterInLine) {
     ASSERT_THROW(reader = DesktopFileReader(ss), ParseError);
 }
 
+TEST_F(DesktopFileReaderFixture, testParseFileMultipleDelimitersInLine) {
+    // TODO: verify that ==Name would be a legal value according to desktop file specification
+    std::stringstream ss;
+    ss << "[Desktop File]" << std::endl
+       << "Name===name" << std::endl;
+
+    DesktopFileReader reader;
+    ASSERT_NO_THROW(reader = DesktopFileReader(ss));
+}
+
 TEST_F(DesktopFileReaderFixture, testParseFileWithLeadingAndTrailingWhitespaceInLines) {
     std::stringstream ss;
     ss << "[Desktop File]" << std::endl
