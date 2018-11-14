@@ -203,25 +203,61 @@ TEST_F(DesktopFileReaderFixture, testParseLinesWithMultipleSpaces) {
 }
 
 TEST_F(DesktopFileReaderFixture, testReadBrokenSectionHeaderMissingClosingBracket) {
-    std::stringstream ins;
-    ins << "[Desktop Entry" << std::endl
-        << "test=test" << std::endl;
+    {
+        std::stringstream ins;
+        ins << "[Desktop Entry" << std::endl
+            << "test=test" << std::endl;
 
-    ASSERT_THROW(DesktopFileReader reader(ins), ParseError);
+        ASSERT_THROW(DesktopFileReader reader(ins), ParseError);
+    }
+
+    // also test for brokenness in a later section, as the first section is normally treated specially
+    {
+        std::stringstream ins;
+        ins << "[Desktop Entry]" << std::endl
+            << "test=test" << std::endl
+            << "[Another Section" << std::endl;
+
+        ASSERT_THROW(DesktopFileReader reader(ins), ParseError);
+    }
 }
 
 TEST_F(DesktopFileReaderFixture, testReadBrokenSectionHeaderTooManyClosingBrackets) {
-    std::stringstream ins;
-    ins << "[Desktop Entry]]" << std::endl
-        << "test=test" << std::endl;
+    {
+        std::stringstream ins;
+        ins << "[Desktop Entry]]" << std::endl
+            << "test=test" << std::endl;
 
-    ASSERT_THROW(DesktopFileReader reader(ins), ParseError);
+        ASSERT_THROW(DesktopFileReader reader(ins), ParseError);
+    }
+
+    // also test for brokenness in a later section, as the first section is normally treated specially
+    {
+        std::stringstream ins;
+        ins << "[Desktop Entry]" << std::endl
+            << "test=test" << std::endl
+            << "[Another Section]]" << std::endl;
+
+        ASSERT_THROW(DesktopFileReader reader(ins), ParseError);
+    }
 }
 
 TEST_F(DesktopFileReaderFixture, testReadBrokenSectionHeaderTooManyOpeningBrackets) {
-    std::stringstream ins;
-    ins << "[[Desktop Entry]" << std::endl
-        << "test=test" << std::endl;
+    {
+        std::stringstream ins;
+        ins << "[[Desktop Entry]" << std::endl
+            << "test=test" << std::endl;
 
-    ASSERT_THROW(DesktopFileReader reader(ins), ParseError);
+        ASSERT_THROW(DesktopFileReader reader(ins), ParseError);
+    }
+
+    // also test for brokenness in a later section, as the first section is normally treated specially
+    {
+        std::stringstream ins;
+        ins << "[Desktop Entry]" << std::endl
+            << "test=test" << std::endl
+            << "[[Another Section]";
+
+        ASSERT_THROW(DesktopFileReader reader(ins), ParseError);
+    }
 }
