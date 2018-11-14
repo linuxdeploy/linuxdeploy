@@ -217,3 +217,11 @@ TEST_F(DesktopFileReaderFixture, testReadBrokenSectionHeaderTooManyClosingBracke
 
     ASSERT_THROW(DesktopFileReader reader(ins), ParseError);
 }
+
+TEST_F(DesktopFileReaderFixture, testReadBrokenSectionHeaderTooManyOpeningBrackets) {
+    std::stringstream ins;
+    ins << "[[Desktop Entry]" << std::endl
+        << "test=test" << std::endl;
+
+    ASSERT_THROW(DesktopFileReader reader(ins), ParseError);
+}

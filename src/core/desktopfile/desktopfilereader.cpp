@@ -55,6 +55,9 @@ namespace linuxdeploy {
                             if (len > 0 &&
                                 !((len >= 2 && (line[0] == '/' && line[1] == '/')) || (len >= 1 && line[0] == '#'))) {
                                 if (line[0] == '[') {
+                                    if (line.find_last_of('[') != 0)
+                                        throw ParseError("Multiple opening [ brackets");
+
                                     // this line apparently introduces a new section
                                     auto closingBracketPos = line.find(']');
                                     auto lastClosingBracketPos = line.find_last_of(']');
