@@ -201,3 +201,11 @@ TEST_F(DesktopFileReaderFixture, testParseLinesWithMultipleSpaces) {
 
     EXPECT_EQ(section["Name"].value(), "What a great  name");
 }
+
+TEST_F(DesktopFileReaderFixture, testReadBrokenSectionHeader) {
+    std::stringstream ins;
+    ins << "[Desktop Entry" << std::endl
+        << "test=test" << std::endl;
+
+    ASSERT_THROW(DesktopFileReader reader(ins), ParseError);
+}

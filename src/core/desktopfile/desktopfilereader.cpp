@@ -56,8 +56,13 @@ namespace linuxdeploy {
                                 !((len >= 2 && (line[0] == '/' && line[1] == '/')) || (len >= 1 && line[0] == '#'))) {
                                 if (line[0] == '[') {
                                     // this line apparently introduces a new section
+                                    auto closingBracketPos = line.find_last_of(']');
+
+                                    if (closingBracketPos == std::string::npos)
+                                        throw ParseError("No closing ] bracket in section header");
+
                                     size_t length = len - 2;
-                                    auto title = line.substr(1, line.find(']') - 1);
+                                    auto title = line.substr(1, closingBracketPos - 1);
 
                                     // set up the new section
                                     sections.insert(std::make_pair(title, DesktopFile::section_t()));
