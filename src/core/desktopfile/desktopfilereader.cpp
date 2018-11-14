@@ -7,6 +7,7 @@
 // local headers
 #include "linuxdeploy/util/util.h"
 #include "linuxdeploy/core/desktopfile/desktopfileentry.h"
+#include "linuxdeploy/core/desktopfile/exceptions.h"
 #include "desktopfilereader.h"
 
 namespace bf = boost::filesystem;
@@ -26,7 +27,7 @@ namespace linuxdeploy {
 
                 void assertPathIsNotEmptyAndFileExists() {
                     if (path.empty())
-                        throw std::invalid_argument("empty path is not permitted");
+                        throw IOError("empty path is not permitted");
                 }
 
                 void copyData(const std::shared_ptr<PrivateData>& other) {
@@ -64,7 +65,7 @@ namespace linuxdeploy {
                                 } else {
                                     // we require at least one section to be present in the desktop file
                                     if (currentSectionName.empty())
-                                        throw std::invalid_argument("No section in desktop file");
+                                        throw ParseError("No section in desktop file");
 
                                     // this line should be a normal key-value pair
                                     std::string key = line.substr(0, line.find('='));
@@ -76,7 +77,7 @@ namespace linuxdeploy {
 
                                     // empty keys are not allowed for obvious reasons
                                     if (key.empty())
-                                        throw std::invalid_argument("Empty keys are not allowed");
+                                        throw ParseError("Empty keys are not allowed");
 
                                     // who are we to judge whether empty values are an issue
                                     // that'd require checking the key names and implementing checks per key according to the
@@ -97,7 +98,7 @@ namespace linuxdeploy {
 
                 std::ifstream ifs(d->path.string());
                 if (!ifs)
-                    throw std::invalid_argument("could not open file: " + d->path.string());
+                    throw IOError("could not open file: " + d->path.string());
 
                 d->parse(ifs);
             }
@@ -156,7 +157,7 @@ namespace linuxdeploy {
                 // the map would lazy-initialize a new entry in case the section doesn't exist
                 // therefore explicitly checking whether the section exists, throwing an exception in case it does not
                 if (it == d->sections.end())
-                    throw std::range_error("could not find section " + name);
+                    throw UnknownSectionError(name);
 
                 return it->second;
             }

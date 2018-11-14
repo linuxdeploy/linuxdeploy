@@ -4,6 +4,7 @@
 
 // local headers
 #include "linuxdeploy/util/util.h"
+#include "linuxdeploy/core/desktopfile/exceptions.h"
 #include "desktopfilewriter.h"
 
 namespace bf = boost::filesystem;
@@ -88,7 +89,7 @@ namespace linuxdeploy {
                 std::ofstream ofs(path.string());
 
                 if (!ofs)
-                    throw std::runtime_error("could not open file for writing: " + path.string());
+                    throw IOError("could not open file for writing: " + path.string());
 
                 save(ofs);
             }
