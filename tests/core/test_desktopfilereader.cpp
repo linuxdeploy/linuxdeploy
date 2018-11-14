@@ -261,3 +261,22 @@ TEST_F(DesktopFileReaderFixture, testReadBrokenSectionHeaderTooManyOpeningBracke
         ASSERT_THROW(DesktopFileReader reader(ins), ParseError);
     }
 }
+
+TEST_F(DesktopFileReaderFixture, testReadBrokenSectionMissingOpeningBracket) {
+    {
+        std::stringstream ins;
+        ins << "Desktop Entry]" << std::endl
+            << "test=test" << std::endl;
+        ASSERT_THROW(DesktopFileReader reader(ins), ParseError);
+    }
+
+    // also test for brokenness in a later section, as the first section is normally treated specially
+    {
+        std::stringstream ins;
+        ins << "[Desktop Entry]" << std::endl
+            << "test=test" << std::endl
+            << "Another Section]" << std::endl;
+
+        ASSERT_THROW(DesktopFileReader reader(ins), ParseError);
+    }
+}

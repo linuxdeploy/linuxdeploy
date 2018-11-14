@@ -78,9 +78,13 @@ namespace linuxdeploy {
                                     if (currentSectionName.empty())
                                         throw ParseError("No section in desktop file");
 
+                                    auto delimiterPos = line.find('=');
+                                    if (delimiterPos == std::string::npos)
+                                        throw ParseError("No = key/value delimiter found");
+
                                     // this line should be a normal key-value pair
-                                    std::string key = line.substr(0, line.find('='));
-                                    std::string value = line.substr(line.find('=') + 1, line.size());
+                                    std::string key = line.substr(0, delimiterPos);
+                                    std::string value = line.substr(delimiterPos + 1, line.size());
 
                                     // we can strip away any sort of leading or trailing whitespace safely
                                     linuxdeploy::util::trim(key);
