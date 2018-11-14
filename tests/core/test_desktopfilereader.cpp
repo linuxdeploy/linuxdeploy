@@ -154,6 +154,26 @@ TEST_F(DesktopFileReaderFixture, testParseFileEmptyKey) {
 }
 
 TEST_F(DesktopFileReaderFixture, testParseFileMissingDelimiterInLine) {
+    {
+        std::stringstream ss;
+        ss << "[Desktop File]" << std::endl
+           << "Exec" << std::endl;
+
+        DesktopFileReader reader;
+        ASSERT_THROW(reader = DesktopFileReader(ss), ParseError);
+    }
+
+    {
+        std::stringstream ss;
+        ss << "[Desktop File]" << std::endl
+           << "Name name" << std::endl;
+
+        DesktopFileReader reader;
+        ASSERT_THROW(reader = DesktopFileReader(ss), ParseError);
+    }
+}
+
+TEST_F(DesktopFileReaderFixture, testParseFile) {
     std::stringstream ss;
     ss << "[Desktop File]" << std::endl
        << "Name name" << std::endl
