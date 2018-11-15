@@ -78,16 +78,16 @@ namespace linuxdeploy {
                 return d->value;
             }
 
-            int DesktopFileEntry::asInt() const {
+            int32_t DesktopFileEntry::asInt() const {
                 d->assertValueNotEmpty();
 
-                return lexical_cast<int>(value());
+                return lexical_cast<int32_t>(value());
             }
 
-            long DesktopFileEntry::asLong() const {
+            int64_t DesktopFileEntry::asLong() const {
                 d->assertValueNotEmpty();
 
-                return lexical_cast<long>(value());
+                return lexical_cast<int64_t>(value());
             }
 
             double DesktopFileEntry::asDouble() const {

@@ -56,11 +56,11 @@ namespace linuxdeploy {
 
                 // convert value to integer
                 // throws boost::bad_lexical_cast in case of type errors
-                int asInt() const;
+                int32_t asInt() const;
 
                 // convert value to long
                 // throws boost::bad_lexical_cast in case of type errors
-                long asLong() const;
+                int64_t asLong() const;
 
                 // convert value to double
                 // throws boost::bad_lexical_cast in case of type errors
