@@ -77,3 +77,14 @@ TEST_F(DesktopFileConformanceTest, testBasicFormatValidKeyCharacters) {
         EXPECT_NO_THROW(DesktopFile file(ss));
     }
 }
+
+TEST_F(DesktopFileConformanceTest, testBasicFormatCheckKeysUnique) {
+    {
+        std::stringstream ss;
+        ss << "[Desktop Entry]" << std::endl
+           << "foo=bar" << std::endl
+           << "foo=baz" << std::endl;
+
+        EXPECT_THROW(DesktopFile file(ss), ParseError);
+    }
+}

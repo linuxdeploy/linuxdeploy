@@ -105,10 +105,13 @@ namespace linuxdeploy {
                                             throw ParseError("Key contains invalid character " + std::string{c});
                                     }
 
-                                    // who are we to judge whether empty values are an issue
-                                    // that'd require checking the key names and implementing checks per key according to the
-                                    // freedesktop.org spec
-                                    sections[currentSectionName][key] = DesktopFileEntry(key, value);
+                                    auto& section = sections[currentSectionName];
+
+                                    // keys must be unique in the same section
+                                    if (section.find(key) != section.end())
+                                        throw ParseError("Key " + key + " found more than once");
+
+                                    section[key] = DesktopFileEntry(key, value);
                                 }
                             }
                         }
