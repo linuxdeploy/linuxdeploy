@@ -34,8 +34,7 @@ namespace linuxdeploy {
                         if (size == 0)
                             continue;
 
-                        if (size > buf.size())
-                            throw std::runtime_error("Read more bytes than buffer size");
+                        assert(size <= buf.size());
 
                         auto outBufSize = outBuf.size();
                         outBuf.reserve(outBufSize + size + 1);
