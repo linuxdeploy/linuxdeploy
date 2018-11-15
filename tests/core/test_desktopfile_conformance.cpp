@@ -50,7 +50,7 @@ TEST_F(DesktopFileConformanceTest, testBasicFormatValidKeyCharacters) {
         ss << "[Desktop Entry]" << std::endl
            << "TestKey=foo" << std::endl;
 
-        EXPECT_THROW(DesktopFile file(ss), ParseError);
+        EXPECT_NO_THROW(DesktopFile file(ss));
     }
 
     {
@@ -58,7 +58,7 @@ TEST_F(DesktopFileConformanceTest, testBasicFormatValidKeyCharacters) {
         ss << "[Desktop Entry]" << std::endl
            << "4242trolol0=foo" << std::endl;
 
-        EXPECT_THROW(DesktopFile file(ss), ParseError);
+        EXPECT_NO_THROW(DesktopFile file(ss));
     }
 
     {
@@ -66,6 +66,14 @@ TEST_F(DesktopFileConformanceTest, testBasicFormatValidKeyCharacters) {
         ss << "[Desktop Entry]" << std::endl
            << "----=foo" << std::endl;
 
-        EXPECT_THROW(DesktopFile file(ss), ParseError);
+        EXPECT_NO_THROW(DesktopFile file(ss));
+    }
+
+    {
+        std::stringstream ss;
+        ss << "[Desktop Entry]" << std::endl
+           << "allLowerCase=foo" << std::endl;
+
+        EXPECT_NO_THROW(DesktopFile file(ss));
     }
 }

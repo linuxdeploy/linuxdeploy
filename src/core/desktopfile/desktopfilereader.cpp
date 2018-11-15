@@ -95,8 +95,10 @@ namespace linuxdeploy {
                                         throw ParseError("Empty keys are not allowed");
 
                                     // keys may only contain A-Za-z- characters according to specification
-                                    for (const auto c : key) {
-                                        if (!(c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c == '-'))
+                                    for (const char c : key) {
+                                        if (!(
+                                                (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || (c == '-')
+                                            ))
                                             throw ParseError("Key contains invalid character " + std::string{c});
                                     }
 
