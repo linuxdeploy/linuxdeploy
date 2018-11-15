@@ -28,6 +28,10 @@ namespace linuxdeploy {
                     class PrivateData;
                     std::shared_ptr<PrivateData> d;
 
+                    // (in)equality operators are implemented outside this class
+                    friend bool operator==(const DesktopFile& first, const DesktopFile& second);
+                    friend bool operator!=(const DesktopFile& first, const DesktopFile& second);
+
                 public:
                     // default constructor
                     DesktopFile();
@@ -49,12 +53,6 @@ namespace linuxdeploy {
 
                     // move assignment operator
                     DesktopFile& operator=(DesktopFile&& other) noexcept;
-
-                    // equality operator
-                    bool operator==(const DesktopFile& other);
-
-                    // inequality operator
-                    bool operator!=(const DesktopFile& other);
 
             public:
                     // returns true if a file has been loaded, false otherwise
@@ -117,6 +115,12 @@ namespace linuxdeploy {
                     // validate desktop file
                     bool validate() const;
             };
+
+            // DesktopFile equality operator
+            bool operator==(const DesktopFile& first, const DesktopFile& second);
+
+            // DesktopFile inequality operator
+            bool operator!=(const DesktopFile& first, const DesktopFile& second);
         }
     }
 }

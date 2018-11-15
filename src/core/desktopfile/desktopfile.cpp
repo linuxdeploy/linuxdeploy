@@ -193,12 +193,12 @@ namespace linuxdeploy {
                 return true;
             }
 
-            bool DesktopFile::operator==(const DesktopFile& other) {
-                return d->data == other.d->data;
+            bool operator==(const DesktopFile& first, const DesktopFile& second) {
+                return first.d->data == second.d->data;
             }
 
-            bool DesktopFile::operator!=(const DesktopFile& other) {
-                return !operator==(other);
+            bool operator!=(const DesktopFile& first, const DesktopFile& second) {
+                return !operator==(first, second);
             }
         }
     }

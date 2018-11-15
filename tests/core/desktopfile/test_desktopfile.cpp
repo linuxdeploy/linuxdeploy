@@ -243,6 +243,8 @@ TEST_F(DesktopFileFixture, testEquality) {
 
     EXPECT_TRUE(file0 == file1);
     EXPECT_FALSE(file0 != file1);
+
+    EXPECT_EQ(file0, file1);
 }
 
 TEST_F(DesktopFileFixture, testInequality) {
@@ -255,4 +257,6 @@ TEST_F(DesktopFileFixture, testInequality) {
 
     EXPECT_TRUE(file != emptyFile);
     EXPECT_FALSE(file == emptyFile);
+
+    EXPECT_NE(file, emptyFile);
 }
