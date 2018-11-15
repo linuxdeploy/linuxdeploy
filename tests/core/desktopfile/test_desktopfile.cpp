@@ -12,7 +12,7 @@ using namespace linuxdeploy::core::desktopfile;
 
 namespace bf = boost::filesystem;
 
-class DesktopFileFixture : public ::testing::Test {
+class DesktopFileTest : public ::testing::Test {
 public:
     std::string testType;
     std::string testName;
@@ -61,12 +61,12 @@ public:
     }
 };
 
-TEST_F(DesktopFileFixture, testDefaultConstructor) {
+TEST_F(DesktopFileTest, testDefaultConstructor) {
     DesktopFile file;
     EXPECT_TRUE(file.isEmpty());
 }
 
-TEST_F(DesktopFileFixture, testPathConstructor) {
+TEST_F(DesktopFileTest, testPathConstructor) {
     ASSERT_THROW(DesktopFile nonExistingPath("/a/b/c/d/e/f/g/h/1/2/3/4/5/6/7/8"), IOError);
 
     DesktopFile emptyFile("/dev/null");
@@ -76,7 +76,7 @@ TEST_F(DesktopFileFixture, testPathConstructor) {
     EXPECT_FALSE(file.isEmpty());
 }
 
-TEST_F(DesktopFileFixture, testStreamConstructor) {
+TEST_F(DesktopFileTest, testStreamConstructor) {
     std::stringstream emptyString;
     DesktopFile emptyFile(emptyString);
     EXPECT_TRUE(emptyFile.isEmpty());
@@ -89,7 +89,7 @@ TEST_F(DesktopFileFixture, testStreamConstructor) {
     assertIsTestDesktopFile(file);
 }
 
-TEST_F(DesktopFileFixture, testCopyConstructor) {
+TEST_F(DesktopFileTest, testCopyConstructor) {
     DesktopFile empty;
     EXPECT_TRUE(empty == empty);
     EXPECT_FALSE(empty != empty);
@@ -111,7 +111,7 @@ TEST_F(DesktopFileFixture, testCopyConstructor) {
     assertIsTestDesktopFile(copy);
 }
 
-TEST_F(DesktopFileFixture, testCopyAssignmentConstructor) {
+TEST_F(DesktopFileTest, testCopyAssignmentConstructor) {
     std::stringstream ss;
     ss << testDesktopFile;
     DesktopFile file(ss);
@@ -126,7 +126,7 @@ TEST_F(DesktopFileFixture, testCopyAssignmentConstructor) {
     assertIsTestDesktopFile(copy);
 }
 
-TEST_F(DesktopFileFixture, testMoveAssignmentConstructor) {
+TEST_F(DesktopFileTest, testMoveAssignmentConstructor) {
     std::stringstream ss;
     ss << testDesktopFile;
     DesktopFile file(ss);
@@ -138,7 +138,7 @@ TEST_F(DesktopFileFixture, testMoveAssignmentConstructor) {
     assertIsTestDesktopFile(copy);
 }
 
-TEST_F(DesktopFileFixture, testAddDefaultValues) {
+TEST_F(DesktopFileTest, testAddDefaultValues) {
     const auto& value = "testExecutable";
 
     DesktopFile file;
@@ -157,7 +157,7 @@ TEST_F(DesktopFileFixture, testAddDefaultValues) {
     EXPECT_EQ(reader["Desktop Entry"]["Categories"].value(), "Utility;");
 }
 
-TEST_F(DesktopFileFixture, testAddDefaultValuesExistingKeys) {
+TEST_F(DesktopFileTest, testAddDefaultValuesExistingKeys) {
     const auto& value = "testExecutable";
 
     std::stringstream iss;
@@ -181,7 +181,7 @@ TEST_F(DesktopFileFixture, testAddDefaultValuesExistingKeys) {
     EXPECT_EQ(reader["Desktop Entry"]["Categories"].value(), "Utility;");
 }
 
-TEST_F(DesktopFileFixture, testAddDefaultValuesNoOverwrite) {
+TEST_F(DesktopFileTest, testAddDefaultValuesNoOverwrite) {
     const auto& value = "testExecutable";
 
     std::stringstream iss;
@@ -208,7 +208,7 @@ TEST_F(DesktopFileFixture, testAddDefaultValuesNoOverwrite) {
     }
 }
 
-TEST_F(DesktopFileFixture, testSaveToPath) {
+TEST_F(DesktopFileTest, testSaveToPath) {
     std::stringstream ins;
     ins << testDesktopFile;
 
@@ -217,12 +217,12 @@ TEST_F(DesktopFileFixture, testSaveToPath) {
     EXPECT_NO_THROW(file.save("/dev/null"));
 }
 
-TEST_F(DesktopFileFixture, testSave) {
+TEST_F(DesktopFileTest, testSave) {
     DesktopFile file("/dev/null");
     EXPECT_NO_THROW(file.save());
 }
 
-TEST_F(DesktopFileFixture, testSaveToStream) {
+TEST_F(DesktopFileTest, testSaveToStream) {
     std::stringstream ins;
     ins << testDesktopFile;
 
@@ -234,7 +234,7 @@ TEST_F(DesktopFileFixture, testSaveToStream) {
     assertHasTestDesktopFileKeys(outs);
 }
 
-TEST_F(DesktopFileFixture, testEquality) {
+TEST_F(DesktopFileTest, testEquality) {
     std::stringstream ins0(testDesktopFile);
     std::stringstream ins1(testDesktopFile);
 
@@ -247,7 +247,7 @@ TEST_F(DesktopFileFixture, testEquality) {
     EXPECT_EQ(file0, file1);
 }
 
-TEST_F(DesktopFileFixture, testInequality) {
+TEST_F(DesktopFileTest, testInequality) {
     std::stringstream ins;
     ins << testDesktopFile;
 

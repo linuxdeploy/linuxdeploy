@@ -11,13 +11,13 @@ using namespace linuxdeploy::core::desktopfile;
 
 namespace bf = boost::filesystem;
 
-class DesktopFileEntryFixture : public ::testing::Test {
+class DesktopFileEntryTest : public ::testing::Test {
 public:
     const std::string key;
     const std::string value;
 
 protected:
-    DesktopFileEntryFixture() : key("testKey"), value("testValue") {}
+    DesktopFileEntryTest() : key("testKey"), value("testValue") {}
     
 private:
     void SetUp() override {}
@@ -25,25 +25,25 @@ private:
     void TearDown() override {}
 };
 
-TEST_F(DesktopFileEntryFixture, testDefaultConstructor) {
+TEST_F(DesktopFileEntryTest, testDefaultConstructor) {
     DesktopFileEntry entry;
     EXPECT_TRUE(entry.isEmpty());
 }
 
-TEST_F(DesktopFileEntryFixture, testKeyValueConstructor) {
+TEST_F(DesktopFileEntryTest, testKeyValueConstructor) {
     DesktopFileEntry entry(key, value);
     EXPECT_FALSE(entry.isEmpty());
     EXPECT_EQ(entry.key(), key);
     EXPECT_EQ(entry.value(), value);
 }
 
-TEST_F(DesktopFileEntryFixture, testGetters) {
+TEST_F(DesktopFileEntryTest, testGetters) {
     DesktopFileEntry entry(key, value);
     EXPECT_EQ(entry.key(), key);
     EXPECT_EQ(entry.value(), value);
 }
 
-TEST_F(DesktopFileEntryFixture, testEqualityAndInequalityOperators) {
+TEST_F(DesktopFileEntryTest, testEqualityAndInequalityOperators) {
     DesktopFileEntry emptyEntry;
     EXPECT_TRUE(emptyEntry == emptyEntry);
     EXPECT_FALSE(emptyEntry != emptyEntry);
@@ -55,7 +55,7 @@ TEST_F(DesktopFileEntryFixture, testEqualityAndInequalityOperators) {
     EXPECT_NE(nonEmptyEntry, nonEmptyEntryWithDifferentValue);
 }
 
-TEST_F(DesktopFileEntryFixture, testCopyConstructor) {
+TEST_F(DesktopFileEntryTest, testCopyConstructor) {
     DesktopFileEntry entry(key, value);
     EXPECT_FALSE(entry.isEmpty());
 
@@ -65,7 +65,7 @@ TEST_F(DesktopFileEntryFixture, testCopyConstructor) {
     EXPECT_EQ(entry, copy);
 }
 
-TEST_F(DesktopFileEntryFixture, testCopyAssignmentConstructor) {
+TEST_F(DesktopFileEntryTest, testCopyAssignmentConstructor) {
     DesktopFileEntry entry;
     EXPECT_TRUE(entry.isEmpty());
 
@@ -80,7 +80,7 @@ TEST_F(DesktopFileEntryFixture, testCopyAssignmentConstructor) {
     entry = entry;
 }
 
-TEST_F(DesktopFileEntryFixture, testMoveAssignmentConstructor) {
+TEST_F(DesktopFileEntryTest, testMoveAssignmentConstructor) {
     DesktopFileEntry entry;
     EXPECT_TRUE(entry.isEmpty());
 
@@ -95,7 +95,7 @@ TEST_F(DesktopFileEntryFixture, testMoveAssignmentConstructor) {
     entry = std::move(entry);
 }
 
-TEST_F(DesktopFileEntryFixture, testConversionToInt) {
+TEST_F(DesktopFileEntryTest, testConversionToInt) {
     DesktopFileEntry intEntry(key, "1234");
     EXPECT_EQ(intEntry.asInt(), 1234);
 
@@ -106,7 +106,7 @@ TEST_F(DesktopFileEntryFixture, testConversionToInt) {
     ASSERT_THROW(emptyEntry.asInt(), std::invalid_argument);
 }
 
-TEST_F(DesktopFileEntryFixture, testConversionToLong) {
+TEST_F(DesktopFileEntryTest, testConversionToLong) {
     DesktopFileEntry intEntry(key, "123456789123456789");
     EXPECT_EQ(intEntry.asLong(), 123456789123456789L);
 
@@ -117,7 +117,7 @@ TEST_F(DesktopFileEntryFixture, testConversionToLong) {
     ASSERT_THROW(emptyEntry.asLong(), std::invalid_argument);
 }
 
-TEST_F(DesktopFileEntryFixture, testConversionToDouble) {
+TEST_F(DesktopFileEntryTest, testConversionToDouble) {
     DesktopFileEntry doubleEntry(key, "1.234567");
     EXPECT_NEAR(doubleEntry.asDouble(), 1.234567, 0.00000001);
 
@@ -128,7 +128,7 @@ TEST_F(DesktopFileEntryFixture, testConversionToDouble) {
     ASSERT_THROW(emptyEntry.asDouble(), std::invalid_argument);
 }
 
-TEST_F(DesktopFileEntryFixture, testParsingStringList) {
+TEST_F(DesktopFileEntryTest, testParsingStringList) {
     DesktopFileEntry emptyEntry(key, "");
     EXPECT_EQ(emptyEntry.parseStringList(), std::vector<std::string>({}));
 

@@ -9,17 +9,17 @@
 using namespace linuxdeploy::core::desktopfile;
 namespace bf = boost::filesystem;
 
-class DesktopFileReaderFixture : public ::testing::Test {
+class DesktopFileReaderTest : public ::testing::Test {
     void SetUp() override {}
     void TearDown() override {}
 };
 
-TEST_F(DesktopFileReaderFixture, testDefaultConstructor) {
+TEST_F(DesktopFileReaderTest, testDefaultConstructor) {
     DesktopFileReader reader;
     EXPECT_TRUE(reader.isEmpty());
 }
 
-TEST_F(DesktopFileReaderFixture, testPathConstructor) {
+TEST_F(DesktopFileReaderTest, testPathConstructor) {
     bf::path path = "/dev/null";
 
     DesktopFileReader reader(path);
@@ -28,28 +28,28 @@ TEST_F(DesktopFileReaderFixture, testPathConstructor) {
     ASSERT_THROW(DesktopFileReader("/no/such/file/or/directory"), IOError);
 }
 
-TEST_F(DesktopFileReaderFixture, testStreamConstructor) {
+TEST_F(DesktopFileReaderTest, testStreamConstructor) {
     std::stringstream ss;
     DesktopFileReader reader(ss);
 
     EXPECT_TRUE(reader.isEmpty());
 }
 
-TEST_F(DesktopFileReaderFixture, testPathConstructorWithEmptyPath) {
+TEST_F(DesktopFileReaderTest, testPathConstructorWithEmptyPath) {
     ASSERT_THROW(DesktopFileReader(""), IOError);
 }
 
-TEST_F(DesktopFileReaderFixture, testPathConstructorWithNonExistingPath) {
+TEST_F(DesktopFileReaderTest, testPathConstructorWithNonExistingPath) {
     ASSERT_THROW(DesktopFileReader("/no/such/path/42"), IOError);
 }
 
-TEST_F(DesktopFileReaderFixture, testEqualityAndInequalityOperators) {
+TEST_F(DesktopFileReaderTest, testEqualityAndInequalityOperators) {
     DesktopFileReader emptyReader;
     EXPECT_TRUE(emptyReader == emptyReader);
     EXPECT_FALSE(emptyReader != emptyReader);
 }
 
-TEST_F(DesktopFileReaderFixture, testCopyConstructor) {
+TEST_F(DesktopFileReaderTest, testCopyConstructor) {
     bf::path path = "/dev/null";
 
     DesktopFileReader reader(path);
@@ -61,7 +61,7 @@ TEST_F(DesktopFileReaderFixture, testCopyConstructor) {
     EXPECT_EQ(reader, copy);
 }
 
-TEST_F(DesktopFileReaderFixture, testCopyAssignmentConstructor) {
+TEST_F(DesktopFileReaderTest, testCopyAssignmentConstructor) {
     bf::path path = "/dev/null";
 
     DesktopFileReader reader;
@@ -77,7 +77,7 @@ TEST_F(DesktopFileReaderFixture, testCopyAssignmentConstructor) {
     reader = reader;
 }
 
-TEST_F(DesktopFileReaderFixture, testMoveAssignmentConstructor) {
+TEST_F(DesktopFileReaderTest, testMoveAssignmentConstructor) {
     bf::path path = "/dev/null";
 
     DesktopFileReader reader;
@@ -93,7 +93,7 @@ TEST_F(DesktopFileReaderFixture, testMoveAssignmentConstructor) {
     reader = std::move(reader);
 }
 
-TEST_F(DesktopFileReaderFixture, testParseSimpleDesktopFile) {
+TEST_F(DesktopFileReaderTest, testParseSimpleDesktopFile) {
     std::stringstream ss;
     ss << "[Desktop File]" << std::endl
        << "Version=1.0" << std::endl
@@ -118,7 +118,7 @@ TEST_F(DesktopFileReaderFixture, testParseSimpleDesktopFile) {
     EXPECT_EQ(section["Categories"].parseStringList(), std::vector<std::string>({"Utility", "Multimedia"}));
 }
 
-TEST_F(DesktopFileReaderFixture, testParseFileGetNonExistingSection) {
+TEST_F(DesktopFileReaderTest, testParseFileGetNonExistingSection) {
     std::stringstream ss;
     ss << "[Desktop File]" << std::endl;
 
@@ -128,7 +128,7 @@ TEST_F(DesktopFileReaderFixture, testParseFileGetNonExistingSection) {
     ASSERT_THROW(reader["Non-existing Section"], UnknownSectionError);
 }
 
-TEST_F(DesktopFileReaderFixture, testParseFileMissingSectionHeader) {
+TEST_F(DesktopFileReaderTest, testParseFileMissingSectionHeader) {
     std::stringstream ss;
     ss << "Name=name" << std::endl
        << "Exec=exec" << std::endl
@@ -140,7 +140,7 @@ TEST_F(DesktopFileReaderFixture, testParseFileMissingSectionHeader) {
     ASSERT_THROW(reader = DesktopFileReader(ss), ParseError);
 }
 
-TEST_F(DesktopFileReaderFixture, testParseFileEmptyKey) {
+TEST_F(DesktopFileReaderTest, testParseFileEmptyKey) {
     std::stringstream ss;
     ss << "[Desktop File]" << std::endl
        << "=name" << std::endl
@@ -153,7 +153,7 @@ TEST_F(DesktopFileReaderFixture, testParseFileEmptyKey) {
     ASSERT_THROW(reader = DesktopFileReader(ss), ParseError);
 }
 
-TEST_F(DesktopFileReaderFixture, testParseFileMissingDelimiterInLine) {
+TEST_F(DesktopFileReaderTest, testParseFileMissingDelimiterInLine) {
     {
         std::stringstream ss;
         ss << "[Desktop File]" << std::endl
@@ -173,7 +173,7 @@ TEST_F(DesktopFileReaderFixture, testParseFileMissingDelimiterInLine) {
     }
 }
 
-TEST_F(DesktopFileReaderFixture, testParseFile) {
+TEST_F(DesktopFileReaderTest, testParseFile) {
     std::stringstream ss;
     ss << "[Desktop File]" << std::endl
        << "Name name" << std::endl
@@ -183,7 +183,7 @@ TEST_F(DesktopFileReaderFixture, testParseFile) {
     ASSERT_THROW(reader = DesktopFileReader(ss), ParseError);
 }
 
-TEST_F(DesktopFileReaderFixture, testParseFileMultipleDelimitersInLine) {
+TEST_F(DesktopFileReaderTest, testParseFileMultipleDelimitersInLine) {
     // TODO: verify that ==Name would be a legal value according to desktop file specification
     std::stringstream ss;
     ss << "[Desktop File]" << std::endl
@@ -193,7 +193,7 @@ TEST_F(DesktopFileReaderFixture, testParseFileMultipleDelimitersInLine) {
     ASSERT_NO_THROW(reader = DesktopFileReader(ss));
 }
 
-TEST_F(DesktopFileReaderFixture, testParseFileWithLeadingAndTrailingWhitespaceInLines) {
+TEST_F(DesktopFileReaderTest, testParseFileWithLeadingAndTrailingWhitespaceInLines) {
     std::stringstream ss;
     ss << "[Desktop File]" << std::endl
        << "Name= name" << std::endl
@@ -208,7 +208,7 @@ TEST_F(DesktopFileReaderFixture, testParseFileWithLeadingAndTrailingWhitespaceIn
     EXPECT_EQ(section["Exec"].value(), "exec");
 }
 
-TEST_F(DesktopFileReaderFixture, testDataGetter) {
+TEST_F(DesktopFileReaderTest, testDataGetter) {
     std::stringstream ss;
     ss << "[Desktop File]" << std::endl
        << "Name= name" << std::endl
@@ -229,7 +229,7 @@ TEST_F(DesktopFileReaderFixture, testDataGetter) {
     EXPECT_EQ(data["Desktop File"], expected);
 }
 
-TEST_F(DesktopFileReaderFixture, testParseLinesWithMultipleSpaces) {
+TEST_F(DesktopFileReaderTest, testParseLinesWithMultipleSpaces) {
     std::stringstream ss;
     ss << "[Desktop File]" << std::endl
        << "Name= What a great  name    " << std::endl;
@@ -242,7 +242,7 @@ TEST_F(DesktopFileReaderFixture, testParseLinesWithMultipleSpaces) {
     EXPECT_EQ(section["Name"].value(), "What a great  name");
 }
 
-TEST_F(DesktopFileReaderFixture, testReadBrokenSectionHeaderMissingClosingBracket) {
+TEST_F(DesktopFileReaderTest, testReadBrokenSectionHeaderMissingClosingBracket) {
     {
         std::stringstream ins;
         ins << "[Desktop Entry" << std::endl
@@ -262,7 +262,7 @@ TEST_F(DesktopFileReaderFixture, testReadBrokenSectionHeaderMissingClosingBracke
     }
 }
 
-TEST_F(DesktopFileReaderFixture, testReadBrokenSectionHeaderTooManyClosingBrackets) {
+TEST_F(DesktopFileReaderTest, testReadBrokenSectionHeaderTooManyClosingBrackets) {
     {
         std::stringstream ins;
         ins << "[Desktop Entry]]" << std::endl
@@ -282,7 +282,7 @@ TEST_F(DesktopFileReaderFixture, testReadBrokenSectionHeaderTooManyClosingBracke
     }
 }
 
-TEST_F(DesktopFileReaderFixture, testReadBrokenSectionHeaderTooManyOpeningBrackets) {
+TEST_F(DesktopFileReaderTest, testReadBrokenSectionHeaderTooManyOpeningBrackets) {
     {
         std::stringstream ins;
         ins << "[[Desktop Entry]" << std::endl
@@ -302,7 +302,7 @@ TEST_F(DesktopFileReaderFixture, testReadBrokenSectionHeaderTooManyOpeningBracke
     }
 }
 
-TEST_F(DesktopFileReaderFixture, testReadBrokenSectionMissingOpeningBracket) {
+TEST_F(DesktopFileReaderTest, testReadBrokenSectionMissingOpeningBracket) {
     {
         std::stringstream ins;
         ins << "Desktop Entry]" << std::endl

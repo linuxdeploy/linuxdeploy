@@ -10,21 +10,21 @@
 using namespace linuxdeploy::core::desktopfile;
 namespace bf = boost::filesystem;
 
-class DesktopFileWriterFixture : public ::testing::Test {
+class DesktopFileWriterTest : public ::testing::Test {
     void SetUp() override {}
     void TearDown() override {}
 };
 
-TEST_F(DesktopFileWriterFixture, testDefaultConstructor) {
+TEST_F(DesktopFileWriterTest, testDefaultConstructor) {
     DesktopFileWriter writer;
 }
 
-TEST_F(DesktopFileWriterFixture, testDataConstructor) {
+TEST_F(DesktopFileWriterTest, testDataConstructor) {
     DesktopFile::sections_t data;
     DesktopFileWriter writer(data);
 }
 
-TEST_F(DesktopFileWriterFixture, testCopyConstructor) {
+TEST_F(DesktopFileWriterTest, testCopyConstructor) {
     DesktopFile::sections_t data;
     DesktopFileWriter writer(data);
 
@@ -32,7 +32,7 @@ TEST_F(DesktopFileWriterFixture, testCopyConstructor) {
     EXPECT_EQ(copy, writer);
 }
 
-TEST_F(DesktopFileWriterFixture, testCopyAssignmentConstructor) {
+TEST_F(DesktopFileWriterTest, testCopyAssignmentConstructor) {
     DesktopFile::sections_t data;
     DesktopFileWriter writer(data);
 
@@ -42,7 +42,7 @@ TEST_F(DesktopFileWriterFixture, testCopyAssignmentConstructor) {
 }
 
 
-TEST_F(DesktopFileWriterFixture, testEqualityAndInequalityOperators) {
+TEST_F(DesktopFileWriterTest, testEqualityAndInequalityOperators) {
     DesktopFile::sections_t data;
     DesktopFileWriter writer(data);
 
@@ -52,7 +52,7 @@ TEST_F(DesktopFileWriterFixture, testEqualityAndInequalityOperators) {
     EXPECT_FALSE(writer != otherWriter);
 }
 
-TEST_F(DesktopFileWriterFixture, testMoveAssignmentConstructor) {
+TEST_F(DesktopFileWriterTest, testMoveAssignmentConstructor) {
     DesktopFile::sections_t data;
     DesktopFileWriter writer(data);
 
@@ -60,19 +60,19 @@ TEST_F(DesktopFileWriterFixture, testMoveAssignmentConstructor) {
     otherWriter = std::move(writer);
 }
 
-TEST_F(DesktopFileWriterFixture, testSaveToPath) {
+TEST_F(DesktopFileWriterTest, testSaveToPath) {
     DesktopFile::sections_t data;
     DesktopFileWriter writer(data);
 
     writer.save("/dev/null");
 }
 
-TEST_F(DesktopFileWriterFixture, testSaveToInvalidPath) {
+TEST_F(DesktopFileWriterTest, testSaveToInvalidPath) {
     DesktopFileWriter writer;
     ASSERT_THROW(writer.save("/a/b/c/d/e/f/g/h/1/2/3/4/5/6/7/8"), IOError);
 }
 
-TEST_F(DesktopFileWriterFixture, testSaveToStream) {
+TEST_F(DesktopFileWriterTest, testSaveToStream) {
     DesktopFile::sections_t data;
     DesktopFileWriter writer(data);
 
@@ -80,14 +80,14 @@ TEST_F(DesktopFileWriterFixture, testSaveToStream) {
     writer.save(ss);
 }
 
-TEST_F(DesktopFileWriterFixture, testDataGetter) {
+TEST_F(DesktopFileWriterTest, testDataGetter) {
     DesktopFile::sections_t data;
     DesktopFileWriter writer(data);
 
     EXPECT_EQ(data, writer.data());
 }
 
-TEST_F(DesktopFileWriterFixture, testSerialization) {
+TEST_F(DesktopFileWriterTest, testSerialization) {
     DesktopFile::section_t section = {
         {"Exec", DesktopFileEntry("Exec", "exec")},
         {"Name", DesktopFileEntry("Name", "name")},
