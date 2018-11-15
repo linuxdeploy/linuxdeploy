@@ -24,7 +24,7 @@ TEST_F(DesktopFileConformanceTest, testBasicFormatInvalidKeyCharacters) {
         ss << "[Desktop Entry]" << std::endl
            << "no spaces in key=foo" << std::endl;
 
-        ASSERT_THROW(DesktopFile file(ss), ParseError);
+        EXPECT_THROW(DesktopFile file(ss), ParseError);
     }
 
     {
@@ -32,7 +32,7 @@ TEST_F(DesktopFileConformanceTest, testBasicFormatInvalidKeyCharacters) {
         ss << "[Desktop Entry]" << std::endl
            << "UmlautTestÄöÜ=foo" << std::endl;
 
-        ASSERT_THROW(DesktopFile file(ss), ParseError);
+        EXPECT_THROW(DesktopFile file(ss), ParseError);
     }
 
     {
@@ -40,7 +40,7 @@ TEST_F(DesktopFileConformanceTest, testBasicFormatInvalidKeyCharacters) {
         ss << "[Desktop Entry]" << std::endl
            << "NoUnderscores_=foo" << std::endl;
 
-        ASSERT_THROW(DesktopFile file(ss), ParseError);
+        EXPECT_THROW(DesktopFile file(ss), ParseError);
     }
 }
 
@@ -50,7 +50,7 @@ TEST_F(DesktopFileConformanceTest, testBasicFormatValidKeyCharacters) {
         ss << "[Desktop Entry]" << std::endl
            << "TestKey=foo" << std::endl;
 
-        ASSERT_THROW(DesktopFile file(ss), ParseError);
+        EXPECT_THROW(DesktopFile file(ss), ParseError);
     }
 
     {
@@ -58,7 +58,7 @@ TEST_F(DesktopFileConformanceTest, testBasicFormatValidKeyCharacters) {
         ss << "[Desktop Entry]" << std::endl
            << "4242trolol0=foo" << std::endl;
 
-        ASSERT_THROW(DesktopFile file(ss), ParseError);
+        EXPECT_THROW(DesktopFile file(ss), ParseError);
     }
 
     {
@@ -66,6 +66,6 @@ TEST_F(DesktopFileConformanceTest, testBasicFormatValidKeyCharacters) {
         ss << "[Desktop Entry]" << std::endl
            << "----=foo" << std::endl;
 
-        ASSERT_THROW(DesktopFile file(ss), ParseError);
+        EXPECT_THROW(DesktopFile file(ss), ParseError);
     }
 }
