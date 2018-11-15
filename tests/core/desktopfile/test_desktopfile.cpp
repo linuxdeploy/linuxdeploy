@@ -157,6 +157,30 @@ TEST_F(DesktopFileFixture, testAddDefaultValues) {
     EXPECT_EQ(reader["Desktop Entry"]["Categories"].value(), "Utility;");
 }
 
+TEST_F(DesktopFileFixture, testAddDefaultValuesExistingKeys) {
+    const auto& value = "testExecutable";
+
+    std::stringstream iss;
+    iss << "[Desktop Entry]" << std::endl
+       << "Name=A Different Name" << std::endl
+       << "Exec=a_different_exec" << std::endl;
+
+    DesktopFile file(iss);
+    file.addDefaultKeys(value);
+
+    std::stringstream ss;
+
+    file.save(ss);
+
+    DesktopFileReader reader(ss);
+
+    EXPECT_EQ(reader["Desktop Entry"]["Name"].value(), "A Different Name");
+    EXPECT_EQ(reader["Desktop Entry"]["Exec"].value(), "a_different_exec");
+    EXPECT_EQ(reader["Desktop Entry"]["Icon"].value(), value);
+    EXPECT_EQ(reader["Desktop Entry"]["Type"].value(), "Application");
+    EXPECT_EQ(reader["Desktop Entry"]["Categories"].value(), "Utility;");
+}
+
 TEST_F(DesktopFileFixture, testAddDefaultValuesNoOverwrite) {
     const auto& value = "testExecutable";
 
