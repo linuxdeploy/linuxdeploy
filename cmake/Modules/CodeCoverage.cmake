@@ -221,6 +221,9 @@ function(SETUP_TARGET_FOR_COVERAGE_GCOVR_XML)
         # Run tests
         ${Coverage_EXECUTABLE} ${Coverage_EXECUTABLE_ARGS}
 
+        # Clean old coverage data
+        COMMAND find ${PROJECT_BINARY_DIR} -type f -iname '*.gcno' -delete
+
         # Running gcovr
         COMMAND ${GCOVR_PATH} --xml
             -r ${PROJECT_SOURCE_DIR} ${GCOVR_EXCLUDES}
@@ -278,6 +281,9 @@ function(SETUP_TARGET_FOR_COVERAGE_GCOVR_HTML)
         # Create folder
         COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/${Coverage_NAME}
 
+        # Clean old coverage data
+        COMMAND find ${PROJECT_BINARY_DIR} -type f -iname '*.gcno' -delete
+
         # Running gcovr
         COMMAND ${GCOVR_PATH} --html --html-details
             -r ${PROJECT_SOURCE_DIR} ${GCOVR_EXCLUDES}
@@ -334,6 +340,9 @@ function(SETUP_TARGET_FOR_COVERAGE_GCOVR_TEXT)
 
         # Create folder
         COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/${Coverage_NAME}
+
+        # Clean old coverage data
+        COMMAND find ${PROJECT_BINARY_DIR} -type f -iname '*.gcno' -delete
 
         # Running gcovr
         COMMAND ${GCOVR_PATH}
