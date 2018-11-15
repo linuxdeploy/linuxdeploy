@@ -4,6 +4,7 @@
 
 // local headers
 #include "linuxdeploy/core/desktopfile/desktopfile.h"
+#include "linuxdeploy/core/desktopfile/exceptions.h"
 #include "../../src/core/desktopfile/desktopfilereader.h"
 
 using boost::bad_lexical_cast;
@@ -66,8 +67,7 @@ TEST_F(DesktopFileFixture, testDefaultConstructor) {
 }
 
 TEST_F(DesktopFileFixture, testPathConstructor) {
-    DesktopFile nonExistingPath("/a/b/c/d/e/f/g/h/1/2/3/4/5/6/7/8");
-    EXPECT_TRUE(nonExistingPath.isEmpty());
+    ASSERT_THROW(DesktopFile nonExistingPath("/a/b/c/d/e/f/g/h/1/2/3/4/5/6/7/8"), IOError);
 
     DesktopFile emptyFile("/dev/null");
     EXPECT_TRUE(emptyFile.isEmpty());

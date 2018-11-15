@@ -1,4 +1,5 @@
 // local headers
+#include "linuxdeploy/core/desktopfile/exceptions.h"
 #include "linuxdeploy/core/desktopfile/desktopfile.h"
 #include "linuxdeploy/core/log.h"
 #include "desktopfilereader.h"
@@ -34,10 +35,15 @@ namespace linuxdeploy {
             DesktopFile::DesktopFile() : d(std::make_shared<PrivateData>()) {}
 
             DesktopFile::DesktopFile(const bf::path& path) : DesktopFile() {
-                if (bf::exists(path)) {
-                    // will throw exceptions in case of issues
-                    read(path);
+                // if the file doesn't exist, an exception shall be thrown
+                // otherwise, a user cannot know for sure whether a file was actually read (would need to check this
+                // manually beforehand
+                if (!bf::exists(path)) {
+                    throw IOError("Could not find file " + path.string());
                 }
+
+                // will throw exceptions in case of issues
+                read(path);
             };
 
             DesktopFile::DesktopFile(std::istream& is) : DesktopFile() {
