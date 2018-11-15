@@ -233,3 +233,26 @@ TEST_F(DesktopFileFixture, testSaveToStream) {
 
     assertHasTestDesktopFileKeys(outs);
 }
+
+TEST_F(DesktopFileFixture, testEquality) {
+    std::stringstream ins0(testDesktopFile);
+    std::stringstream ins1(testDesktopFile);
+
+    DesktopFile file0(ins0);
+    DesktopFile file1(ins1);
+
+    EXPECT_TRUE(file0 == file1);
+    EXPECT_FALSE(file0 != file1);
+}
+
+TEST_F(DesktopFileFixture, testInequality) {
+    std::stringstream ins;
+    ins << testDesktopFile;
+
+    DesktopFile file(ins);
+
+    DesktopFile emptyFile;
+
+    EXPECT_TRUE(file != emptyFile);
+    EXPECT_FALSE(file == emptyFile);
+}
