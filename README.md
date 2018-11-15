@@ -37,6 +37,8 @@ qmake CONFIG+=release PREFIX=/usr .
 make install INSTALL_ROOT=AppDir
 ```
 
+Next, download the latest linuxdeploy AppImage. It's available on the [release page](https://github.com/linuxdeploy/linuxdeploy/releases). Make sure to pick the right one for your (target) architecture.
+
 Now, simply run linuxdeploy like `./linuxdeploy*.AppImage --appdir AppDir`.
 
 Please use `./linuxdeploy*.AppImage --help` to get a list of options supported by linuxdeploy.
@@ -85,6 +87,8 @@ You can use `./linuxdeploy*.AppImage --list-plugins` to get a list of all the pl
 linuxdeploy currently ships with some plugins. These are likely out of date. In case of issues, please download the latest version, which will take precendence over the bundled plugin.
 
 If you want to use a plugin to bundle additional resources, please add `./linuxdeploy*.AppImage --plugin <name>` to your linuxdeploy command. Output plugins can be activated using `./linuxdeploy*.AppImage --output <name>`.
+
+**A list of official and community plugins can be found in the [awesome-linuxdeploy](http://github.com/linuxdeploy/awesome-linuxdeploy) project.**
 
 **Note:** If you want to suggest a plugin for a specific framework, language etc., please feel free to [create a new issue](https://github.com/linuxdeploy/linuxdeploy/issues/new). Current plugin requests can be found [here](https://github.com/linuxdeploy/linuxdeploy/issues?utf8=%E2%9C%93&q=label%3A%22plugin+request%22).
 
