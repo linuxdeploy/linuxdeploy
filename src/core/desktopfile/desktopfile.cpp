@@ -134,15 +134,6 @@ namespace linuxdeploy {
                 return (it->second.find(key) != it->second.end());
             }
 
-            bool DesktopFile::setEntry(const std::string& section, const std::string& key, const std::string& value) {
-                // check if value exists -- used for return value
-                auto rv = entryExists(section, key);
-
-                d->data[section][key] = std::move(DesktopFileEntry(key, value));
-
-                return rv;
-            }
-
             bool DesktopFile::setEntry(const std::string& section, const DesktopFileEntry& entry) {
                 // check if value exists -- used for return value
                 auto rv = entryExists(section, entry.key());
@@ -152,22 +143,13 @@ namespace linuxdeploy {
                 return rv;
             }
 
-            bool DesktopFile::setEntry(const std::string& section, const DesktopFileEntry&& entry) {
+            bool DesktopFile::setEntry(const std::string& section, DesktopFileEntry&& entry) {
                   // check if value exists -- used for return value
                 auto rv = entryExists(section, entry.key());
 
                 d->data[section][entry.key()] = entry;
 
                 return rv;
-            }
-
-            bool DesktopFile::getEntry(const std::string& section, const std::string& key, std::string& value) const {
-                if (!entryExists(section, key))
-                    return false;
-
-                value = d->data[section][key].value();
-
-                return true;
             }
 
             bool DesktopFile::getEntry(const std::string& section, const std::string& key, DesktopFileEntry& entry) const {
@@ -185,14 +167,15 @@ namespace linuxdeploy {
 
                 auto setDefault = [&rv, this](const std::string& section, const std::string& key, const std::string& value) {
                     if (entryExists(section, key)) {
-                        std::string currentValue;
-                        if (!getEntry(section, key, currentValue))
-                            ldLog() << LD_ERROR << "This should never happen" << std::endl;
+                        DesktopFileEntry entry;
 
-                        ldLog() << LD_WARNING << "Key exists, not modified:" << key << "(current value:" << currentValue << LD_NO_SPACE << ")" << std::endl;
+                        // this should never return false
+                        assert(getEntry(section, key, entry));
+
+                        ldLog() << LD_WARNING << "Key exists, not modified:" << key << "(current value:" << entry.value() << LD_NO_SPACE << ")" << std::endl;
                         rv = false;
                     } else {
-                        if (setEntry(section, key, value)) {
+                        if (setEntry(section, std::move(DesktopFileEntry(key, value)))) {
                             // *should* be unreachable
                             rv = false;
                         }

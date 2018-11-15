@@ -98,17 +98,7 @@ namespace linuxdeploy {
                     // get key from desktop file
                     // an std::string passed as value parameter will be populated with the contents
                     // returns true (and populates value) if the key exists, false otherwise
-                    bool getEntry(const std::string& section, const std::string& key, std::string& value) const;
-
-                    // get key from desktop file
-                    // an std::string passed as value parameter will be populated with the contents
-                    // returns true (and populates value) if the key exists, false otherwise
                     bool getEntry(const std::string& section, const std::string& key, DesktopFileEntry& value) const;
-
-                    // add key to section in desktop file
-                    // the section will be created if it doesn't exist already
-                    // returns true if an existing key was overwritten, false otherwise
-                    bool setEntry(const std::string& section, const std::string& key, const std::string& value);
 
                     // add key to section in desktop file
                     // the section will be created if it doesn't exist already
@@ -118,7 +108,7 @@ namespace linuxdeploy {
                     // add key to section in desktop file
                     // the section will be created if it doesn't exist already
                     // returns true if an existing key was overwritten, false otherwise
-                    bool setEntry(const std::string& section, const DesktopFileEntry&& entry);
+                    bool setEntry(const std::string& section, DesktopFileEntry&& entry);
 
                     // create common application entries in desktop file
                     // returns false if one of the keys exists and was left unmodified

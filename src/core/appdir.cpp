@@ -12,6 +12,7 @@
 
 // local headers
 #include "linuxdeploy/core/appdir.h"
+#include "linuxdeploy/core/desktopfile/desktopfileentry.h"
 #include "linuxdeploy/core/elf.h"
 #include "linuxdeploy/core/log.h"
 #include "linuxdeploy/util/util.h"
@@ -21,6 +22,7 @@
 #include "excludelist.h"
 
 using namespace linuxdeploy::core;
+using namespace linuxdeploy::core::desktopfile;
 using namespace linuxdeploy::core::log;
 
 using namespace cimg_library;
@@ -441,7 +443,7 @@ namespace linuxdeploy {
                         return true;
                     }
 
-                    bool deployDesktopFile(const desktopfile::DesktopFile& desktopFile) {
+                    bool deployDesktopFile(const DesktopFile& desktopFile) {
                         if (hasBeenVisitedAlready(desktopFile.path())) {
                             ldLog() << LD_DEBUG << "File has been visited already:" << desktopFile.path() << std::endl;
                             return true;
@@ -586,7 +588,7 @@ namespace linuxdeploy {
                 return d->deployExecutable(path, destination);
             }
 
-            bool AppDir::deployDesktopFile(const desktopfile::DesktopFile& desktopFile) {
+            bool AppDir::deployDesktopFile(const DesktopFile& desktopFile) {
                 return d->deployDesktopFile(desktopFile);
             }
  
@@ -640,8 +642,8 @@ namespace linuxdeploy {
                 return listFilesInDirectory(path() / "usr/bin/", false);
             }
 
-            std::vector<desktopfile::DesktopFile> AppDir::deployedDesktopFiles() {
-                std::vector<desktopfile::DesktopFile> desktopFiles;
+            std::vector<DesktopFile> AppDir::deployedDesktopFiles() {
+                std::vector<DesktopFile> desktopFiles;
 
                 auto paths = listFilesInDirectory(path() / "usr/share/applications/", false);
                 paths.erase(std::remove_if(paths.begin(), paths.end(), [](const bf::path& path) {
@@ -655,7 +657,7 @@ namespace linuxdeploy {
                 return desktopFiles;
             }
 
-            bool AppDir::createLinksInAppDirRoot(const desktopfile::DesktopFile& desktopFile, boost::filesystem::path customAppRunPath) {
+            bool AppDir::createLinksInAppDirRoot(const DesktopFile& desktopFile, boost::filesystem::path customAppRunPath) {
                 ldLog() << "Deploying desktop file to AppDir root:" << desktopFile.path() << std::endl;
 
                 // copy desktop file to root directory
@@ -665,9 +667,9 @@ namespace linuxdeploy {
                 }
 
                 // look for suitable icon
-                std::string iconName;
+                DesktopFileEntry iconEntry;
 
-                if (!desktopFile.getEntry("Desktop Entry", "Icon", iconName)) {
+                if (!desktopFile.getEntry("Desktop Entry", "Icon", iconEntry)) {
                     ldLog() << LD_ERROR << "Icon entry missing in desktop file:" << desktopFile.path() << std::endl;
                     return false;
                 }
@@ -677,16 +679,16 @@ namespace linuxdeploy {
                 const auto foundIconPaths = deployedIconPaths();
 
                 if (foundIconPaths.empty()) {
-                    ldLog() << LD_ERROR << "Could not find icon executable for Icon entry:" << iconName << std::endl;
+                    ldLog() << LD_ERROR << "Could not find icon executable for Icon entry:" << iconEntry.value() << std::endl;
                     return false;
                 }
 
                 for (const auto& iconPath : foundIconPaths) {
                     ldLog() << LD_DEBUG << "Icon found:" << iconPath << std::endl;
 
-                    const bool matchesFilenameWithExtension = iconPath.filename() == iconName;
+                    const bool matchesFilenameWithExtension = iconPath.filename() == iconEntry.value();
 
-                    if (iconPath.stem() == iconName || matchesFilenameWithExtension) {
+                    if (iconPath.stem() == iconEntry.value() || matchesFilenameWithExtension) {
                         if (matchesFilenameWithExtension) {
                             ldLog() << LD_WARNING << "Icon= entry filename contains extension" << std::endl;
                         }
@@ -704,7 +706,7 @@ namespace linuxdeploy {
                 }
 
                 if (!iconDeployed) {
-                    ldLog() << LD_ERROR << "Could not find suitable icon for Icon entry:" << iconName << std::endl;
+                    ldLog() << LD_ERROR << "Could not find suitable icon for Icon entry:" << iconEntry.value() << std::endl;
                     return false;
                 }
 
@@ -722,15 +724,15 @@ namespace linuxdeploy {
                         ldLog() << LD_WARNING << "Custom AppRun detected, skipping deployment of symlink" << std::endl;
                     } else {
                         // look for suitable binary to create AppRun symlink
-                        std::string executableName;
+                        DesktopFileEntry executableEntry;
 
-                        if (!desktopFile.getEntry("Desktop Entry", "Exec", executableName)) {
+                        if (!desktopFile.getEntry("Desktop Entry", "Exec", executableEntry)) {
                             ldLog() << LD_ERROR << "Exec entry missing in desktop file:" << desktopFile.path()
                                     << std::endl;
                             return false;
                         }
 
-                        executableName = util::split(executableName)[0];
+                        auto executableName = util::split(executableEntry.value())[0];
 
                         const auto foundExecutablePaths = deployedExecutablePaths();
 
