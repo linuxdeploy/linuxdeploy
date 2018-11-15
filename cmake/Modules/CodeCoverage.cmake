@@ -222,7 +222,7 @@ function(SETUP_TARGET_FOR_COVERAGE_GCOVR_XML)
         COMMAND find ${PROJECT_BINARY_DIR} -type f -iname '*.gcno' -delete
 
         # Run tests
-        ${Coverage_EXECUTABLE} ${Coverage_EXECUTABLE_ARGS}
+        COMMAND ${Coverage_EXECUTABLE} ${Coverage_EXECUTABLE_ARGS}
 
         # Running gcovr
         COMMAND ${GCOVR_PATH} --xml
@@ -279,7 +279,7 @@ function(SETUP_TARGET_FOR_COVERAGE_GCOVR_HTML)
         COMMAND find ${PROJECT_BINARY_DIR} -type f -iname '*.gcno' -delete
 
         # Run tests
-        ${Coverage_EXECUTABLE} ${Coverage_EXECUTABLE_ARGS}
+        COMMAND ${Coverage_EXECUTABLE} ${Coverage_EXECUTABLE_ARGS}
 
         # Create folder
         COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/${Coverage_NAME}
@@ -339,7 +339,7 @@ function(SETUP_TARGET_FOR_COVERAGE_GCOVR_TEXT)
         COMMAND find ${PROJECT_BINARY_DIR} -type f -iname '*.gcno' -delete
 
         # Run tests
-        ${Coverage_EXECUTABLE} ${Coverage_EXECUTABLE_ARGS}
+        COMMAND ${Coverage_EXECUTABLE} ${Coverage_EXECUTABLE_ARGS}
 
         # Create folder
         COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/${Coverage_NAME}
