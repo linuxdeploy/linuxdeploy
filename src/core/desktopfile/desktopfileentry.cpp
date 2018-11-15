@@ -120,10 +120,6 @@ namespace linuxdeploy {
 
                 return list;
             }
-
-            DesktopFileEntry::operator std::string() const {
-                return value();
-            }
         }
     }
 };

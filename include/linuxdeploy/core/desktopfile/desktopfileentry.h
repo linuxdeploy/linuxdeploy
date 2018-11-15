@@ -50,10 +50,6 @@ namespace linuxdeploy {
                 const std::string& value() const;
 
             public:
-                // allow conversion of entry to string
-                // returns value
-                explicit operator std::string() const;
-
                 // convert value to integer
                 // throws boost::bad_lexical_cast in case of type errors
                 int32_t asInt() const;

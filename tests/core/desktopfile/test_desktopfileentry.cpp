@@ -128,12 +128,6 @@ TEST_F(DesktopFileEntryFixture, testConversionToDouble) {
     ASSERT_THROW(emptyEntry.asDouble(), std::invalid_argument);
 }
 
-TEST_F(DesktopFileEntryFixture, testConversionToString) {
-    DesktopFileEntry entry(key, value);
-    auto result = static_cast<std::string>(entry);
-    EXPECT_EQ(value, result);
-}
-
 TEST_F(DesktopFileEntryFixture, testParsingStringList) {
     DesktopFileEntry emptyEntry(key, "");
     EXPECT_EQ(emptyEntry.parseStringList(), std::vector<std::string>({}));
