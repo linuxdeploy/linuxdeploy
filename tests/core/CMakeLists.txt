@@ -64,3 +64,9 @@ set_property(TARGET test_desktopfile
 )
 
 add_test(test_desktopfile test_desktopfile)
+
+
+add_executable(test_desktopfile_conformance test_desktopfile_conformance.cpp)
+target_link_libraries(test_desktopfile_conformance PRIVATE linuxdeploy_core gtest gtest_main)
+
+add_test(test_desktopfile_conformance test_desktopfile_conformance)

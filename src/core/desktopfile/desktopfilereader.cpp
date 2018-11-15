@@ -94,6 +94,12 @@ namespace linuxdeploy {
                                     if (key.empty())
                                         throw ParseError("Empty keys are not allowed");
 
+                                    // keys may only contain A-Za-z- characters according to specification
+                                    for (const auto c : key) {
+                                        if (!(c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c == '-'))
+                                            throw ParseError("Key contains invalid character " + std::string{c});
+                                    }
+
                                     // who are we to judge whether empty values are an issue
                                     // that'd require checking the key names and implementing checks per key according to the
                                     // freedesktop.org spec
