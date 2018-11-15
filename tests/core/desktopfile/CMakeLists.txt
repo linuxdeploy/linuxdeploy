@@ -10,7 +10,7 @@ add_executable(test_desktopfile
 target_link_libraries(test_desktopfile PRIVATE linuxdeploy_core_desktopfile gtest gtest_main)
 
 set_property(TARGET test_desktopfile
-    PROPERTY COMPILE_FLAGS "-DDESKTOP_FILE_PATH=\\\"${CMAKE_CURRENT_SOURCE_DIR}/../data/simple_app.desktop\\\""
+    PROPERTY COMPILE_FLAGS "-DDESKTOP_FILE_PATH=\\\"${TEST_DATA_DIR}/simple_app.desktop\\\""
 )
 
 add_test(test_desktopfile test_desktopfile)
