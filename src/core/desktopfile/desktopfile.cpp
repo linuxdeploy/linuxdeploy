@@ -175,10 +175,7 @@ namespace linuxdeploy {
                         ldLog() << LD_WARNING << "Key exists, not modified:" << key << "(current value:" << entry.value() << LD_NO_SPACE << ")" << std::endl;
                         rv = false;
                     } else {
-                        if (setEntry(section, std::move(DesktopFileEntry(key, value)))) {
-                            // *should* be unreachable
-                            rv = false;
-                        }
+                        assert(!setEntry(section, std::move(DesktopFileEntry(key, value))));
                     }
                 };
 
