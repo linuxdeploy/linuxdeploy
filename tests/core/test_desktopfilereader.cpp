@@ -4,6 +4,7 @@
 
 // local headers
 #include "../../src/core/desktopfile/desktopfilereader.h"
+#include "linuxdeploy/core/desktopfile/exceptions.h"
 
 using namespace linuxdeploy::core::desktopfile;
 namespace bf = boost::filesystem;
@@ -24,7 +25,7 @@ TEST_F(DesktopFileReaderFixture, testPathConstructor) {
     DesktopFileReader reader(path);
     EXPECT_TRUE(reader.isEmpty());
 
-    ASSERT_THROW(DesktopFileReader("/no/such/file/or/directory"), std::invalid_argument);
+    ASSERT_THROW(DesktopFileReader("/no/such/file/or/directory"), IOError);
 }
 
 TEST_F(DesktopFileReaderFixture, testStreamConstructor) {
@@ -35,11 +36,11 @@ TEST_F(DesktopFileReaderFixture, testStreamConstructor) {
 }
 
 TEST_F(DesktopFileReaderFixture, testPathConstructorWithEmptyPath) {
-    ASSERT_THROW(DesktopFileReader(""), std::invalid_argument);
+    ASSERT_THROW(DesktopFileReader(""), IOError);
 }
 
 TEST_F(DesktopFileReaderFixture, testPathConstructorWithNonExistingPath) {
-    ASSERT_THROW(DesktopFileReader("/no/such/path/42"), std::invalid_argument);
+    ASSERT_THROW(DesktopFileReader("/no/such/path/42"), IOError);
 }
 
 TEST_F(DesktopFileReaderFixture, testEqualityAndInequalityOperators) {
@@ -124,7 +125,7 @@ TEST_F(DesktopFileReaderFixture, testParseFileGetNonExistingSection) {
     DesktopFileReader reader;
     reader = DesktopFileReader(ss);
 
-    ASSERT_THROW(reader["Non-existing Section"], std::range_error);
+    ASSERT_THROW(reader["Non-existing Section"], UnknownSectionError);
 }
 
 TEST_F(DesktopFileReaderFixture, testParseFileMissingSectionHeader) {
@@ -136,7 +137,7 @@ TEST_F(DesktopFileReaderFixture, testParseFileMissingSectionHeader) {
        << "Categories=Utility;Multimedia;" << std::endl;
 
     DesktopFileReader reader;
-    ASSERT_THROW(reader = DesktopFileReader(ss), std::invalid_argument);
+    ASSERT_THROW(reader = DesktopFileReader(ss), ParseError);
 }
 
 TEST_F(DesktopFileReaderFixture, testParseFileEmptyKey) {
@@ -149,7 +150,47 @@ TEST_F(DesktopFileReaderFixture, testParseFileEmptyKey) {
        << "Categories=Utility;Multimedia;" << std::endl;
 
     DesktopFileReader reader;
-    ASSERT_THROW(reader = DesktopFileReader(ss), std::invalid_argument);
+    ASSERT_THROW(reader = DesktopFileReader(ss), ParseError);
+}
+
+TEST_F(DesktopFileReaderFixture, testParseFileMissingDelimiterInLine) {
+    {
+        std::stringstream ss;
+        ss << "[Desktop File]" << std::endl
+           << "Exec" << std::endl;
+
+        DesktopFileReader reader;
+        ASSERT_THROW(reader = DesktopFileReader(ss), ParseError);
+    }
+
+    {
+        std::stringstream ss;
+        ss << "[Desktop File]" << std::endl
+           << "Name name" << std::endl;
+
+        DesktopFileReader reader;
+        ASSERT_THROW(reader = DesktopFileReader(ss), ParseError);
+    }
+}
+
+TEST_F(DesktopFileReaderFixture, testParseFile) {
+    std::stringstream ss;
+    ss << "[Desktop File]" << std::endl
+       << "Name name" << std::endl
+       << "Exec" << std::endl;
+
+    DesktopFileReader reader;
+    ASSERT_THROW(reader = DesktopFileReader(ss), ParseError);
+}
+
+TEST_F(DesktopFileReaderFixture, testParseFileMultipleDelimitersInLine) {
+    // TODO: verify that ==Name would be a legal value according to desktop file specification
+    std::stringstream ss;
+    ss << "[Desktop File]" << std::endl
+       << "Name===name" << std::endl;
+
+    DesktopFileReader reader;
+    ASSERT_NO_THROW(reader = DesktopFileReader(ss));
 }
 
 TEST_F(DesktopFileReaderFixture, testParseFileWithLeadingAndTrailingWhitespaceInLines) {
@@ -199,4 +240,83 @@ TEST_F(DesktopFileReaderFixture, testParseLinesWithMultipleSpaces) {
     EXPECT_FALSE(section.empty());
 
     EXPECT_EQ(section["Name"].value(), "What a great  name");
+}
+
+TEST_F(DesktopFileReaderFixture, testReadBrokenSectionHeaderMissingClosingBracket) {
+    {
+        std::stringstream ins;
+        ins << "[Desktop Entry" << std::endl
+            << "test=test" << std::endl;
+
+        ASSERT_THROW(DesktopFileReader reader(ins), ParseError);
+    }
+
+    // also test for brokenness in a later section, as the first section is normally treated specially
+    {
+        std::stringstream ins;
+        ins << "[Desktop Entry]" << std::endl
+            << "test=test" << std::endl
+            << "[Another Section" << std::endl;
+
+        ASSERT_THROW(DesktopFileReader reader(ins), ParseError);
+    }
+}
+
+TEST_F(DesktopFileReaderFixture, testReadBrokenSectionHeaderTooManyClosingBrackets) {
+    {
+        std::stringstream ins;
+        ins << "[Desktop Entry]]" << std::endl
+            << "test=test" << std::endl;
+
+        ASSERT_THROW(DesktopFileReader reader(ins), ParseError);
+    }
+
+    // also test for brokenness in a later section, as the first section is normally treated specially
+    {
+        std::stringstream ins;
+        ins << "[Desktop Entry]" << std::endl
+            << "test=test" << std::endl
+            << "[Another Section]]" << std::endl;
+
+        ASSERT_THROW(DesktopFileReader reader(ins), ParseError);
+    }
+}
+
+TEST_F(DesktopFileReaderFixture, testReadBrokenSectionHeaderTooManyOpeningBrackets) {
+    {
+        std::stringstream ins;
+        ins << "[[Desktop Entry]" << std::endl
+            << "test=test" << std::endl;
+
+        ASSERT_THROW(DesktopFileReader reader(ins), ParseError);
+    }
+
+    // also test for brokenness in a later section, as the first section is normally treated specially
+    {
+        std::stringstream ins;
+        ins << "[Desktop Entry]" << std::endl
+            << "test=test" << std::endl
+            << "[[Another Section]";
+
+        ASSERT_THROW(DesktopFileReader reader(ins), ParseError);
+    }
+}
+
+TEST_F(DesktopFileReaderFixture, testReadBrokenSectionMissingOpeningBracket) {
+    {
+        std::stringstream ins;
+        ins << "Desktop Entry]" << std::endl
+            << "test=test" << std::endl;
+        ASSERT_THROW(DesktopFileReader reader(ins), ParseError);
+    }
+
+    // also test for brokenness in a later section, as the first section is normally treated specially
+    {
+        std::stringstream ins;
+        ins << "[Desktop Entry]" << std::endl
+            << "test=test" << std::endl
+            << "Another Section]" << std::endl;
+
+        ASSERT_THROW(DesktopFileReader reader(ins), ParseError);
+    }
 }

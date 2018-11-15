@@ -7,6 +7,7 @@
 // local headers
 #include "linuxdeploy/util/util.h"
 #include "linuxdeploy/core/desktopfile/desktopfileentry.h"
+#include "linuxdeploy/core/desktopfile/exceptions.h"
 #include "desktopfilereader.h"
 
 namespace bf = boost::filesystem;
@@ -26,7 +27,7 @@ namespace linuxdeploy {
 
                 void assertPathIsNotEmptyAndFileExists() {
                     if (path.empty())
-                        throw std::invalid_argument("empty path is not permitted");
+                        throw IOError("empty path is not permitted");
                 }
 
                 void copyData(const std::shared_ptr<PrivateData>& other) {
@@ -54,9 +55,20 @@ namespace linuxdeploy {
                             if (len > 0 &&
                                 !((len >= 2 && (line[0] == '/' && line[1] == '/')) || (len >= 1 && line[0] == '#'))) {
                                 if (line[0] == '[') {
+                                    if (line.find_last_of('[') != 0)
+                                        throw ParseError("Multiple opening [ brackets");
+
                                     // this line apparently introduces a new section
+                                    auto closingBracketPos = line.find(']');
+                                    auto lastClosingBracketPos = line.find_last_of(']');
+
+                                    if (closingBracketPos == std::string::npos)
+                                        throw ParseError("No closing ] bracket in section header");
+                                    else if (closingBracketPos != lastClosingBracketPos)
+                                        throw ParseError("Two or more closing ] brackets in section header");
+
                                     size_t length = len - 2;
-                                    auto title = line.substr(1, line.find(']') - 1);
+                                    auto title = line.substr(1, closingBracketPos - 1);
 
                                     // set up the new section
                                     sections.insert(std::make_pair(title, DesktopFile::section_t()));
@@ -64,11 +76,15 @@ namespace linuxdeploy {
                                 } else {
                                     // we require at least one section to be present in the desktop file
                                     if (currentSectionName.empty())
-                                        throw std::invalid_argument("No section in desktop file");
+                                        throw ParseError("No section in desktop file");
+
+                                    auto delimiterPos = line.find('=');
+                                    if (delimiterPos == std::string::npos)
+                                        throw ParseError("No = key/value delimiter found");
 
                                     // this line should be a normal key-value pair
-                                    std::string key = line.substr(0, line.find('='));
-                                    std::string value = line.substr(line.find('=') + 1, line.size());
+                                    std::string key = line.substr(0, delimiterPos);
+                                    std::string value = line.substr(delimiterPos + 1, line.size());
 
                                     // we can strip away any sort of leading or trailing whitespace safely
                                     linuxdeploy::util::trim(key);
@@ -76,12 +92,26 @@ namespace linuxdeploy {
 
                                     // empty keys are not allowed for obvious reasons
                                     if (key.empty())
-                                        throw std::invalid_argument("Empty keys are not allowed");
+                                        throw ParseError("Empty keys are not allowed");
 
-                                    // who are we to judge whether empty values are an issue
-                                    // that'd require checking the key names and implementing checks per key according to the
-                                    // freedesktop.org spec
-                                    sections[currentSectionName][key] = DesktopFileEntry(key, value);
+                                    // keys may only contain A-Za-z- characters according to specification
+                                    for (const char c : key) {
+                                        if (!(
+                                                (c >= 'A' && c <= 'Z') ||
+                                                (c >= 'a' && c <= 'z') ||
+                                                (c >= '0' && c <= '9') ||
+                                                (c == '-')
+                                            ))
+                                            throw ParseError("Key contains invalid character " + std::string{c});
+                                    }
+
+                                    auto& section = sections[currentSectionName];
+
+                                    // keys must be unique in the same section
+                                    if (section.find(key) != section.end())
+                                        throw ParseError("Key " + key + " found more than once");
+
+                                    section[key] = DesktopFileEntry(key, value);
                                 }
                             }
                         }
@@ -97,7 +127,7 @@ namespace linuxdeploy {
 
                 std::ifstream ifs(d->path.string());
                 if (!ifs)
-                    throw std::invalid_argument("could not open file: " + d->path.string());
+                    throw IOError("could not open file: " + d->path.string());
 
                 d->parse(ifs);
             }
@@ -156,7 +186,7 @@ namespace linuxdeploy {
                 // the map would lazy-initialize a new entry in case the section doesn't exist
                 // therefore explicitly checking whether the section exists, throwing an exception in case it does not
                 if (it == d->sections.end())
-                    throw std::range_error("could not find section " + name);
+                    throw UnknownSectionError(name);
 
                 return it->second;
             }

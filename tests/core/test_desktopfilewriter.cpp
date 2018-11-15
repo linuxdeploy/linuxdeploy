@@ -5,6 +5,7 @@
 // local headers
 #include "../../src/core/desktopfile/desktopfilewriter.h"
 #include "../../src/core/desktopfile/desktopfilereader.h"
+#include "linuxdeploy/core/desktopfile/exceptions.h"
 
 using namespace linuxdeploy::core::desktopfile;
 namespace bf = boost::filesystem;
@@ -68,7 +69,7 @@ TEST_F(DesktopFileWriterFixture, testSaveToPath) {
 
 TEST_F(DesktopFileWriterFixture, testSaveToInvalidPath) {
     DesktopFileWriter writer;
-    ASSERT_THROW(writer.save("/a/b/c/d/e/f/g/h/1/2/3/4/5/6/7/8"), std::runtime_error);
+    ASSERT_THROW(writer.save("/a/b/c/d/e/f/g/h/1/2/3/4/5/6/7/8"), IOError);
 }
 
 TEST_F(DesktopFileWriterFixture, testSaveToStream) {

@@ -75,7 +75,7 @@ namespace linuxdeploy {
                 clear();
 
                 DesktopFileReader reader(path);
-                d->data = reader.data();
+                d->data = std::move(reader.data());
             }
 
             void DesktopFile::read(std::istream& is) {
