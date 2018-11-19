@@ -44,9 +44,31 @@ TEST_F(DesktopFileReaderTest, testPathConstructorWithNonExistingPath) {
 }
 
 TEST_F(DesktopFileReaderTest, testEqualityAndInequalityOperators) {
-    DesktopFileReader emptyReader;
-    EXPECT_TRUE(emptyReader == emptyReader);
-    EXPECT_FALSE(emptyReader != emptyReader);
+    {
+        DesktopFileReader emptyReader;
+        EXPECT_TRUE(emptyReader == emptyReader);
+        EXPECT_FALSE(emptyReader != emptyReader);
+    }
+
+    {
+        // make sure that files with different paths are recognized as different
+        DesktopFile nullFile("/dev/null");
+        DesktopFile fileWithoutPath;
+
+        EXPECT_TRUE(nullFile != fileWithoutPath);
+        EXPECT_FALSE(nullFile == fileWithoutPath);
+    }
+
+    {
+        // make sure that files with different contents are recognized as different
+        DesktopFile fileWithContents;
+        fileWithContents.setEntry("Desktop Entry", DesktopFileEntry("test", "test"));
+
+        DesktopFile emptyFile;
+
+        EXPECT_TRUE(emptyFile != fileWithContents);
+        EXPECT_FALSE(emptyFile == fileWithContents);
+    }
 }
 
 TEST_F(DesktopFileReaderTest, testCopyConstructor) {
