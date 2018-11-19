@@ -778,7 +778,7 @@ namespace linuxdeploy {
             }
 
             bool AppDir::createRelativeSymlink(const bf::path& target, const bf::path& symlink) {
-                d->symlinkFile(target, symlink, true);
+                return d->symlinkFile(target, symlink, true);
             }
 
             std::vector<bf::path> AppDir::listExecutables() {
