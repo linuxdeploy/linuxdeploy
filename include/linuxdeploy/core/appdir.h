@@ -96,7 +96,7 @@ namespace linuxdeploy {
                     bool deployDependenciesForExistingFiles();
 
                     // disable deployment of copyright files for this instance
-                    bool setDisableCopyrightFilesDeployment(bool disable);
+                    void setDisableCopyrightFilesDeployment(bool disable);
             };
         }
     }

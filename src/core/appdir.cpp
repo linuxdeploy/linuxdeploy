@@ -843,7 +843,7 @@ namespace linuxdeploy {
                 return true;
             }
 
-            bool AppDir::setDisableCopyrightFilesDeployment(bool disable) {
+            void AppDir::setDisableCopyrightFilesDeployment(bool disable) {
                 d->disableCopyrightFilesDeployment = disable;
             }
         }
