@@ -166,7 +166,7 @@ namespace linuxdeploy {
             }
 
             bool DesktopFileReader::operator==(const DesktopFileReader& other) const {
-                return d->path == other.d->path;
+                return d->path == other.d->path && d->sections == other.d->sections;
             }
 
             bool DesktopFileReader::operator!=(const DesktopFileReader& other) const {

@@ -74,6 +74,7 @@ TEST_F(DesktopFileReaderTest, testCopyConstructor) {
         DesktopFileReader copy(reader);
 
         EXPECT_TRUE(reader.data() == copy.data());
+        EXPECT_TRUE(reader == copy);
     }
 }
 
