@@ -68,7 +68,7 @@ namespace linuxdeploy {
 
                 for (bf::directory_iterator i(dir); i != bf::directory_iterator(); ++i) {
                     // must be a file, and not a directory
-                    if (!(bf::is_directory(bf::absolute(*i)))) {
+                    if (bf::is_directory(bf::absolute(*i))) {
                         if (extendedDebugLoggingEnabled)
                             ldLog() << LD_DEBUG << "Entry is a directory, skipping:" << i->path() << std::endl;
 
