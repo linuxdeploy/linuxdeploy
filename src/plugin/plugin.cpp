@@ -64,16 +64,22 @@ namespace linuxdeploy {
 
                 ldLog() << LD_DEBUG << "Searching for plugins in directory" << dir << std::endl;
 
+                bool extendedDebugLoggingEnabled = (getenv("DEBUG_PLUGIN_DETECTION") != nullptr);
+
                 for (bf::directory_iterator i(dir); i != bf::directory_iterator(); ++i) {
                     // must be a file, and not a directory
                     if (!(bf::is_directory(bf::absolute(*i)))) {
-                        ldLog() << LD_DEBUG << "Entry is a directory, skipping:" << i->path() << std::endl;
+                        if (extendedDebugLoggingEnabled)
+                            ldLog() << LD_DEBUG << "Entry is a directory, skipping:" << i->path() << std::endl;
+
                         continue;
                     }
 
                     // file must be executable...
                     if (!(bf::status(*i).permissions() & (bf::owner_exe | bf::group_exe | bf::others_exe))) {
-                        ldLog() << LD_DEBUG << "File/symlink is not executable, skipping:" << i->path() << std::endl;
+                        if (extendedDebugLoggingEnabled)
+                            ldLog() << LD_DEBUG << "File/symlink is not executable, skipping:" << i->path() << std::endl;
+
                         continue;
                     }
 
