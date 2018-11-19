@@ -65,29 +65,42 @@ namespace linuxdeploy {
                 ldLog() << LD_DEBUG << "Searching for plugins in directory" << dir << std::endl;
 
                 for (bf::directory_iterator i(dir); i != bf::directory_iterator(); ++i) {
-                    // file must be executable...
-                    if (bf::status(*i).permissions() & (bf::owner_exe | bf::group_exe | bf::others_exe)) {
-                        // ... and filename must match regular expression
-                        boost::cmatch res;
-                        if (boost::regex_match(i->path().filename().string().c_str(), res, PLUGIN_EXPR)) {
-                            try {
-                                auto name = res[1].str();
-                                auto* plugin = createPluginInstance(*i);
-                                if (plugin == nullptr) {
-                                    ldLog() << LD_DEBUG << "Failed to create instance for plugin" << i->path();
-                                } else {
-                                    ldLog() << LD_DEBUG << "Found plugin '" << LD_NO_SPACE << name << LD_NO_SPACE << "':" << plugin->path() << std::endl;
+                    // must be a file, and not a directory
+                    if (!(bf::is_directory(bf::absolute(*i)))) {
+                        ldLog() << LD_DEBUG << "Entry is a directory, skipping:" << i->path() << std::endl;
+                        continue;
+                    }
 
-                                    if (foundPlugins.find(name) != foundPlugins.end()) {
-                                        ldLog() << LD_DEBUG << "Already found" << name << "plugin in" << foundPlugins[name]->path() << std::endl;
-                                    } else {
-                                        foundPlugins[name] = plugin;
-                                    }
-                                }
-                            } catch (const PluginError& e) {
-                                ldLog() << LD_WARNING << "Could not load plugin" << i->path() << LD_NO_SPACE << ": " << e.what();
+                    // file must be executable...
+                    if (!(bf::status(*i).permissions() & (bf::owner_exe | bf::group_exe | bf::others_exe))) {
+                        ldLog() << LD_DEBUG << "File/symlink is not executable, skipping:" << i->path() << std::endl;
+                        continue;
+                    }
+
+                    // entry name must match regular expression
+                    boost::cmatch res;
+
+                    if (!boost::regex_match(i->path().filename().string().c_str(), res, PLUGIN_EXPR)) {
+                        ldLog() << LD_DEBUG << "Doesn't match plugin regex, skipping:" << i->path() << std::endl;
+                        continue;
+                    }
+
+                    try {
+                        auto name = res[1].str();
+                        auto* plugin = createPluginInstance(*i);
+                        if (plugin == nullptr) {
+                            ldLog() << LD_DEBUG << "Failed to create instance for plugin" << i->path() << std::endl;;
+                        } else {
+                            ldLog() << LD_DEBUG << "Found plugin '" << LD_NO_SPACE << name << LD_NO_SPACE << "':" << plugin->path() << std::endl;
+
+                            if (foundPlugins.find(name) != foundPlugins.end()) {
+                                ldLog() << LD_DEBUG << "Already found" << name << "plugin in" << foundPlugins[name]->path() << std::endl;
+                            } else {
+                                foundPlugins[name] = plugin;
                             }
                         }
+                    } catch (const PluginError& e) {
+                        ldLog() << LD_WARNING << "Could not load plugin" << i->path() << LD_NO_SPACE << ": " << e.what();
                     }
                 }
             }
