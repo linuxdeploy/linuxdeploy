@@ -50,15 +50,31 @@ TEST_F(DesktopFileReaderTest, testEqualityAndInequalityOperators) {
 }
 
 TEST_F(DesktopFileReaderTest, testCopyConstructor) {
-    bf::path path = "/dev/null";
+    {
+        bf::path path = "/dev/null";
 
-    DesktopFileReader reader(path);
-    EXPECT_TRUE(reader.isEmpty());
+        DesktopFileReader reader(path);
+        EXPECT_TRUE(reader.isEmpty());
 
-    DesktopFileReader copy = reader;
-    EXPECT_TRUE(copy.isEmpty());
+        DesktopFileReader copy = reader;
+        EXPECT_TRUE(copy.isEmpty());
 
-    EXPECT_EQ(reader, copy);
+        EXPECT_EQ(reader, copy);
+    }
+
+    {
+        // make sure that contents are copied, too
+        DesktopFile file;
+        file.setEntry("Desktop Entry", DesktopFileEntry("test", "test"));
+
+        std::stringstream ss;
+        file.save(ss);
+
+        DesktopFileReader reader(ss);
+        DesktopFileReader copy(reader);
+
+        EXPECT_TRUE(reader.data() == copy.data());
+    }
 }
 
 TEST_F(DesktopFileReaderTest, testCopyAssignmentConstructor) {

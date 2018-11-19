@@ -32,6 +32,7 @@ namespace linuxdeploy {
 
                 void copyData(const std::shared_ptr<PrivateData>& other) {
                     path = other->path;
+                    sections = other->sections;
                 }
 
                 void parse(std::istream& file) {
