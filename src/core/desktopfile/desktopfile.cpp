@@ -156,6 +156,9 @@ namespace linuxdeploy {
                 if (!entryExists(section, key))
                     return false;
 
+                // make sure keys are equal
+                assert(key == entry.key());
+
                 entry = d->data[section][key];
                 return true;
             }
