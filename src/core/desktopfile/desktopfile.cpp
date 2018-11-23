@@ -173,12 +173,14 @@ namespace linuxdeploy {
                         DesktopFileEntry entry;
 
                         // this should never return false
-                        assert(getEntry(section, key, entry));
+                        auto entryExists = getEntry(section, key, entry);
+                        assert(entryExists);
 
                         ldLog() << LD_WARNING << "Key exists, not modified:" << key << "(current value:" << entry.value() << LD_NO_SPACE << ")" << std::endl;
                         rv = false;
                     } else {
-                        assert(!setEntry(section, std::move(DesktopFileEntry(key, value))));
+                        auto entrySet = setEntry(section, DesktopFileEntry(key, value));
+                        assert(entrySet);
                     }
                 };
 
