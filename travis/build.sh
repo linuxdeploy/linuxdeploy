@@ -42,8 +42,25 @@ make -j$(nproc)
 ## Run Unit Tests
 ctest -V
 
+# look for suitable strip binary to bundle
+# https://github.com/linuxdeploy/linuxdeploy/issues/59
+# first, try to find architecture aware
+strip_path=/usr/"$ARCH"*/bin/strip
+
+# another possible path
+if [[ ! -f "$strip_path" ]]; then
+    strip_path=/usr/bin/"$ARCH"*-strip
+fi
+
+# fall back to using "default" distro strip
+if [[ ! -f "$strip_path" ]]; then
+    strip_path=/usr/bin/strip
+fi
+
+# TODO: make sure strip binary's architecture matches the one we want, e.g., using file, readelf...
+
 # args are used more than once
-LINUXDEPLOY_ARGS=("--appdir" "AppDir" "-e" "bin/linuxdeploy" "-i" "$REPO_ROOT/resources/linuxdeploy.png" "--create-desktop-file" "-e" "/usr/bin/patchelf" "-e" "/usr/bin/strip")
+LINUXDEPLOY_ARGS=("--appdir" "AppDir" "-e" "bin/linuxdeploy" "-i" "$REPO_ROOT/resources/linuxdeploy.png" "--create-desktop-file" "-e" "/usr/bin/patchelf" "-e" "$strip_path")
 
 # deploy patchelf which is a dependency of linuxdeploy
 bin/linuxdeploy "${LINUXDEPLOY_ARGS[@]}"
