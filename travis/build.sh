@@ -42,22 +42,17 @@ make -j$(nproc)
 ## Run Unit Tests
 ctest -V
 
-# look for suitable strip binary to bundle
-# https://github.com/linuxdeploy/linuxdeploy/issues/59
-# first, try to find architecture aware
-strip_path=/usr/"$ARCH"*/bin/strip
+strip_path=$(which strip)
 
-# another possible path
-if [[ ! -f "$strip_path" ]]; then
-    strip_path=/usr/bin/"$ARCH"*-strip
+if [ "$ARCH" == "i386" ]; then
+    # download i386 strip for i386 AppImage
+    # https://github.com/linuxdeploy/linuxdeploy/issues/59
+    wget http://security.ubuntu.com/ubuntu/pool/main/b/binutils/binutils-multiarch_2.24-5ubuntu14.2_i386.deb
+    echo "0106f170cebf5800e863a558cad039e4f16a76d3424ae943209c3f6b0cacd511  binutils-multiarch_2.24-5ubuntu14.2_i386.deb" | sha256sum -c
+    dpkg -x binutils-multiarch_2.24-5ubuntu14.2_i386.deb out/
+    rm binutils-multiarch_2.24-5ubuntu14.2_i386.deb
+    strip_path=$(readlink -f out/usr/bin/strip)
 fi
-
-# fall back to using "default" distro strip
-if [[ ! -f "$strip_path" ]]; then
-    strip_path=/usr/bin/strip
-fi
-
-# TODO: make sure strip binary's architecture matches the one we want, e.g., using file, readelf...
 
 # args are used more than once
 LINUXDEPLOY_ARGS=("--appdir" "AppDir" "-e" "bin/linuxdeploy" "-i" "$REPO_ROOT/resources/linuxdeploy.png" "--create-desktop-file" "-e" "/usr/bin/patchelf" "-e" "$strip_path")

@@ -26,10 +26,6 @@ matrix:
             - automake  # required for patchelf
             - libfuse2:i386
             - libcairo2:i386
-      install:
-        # to be able to bundle 32-bit strip binary
-        - wget https://ftp.fau.de/debian/pool/main/b/binutils/binutils-i686-linux-gnu_2.31.1-7_i386.deb
-        - sudo dpkg -i binutils-i686-linux-gnu*.deb
     - env: ARCH=x86_64 BUILD_TYPE=coverage
       addons:
         apt:
