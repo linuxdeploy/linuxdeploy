@@ -144,7 +144,7 @@ namespace linuxdeploy {
             }
 
             bool DesktopFile::setEntry(const std::string& section, DesktopFileEntry&& entry) {
-                  // check if value exists -- used for return value
+                // check if value exists -- used for return value
                 auto rv = entryExists(section, entry.key());
 
                 d->data[section][entry.key()] = entry;
@@ -156,10 +156,11 @@ namespace linuxdeploy {
                 if (!entryExists(section, key))
                     return false;
 
+                entry = d->data[section][key];
+
                 // make sure keys are equal
                 assert(key == entry.key());
 
-                entry = d->data[section][key];
                 return true;
             }
 
@@ -179,8 +180,8 @@ namespace linuxdeploy {
                         ldLog() << LD_WARNING << "Key exists, not modified:" << key << "(current value:" << entry.value() << LD_NO_SPACE << ")" << std::endl;
                         rv = false;
                     } else {
-                        auto entrySet = setEntry(section, DesktopFileEntry(key, value));
-                        assert(entrySet);
+                        auto entryOverwritten = setEntry(section, DesktopFileEntry(key, value));
+                        assert(!entryOverwritten);
                     }
                 };
 
