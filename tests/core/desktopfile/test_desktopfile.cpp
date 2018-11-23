@@ -138,12 +138,21 @@ TEST_F(DesktopFileTest, testMoveAssignmentConstructor) {
     assertIsTestDesktopFile(copy);
 }
 
-/* deactivated until further notice as they won't run on Travis CI for some reason
+void assertDefaultKeysExistInDesktopFile(const DesktopFile& file) {
+    DesktopFileEntry entry;
+
+    for (const auto& key : {"Name", "Exec", "Icon", "Type"})
+        EXPECT_TRUE(file.getEntry("Desktop Entry", key, entry)) << "Could not find key in desktop file: " << key;
+}
+
 TEST_F(DesktopFileTest, testAddDefaultValues) {
     const auto& value = "testExecutable";
 
     DesktopFile file;
     file.addDefaultKeys(value);
+
+    // make sure keys exist in desktop files
+    assertDefaultKeysExistInDesktopFile(file);
 
     std::stringstream ss;
 
@@ -169,6 +178,11 @@ TEST_F(DesktopFileTest, testAddDefaultValuesExistingKeys) {
     DesktopFile file(iss);
     file.addDefaultKeys(value);
 
+    // make sure keys exist in desktop files
+    assertDefaultKeysExistInDesktopFile(file);
+
+    file.save(std::cout);
+
     std::stringstream ss;
 
     file.save(ss);
@@ -178,7 +192,6 @@ TEST_F(DesktopFileTest, testAddDefaultValuesExistingKeys) {
     EXPECT_EQ(reader["Desktop Entry"]["Name"].value(), "A Different Name");
     EXPECT_EQ(reader["Desktop Entry"]["Exec"].value(), "a_different_exec");
     EXPECT_EQ(reader["Desktop Entry"]["Icon"].value(), value);
-    EXPECT_EQ(reader["Desktop Entry"]["Type"].value(), "Application");
     EXPECT_EQ(reader["Desktop Entry"]["Categories"].value(), "Utility;");
 }
 
@@ -190,6 +203,9 @@ TEST_F(DesktopFileTest, testAddDefaultValuesNoOverwrite) {
     DesktopFile file(iss);
 
     file.addDefaultKeys(value);
+
+    // make sure keys exist in desktop files
+    assertDefaultKeysExistInDesktopFile(file);
 
     {
         std::stringstream oss;
@@ -208,7 +224,6 @@ TEST_F(DesktopFileTest, testAddDefaultValuesNoOverwrite) {
         EXPECT_EQ(reader["Desktop Entry"]["Categories"].parseStringList(), std::vector<std::string>({"Utility"}));
     }
 }
-*/
 
 TEST_F(DesktopFileTest, testSaveToPath) {
     std::stringstream ins;
