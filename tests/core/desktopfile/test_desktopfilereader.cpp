@@ -147,8 +147,9 @@ TEST_F(DesktopFileReaderTest, testParseSimpleDesktopFile) {
 
     auto section = reader["Desktop File"];
     EXPECT_FALSE(section.empty());
+    EXPECT_EQ(section.size(), 6);
 
-    EXPECT_NEAR(section["Version"].asDouble(), 1.0f, 0.000001);
+    EXPECT_NEAR(section["Version"].asDouble(), 1.0, 0.000001);
     EXPECT_EQ(section["Name"].value(), "name");
     EXPECT_EQ(section["Exec"].value(), "exec");
     EXPECT_EQ(section["Icon"].value(), "icon");
