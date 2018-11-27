@@ -158,6 +158,37 @@ TEST_F(DesktopFileReaderTest, testParseSimpleDesktopFile) {
     EXPECT_EQ(section["Categories"].parseStringList(), std::vector<std::string>({"Utility", "Multimedia"}));
 }
 
+TEST_F(DesktopFileReaderTest, testParseSimpleDesktopFileWithComments) {
+    std::stringstream ss;
+    ss << "[Desktop File]" << std::endl
+       << "Version=1.0" << std::endl
+       << "Name=name" << std::endl
+       << "# a comment" << std::endl
+       << "Exec=exec" << std::endl
+       << "Icon=icon" << std::endl
+       << "Type=Application" << std::endl
+       << "# another comment" << std::endl
+       << "Categories=Utility;Multimedia;" << std::endl;
+
+    DesktopFileReader reader;
+    reader = DesktopFileReader(ss);
+
+    auto section = reader["Desktop File"];
+    EXPECT_FALSE(section.empty());
+    EXPECT_EQ(section.size(), 6);
+
+    // TODO: check for comments in data
+    // right now, they're just discarded, but they shall be preserved in the right positions in the future
+
+    EXPECT_NEAR(section["Version"].asDouble(), 1.0f, 0.000001);
+    EXPECT_EQ(section["Name"].value(), "name");
+    EXPECT_EQ(section["Exec"].value(), "exec");
+    EXPECT_EQ(section["Icon"].value(), "icon");
+    EXPECT_EQ(section["Type"].value(), "Application");
+    EXPECT_EQ(section["Name"].value(), "name");
+    EXPECT_EQ(section["Categories"].parseStringList(), std::vector<std::string>({"Utility", "Multimedia"}));
+}
+
 TEST_F(DesktopFileReaderTest, testParseFileGetNonExistingSection) {
     std::stringstream ss;
     ss << "[Desktop File]" << std::endl;
