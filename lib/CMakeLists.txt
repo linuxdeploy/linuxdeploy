@@ -122,7 +122,7 @@ if(NOT USE_SYSTEM_BOOST)
     add_library(boost_lexical_cast INTERFACE)
     set_property(TARGET boost_lexical_cast PROPERTY INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/boost-lexical_cast/include>")
     set_property(TARGET boost_lexical_cast PROPERTY INTERFACE_LINK_LIBRARIES "boost_config")
-    target_link_libraries(boost_lexical_cast INTERFACE boost_concept_check boost_numeric_conversion boost_array boost_container boost_math boost_system)
+    target_link_libraries(boost_lexical_cast INTERFACE boost_concept_check boost_numeric_conversion boost_array boost_container boost_math boost_integer)
 endif()
 
 if(BUILD_TESTING)
