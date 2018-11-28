@@ -1,10 +1,10 @@
 // system includes
 #include <fstream>
 #include <memory>
+#include <regex>
 #include <utility>
 
 // library includes
-#include <boost/regex.hpp>
 #include <subprocess.hpp>
 #include <sys/mman.h>
 
@@ -134,11 +134,11 @@ namespace linuxdeploy {
 
                 auto outputAndError = util::subprocess::check_output_error(lddProc);
 
-                const boost::regex expr(R"(\s*(.+)\s+\=>\s+(.+)\s+\((.+)\)\s*)");
-                boost::smatch what;
+                const std::regex expr(R"(\s*(.+)\s+\=>\s+(.+)\s+\((.+)\)\s*)");
+                std::smatch what;
 
                 for (const auto& line : util::splitLines(outputAndError.first)) {
-                    if (boost::regex_search(line, what, expr)) {
+                    if (std::regex_search(line, what, expr)) {
                         auto libraryPath = what[2].str();
                         util::trim(libraryPath);
                         paths.push_back(bf::absolute(libraryPath));

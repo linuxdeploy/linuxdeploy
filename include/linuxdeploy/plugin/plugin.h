@@ -1,10 +1,7 @@
 // system includes
 #include <map>
 #include <string>
-
-// library includes
-#include <boost/filesystem.hpp>
-#include <boost/regex.hpp>
+#include <regex>
 
 // local includes
 #include "linuxdeploy/core/log.h"
@@ -22,7 +19,7 @@ namespace linuxdeploy {
         /*
          * Official regular expression to check filenames for plugins
          */
-        static const boost::regex PLUGIN_EXPR(R"(^linuxdeploy-plugin-([^\s\.-]+)(?:-[^\.]+)?(?:\..+)?$)");
+        static const std::regex PLUGIN_EXPR(R"(^linuxdeploy-plugin-([^\s\.-]+)(?:-[^\.]+)?(?:\..+)?$)");
 
         /*
          * Plugin interface.

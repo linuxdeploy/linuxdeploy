@@ -7,10 +7,10 @@ include_directories(${PROJECT_SOURCE_DIR}/include)
 if(USE_SYSTEM_BOOST)
     set(Boost_USE_STATIC_LIBS ON)
     find_package(Boost REQUIRED COMPONENTS filesystem regex)
-    set(BOOST_LIBS Boost::filesystem Boost::regex)
+    set(BOOST_LIBS Boost::filesystem)
 else()
     # use custom built libs
-    set(BOOST_LIBS boost_system boost_filesystem boost_regex boost_lexical_cast)
+    set(BOOST_LIBS boost_system boost_filesystem boost_lexical_cast)
 endif()
 
 

@@ -1,11 +1,11 @@
 // system headers
+#include <regex>
 #include <set>
 #include <string>
 #include <vector>
 
 // library headers
 #include <boost/filesystem.hpp>
-#include <boost/regex.hpp>
 #include <fnmatch.h>
 #include <subprocess.hpp>
 
@@ -84,9 +84,9 @@ namespace linuxdeploy {
                     }
 
                     // entry name must match regular expression
-                    boost::cmatch res;
+                    std::smatch res;
 
-                    if (!boost::regex_match(i->path().filename().string().c_str(), res, PLUGIN_EXPR)) {
+                    if (!std::regex_match(i->path().filename().string(), res, PLUGIN_EXPR)) {
                         ldLog() << LD_DEBUG << "Doesn't match plugin regex, skipping:" << i->path() << std::endl;
                         continue;
                     }
