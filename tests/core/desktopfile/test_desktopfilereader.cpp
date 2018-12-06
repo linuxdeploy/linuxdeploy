@@ -384,3 +384,53 @@ TEST_F(DesktopFileReaderTest, testReadLocalizedEntriesWithoutProperLocalizationS
 
     EXPECT_EQ(data["Desktop File"], expected);
 }
+
+TEST_F(DesktopFileReaderTest, testBrokenLocalizedKeys) {
+    {
+        std::stringstream ins;
+        ins << "[Desktop Entry]" << std::endl
+            << "test]de[=test" << std::endl;
+
+        EXPECT_THROW(DesktopFileReader reader(ins), ParseError);
+    }
+
+    {
+        std::stringstream ins;
+        ins << "[Desktop Entry]" << std::endl
+            << "test[de]]=test" << std::endl;
+
+        EXPECT_THROW(DesktopFileReader reader(ins), ParseError);
+    }
+
+    {
+        std::stringstream ins;
+        ins << "[Desktop Entry]" << std::endl
+            << "test[[de]=test" << std::endl;
+
+        EXPECT_THROW(DesktopFileReader reader(ins), ParseError);
+    }
+
+    {
+        std::stringstream ins;
+        ins << "[Desktop Entry]" << std::endl
+            << "test[]de=test" << std::endl;
+
+        EXPECT_THROW(DesktopFileReader reader(ins), ParseError);
+    }
+
+    {
+        std::stringstream ins;
+        ins << "[Desktop Entry]" << std::endl
+            << "test[de=test" << std::endl;
+
+        EXPECT_THROW(DesktopFileReader reader(ins), ParseError);
+    }
+
+    {
+        std::stringstream ins;
+        ins << "[Desktop Entry]" << std::endl
+            << "testde]=test" << std::endl;
+
+        EXPECT_THROW(DesktopFileReader reader(ins), ParseError);
+    }
+}

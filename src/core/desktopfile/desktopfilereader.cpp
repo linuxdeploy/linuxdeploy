@@ -113,6 +113,19 @@ namespace linuxdeploy {
                                         }
                                     }
 
+                                    if (std::count(key.begin(), key.end(), '[') > 1 ||
+                                        std::count(key.begin(), key.end(), ']') > 1 ||
+                                        // make sure that both [ and ] are present
+                                        (key.find('[') != std::string::npos && key.find(']') == std::string::npos) ||
+                                        (key.find('[') == std::string::npos && key.find(']') != std::string::npos) ||
+                                        // disallow empty locale names
+                                        (key.find('[') != std::string::npos && key.find(']') != std::string::npos && (key.find(']') - key.find('[')) < 2) ||
+                                        // ensure order of [ and ]
+                                        (key.find('[') != std::string::npos && key.find('[' ) > key.find(']'))
+                                    ) {
+                                        throw ParseError("Invalid localization syntax used in key " + key);
+                                    }
+
                                     auto& section = sections[currentSectionName];
 
                                     // keys must be unique in the same section
