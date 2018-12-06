@@ -105,10 +105,12 @@ namespace linuxdeploy {
                                                 // FIXME: remove this hack after introducing localization support to
                                                 // conform to desktop file spec again
                                                 (c == '[') || (c == ']')
-                                            ))
+                                            )
+                                        ) {
                                             throw ParseError(
-                                                "Key " + key + " contains invalid character " + std::string{c}
+                                                    "Key " + key + " contains invalid character " + std::string{c}
                                             );
+                                        }
                                     }
 
                                     auto& section = sections[currentSectionName];
