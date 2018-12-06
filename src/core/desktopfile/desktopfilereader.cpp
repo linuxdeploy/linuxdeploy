@@ -106,7 +106,9 @@ namespace linuxdeploy {
                                                 // conform to desktop file spec again
                                                 (c == '[') || (c == ']')
                                             ))
-                                            throw ParseError("Key contains invalid character " + std::string{c});
+                                            throw ParseError(
+                                                "Key " + key + " contains invalid character " + std::string{c}
+                                            );
                                     }
 
                                     auto& section = sections[currentSectionName];
