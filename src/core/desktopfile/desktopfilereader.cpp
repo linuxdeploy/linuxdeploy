@@ -101,7 +101,10 @@ namespace linuxdeploy {
                                                 (c >= 'A' && c <= 'Z') ||
                                                 (c >= 'a' && c <= 'z') ||
                                                 (c >= '0' && c <= '9') ||
-                                                (c == '-')
+                                                (c == '-') ||
+                                                // FIXME: remove this hack after introducing localization support to
+                                                // conform to desktop file spec again
+                                                (c == '[') || (c == ']')
                                             ))
                                             throw ParseError("Key contains invalid character " + std::string{c});
                                     }
