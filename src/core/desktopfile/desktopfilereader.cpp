@@ -101,9 +101,29 @@ namespace linuxdeploy {
                                                 (c >= 'A' && c <= 'Z') ||
                                                 (c >= 'a' && c <= 'z') ||
                                                 (c >= '0' && c <= '9') ||
-                                                (c == '-')
-                                            ))
-                                            throw ParseError("Key contains invalid character " + std::string{c});
+                                                (c == '-') ||
+                                                // FIXME: remove this hack after introducing localization support to
+                                                // conform to desktop file spec again
+                                                (c == '[') || (c == ']')
+                                            )
+                                        ) {
+                                            throw ParseError(
+                                                    "Key " + key + " contains invalid character " + std::string{c}
+                                            );
+                                        }
+                                    }
+
+                                    if (std::count(key.begin(), key.end(), '[') > 1 ||
+                                        std::count(key.begin(), key.end(), ']') > 1 ||
+                                        // make sure that both [ and ] are present
+                                        (key.find('[') != std::string::npos && key.find(']') == std::string::npos) ||
+                                        (key.find('[') == std::string::npos && key.find(']') != std::string::npos) ||
+                                        // disallow empty locale names
+                                        (key.find('[') != std::string::npos && key.find(']') != std::string::npos && (key.find(']') - key.find('[')) < 2) ||
+                                        // ensure order of [ and ]
+                                        (key.find('[') != std::string::npos && key.find('[' ) > key.find(']'))
+                                    ) {
+                                        throw ParseError("Invalid localization syntax used in key " + key);
                                     }
 
                                     auto& section = sections[currentSectionName];
