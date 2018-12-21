@@ -59,7 +59,7 @@ if [ "$ARCH" == "i386" ]; then
 fi
 
 # args are used more than once
-LINUXDEPLOY_ARGS=("--appdir" "AppDir" "-e" "bin/linuxdeploy" "-i" "$REPO_ROOT/resources/linuxdeploy.png" "--create-desktop-file" "-e" "/usr/bin/patchelf" "-e" "$strip_path")
+LINUXDEPLOY_ARGS=("--appdir" "AppDir" "-e" "bin/linuxdeploy" "-i" "$REPO_ROOT/resources/linuxdeploy.png" "-d" "$REPO_ROOT/resources/linuxdeploy.desktop" "-e" "/usr/bin/patchelf" "-e" "$strip_path")
 
 # deploy patchelf which is a dependency of linuxdeploy
 bin/linuxdeploy "${LINUXDEPLOY_ARGS[@]}"
