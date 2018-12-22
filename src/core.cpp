@@ -33,14 +33,13 @@ namespace linuxdeploy {
             return deployedDesktopFiles[0];
         }
 
-        auto firstDeployedDesktopFileName = boost::filesystem::path(
-            desktopFilePaths.front()).filename().string();
+        auto firstDeployedDesktopFileName = boost::filesystem::path(desktopFilePaths.front()).filename().string();
 
         auto desktopFileMatchingName = find_if(
             deployedDesktopFiles.begin(),
             deployedDesktopFiles.end(),
             [&firstDeployedDesktopFileName](const desktopfile::DesktopFile& desktopFile) {
-                auto fileName = desktopFile.path();
+                auto fileName = bf::path(desktopFile.path()).filename().string();
                 return fileName == firstDeployedDesktopFileName;
             }
         );
