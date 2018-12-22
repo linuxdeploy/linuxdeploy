@@ -18,11 +18,10 @@ target_include_directories(linuxdeploy_core_log PUBLIC ${PROJECT_SOURCE_DIR}/inc
 target_link_libraries(linuxdeploy_core_log PUBLIC ${BOOST_LIBS})
 
 add_subdirectory(copyright)
-add_subdirectory(desktopfile)
 
 add_library(linuxdeploy_core STATIC elf.cpp appdir.cpp ${HEADERS})
 target_link_libraries(linuxdeploy_core PUBLIC
-    linuxdeploy_plugin linuxdeploy_core_log linuxdeploy_util linuxdeploy_core_desktopfile
+    linuxdeploy_plugin linuxdeploy_core_log linuxdeploy_util linuxdeploy_desktopfile
     ${BOOST_LIBS} CImg ${CMAKE_THREAD_LIBS_INIT}
 )
 target_link_libraries(linuxdeploy_core PRIVATE linuxdeploy_core_copyright)

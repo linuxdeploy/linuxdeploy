@@ -12,9 +12,9 @@
 
 // local headers
 #include "linuxdeploy/core/appdir.h"
-#include "linuxdeploy/core/desktopfile/desktopfileentry.h"
 #include "linuxdeploy/core/elf.h"
 #include "linuxdeploy/core/log.h"
+#include "linuxdeploy/desktopfile/desktopfileentry.h"
 #include "linuxdeploy/util/util.h"
 #include "copyright.h"
 
@@ -22,7 +22,7 @@
 #include "excludelist.h"
 
 using namespace linuxdeploy::core;
-using namespace linuxdeploy::core::desktopfile;
+using namespace linuxdeploy::desktopfile;
 using namespace linuxdeploy::core::log;
 
 using namespace cimg_library;
@@ -651,7 +651,7 @@ namespace linuxdeploy {
                 }), paths.end());
 
                 for (const auto& path : paths) {
-                    desktopFiles.emplace_back(path);
+                    desktopFiles.emplace_back(path.string());
                 }
 
                 return desktopFiles;

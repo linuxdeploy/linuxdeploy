@@ -5,7 +5,7 @@
 #include <boost/filesystem.hpp>
 
 // local includes
-#include "linuxdeploy/core/desktopfile/desktopfile.h"
+#include "linuxdeploy/desktopfile/desktopfile.h"
 
 #pragma once
 

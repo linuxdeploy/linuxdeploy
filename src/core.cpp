@@ -8,6 +8,7 @@
 
 using namespace linuxdeploy::core;
 using namespace linuxdeploy::core::log;
+using namespace linuxdeploy::desktopfile;
 namespace bf = boost::filesystem;
 
 namespace linuxdeploy {

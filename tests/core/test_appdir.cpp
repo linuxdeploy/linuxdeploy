@@ -2,7 +2,7 @@
 #include  "linuxdeploy/core/appdir.h"
 
 using namespace linuxdeploy::core::appdir;
-using namespace linuxdeploy::core::desktopfile;
+using namespace linuxdeploy::desktopfile;
 using namespace boost::filesystem;
 
 namespace AppDirTest {

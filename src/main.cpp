@@ -7,13 +7,14 @@
 
 // local headers
 #include "linuxdeploy/core/appdir.h"
-#include "linuxdeploy/core/desktopfile/desktopfile.h"
+#include "linuxdeploy/desktopfile/desktopfile.h"
 #include "linuxdeploy/core/elf.h"
 #include "linuxdeploy/core/log.h"
 #include "linuxdeploy/plugin/plugin.h"
 #include "linuxdeploy/util/util.h"
 #include "core.h"
 
+using namespace linuxdeploy;
 using namespace linuxdeploy::core;
 using namespace linuxdeploy::core::log;
 using namespace linuxdeploy::util;
@@ -249,7 +250,7 @@ int main(int argc, char** argv) {
             ldLog() << LD_WARNING << "Tried to overwrite existing entries in desktop file:" << desktopFilePath << std::endl;
         }
 
-        if (!desktopFile.save(desktopFilePath)) {
+        if (!desktopFile.save(desktopFilePath.string())) {
             ldLog() << LD_ERROR << "Failed to save desktop file:" << desktopFilePath << std::endl;
             return 1;
         }

@@ -37,7 +37,3 @@ add_test(test_linuxdeploy test_linuxdeploy)
 
 # make sure library and executable are built before test_appdir
 add_dependencies(test_linuxdeploy simple_library simple_executable)
-
-
-# include desktop file tests
-add_subdirectory(desktopfile)
