@@ -7,7 +7,7 @@ using namespace linuxdeploy::core;
 namespace bf = boost::filesystem;
 
 namespace LinuxDeployTest {
-    class LinuxDeployTestsFixture : public ::testing::Test {
+    class IntegrationTests : public ::testing::Test {
     public:
         bf::path tmpAppDir;
         bf::path source_executable_path;
@@ -41,7 +41,7 @@ namespace LinuxDeployTest {
             remove_all(tmpAppDir);
         }
 
-        ~LinuxDeployTestsFixture() override = default;
+        ~IntegrationTests() override = default;
 
         void listDeployedFiles() {
             std::cout << "Files deployed in AppDir:" << std::endl;
@@ -79,7 +79,7 @@ namespace LinuxDeployTest {
         }
     };
 
-    TEST_F(LinuxDeployTestsFixture, deployAppDirRootFilesWithExistentAppRun) {
+    TEST_F(IntegrationTests, deployAppDirRootFilesWithExistentAppRun) {
         fillRegularAppDir();
         add_apprun();
 
@@ -91,7 +91,7 @@ namespace LinuxDeployTest {
         EXPECT_TRUE(exists(target_apprun_path));
     }
 
-    TEST_F(LinuxDeployTestsFixture, deployAppDirRootFilesWithCustomAppRun) {
+    TEST_F(IntegrationTests, deployAppDirRootFilesWithCustomAppRun) {
         linuxdeploy::core::appdir::AppDir appDir(tmpAppDir);
         linuxdeploy::deployAppDirRootFiles({}, source_apprun_path.string(), appDir);
 
