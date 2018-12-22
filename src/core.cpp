@@ -39,7 +39,7 @@ namespace linuxdeploy {
             deployedDesktopFiles.begin(),
             deployedDesktopFiles.end(),
             [&firstDeployedDesktopFileName](const desktopfile::DesktopFile& desktopFile) {
-                auto fileName = desktopFile.path().filename().string();
+                auto fileName = desktopFile.path();
                 return fileName == firstDeployedDesktopFileName;
             }
         );
@@ -84,5 +84,35 @@ namespace linuxdeploy {
         } catch (const DeployError& er) {
             return false;
         }
+    }
+
+    bool addDefaultKeys(DesktopFile& desktopFile, const std::string& executableFileName) {
+        ldLog() << "Adding default values to desktop file:" << desktopFile.path() << std::endl;
+
+        auto rv = true;
+
+        auto setDefault = [&rv, &desktopFile](const std::string& section, const std::string& key, const std::string& value) {
+            if (desktopFile.entryExists(section, key)) {
+                DesktopFileEntry entry;
+
+                // this should never return false
+                auto entryExists = desktopFile.getEntry(section, key, entry);
+                assert(entryExists);
+
+                ldLog() << LD_WARNING << "Key exists, not modified:" << key << "(current value:" << entry.value() << LD_NO_SPACE << ")" << std::endl;
+                rv = false;
+            } else {
+                auto entryOverwritten = desktopFile.setEntry(section, DesktopFileEntry(key, value));
+                assert(!entryOverwritten);
+            }
+        };
+
+        setDefault("Desktop Entry", "Name", executableFileName);
+        setDefault("Desktop Entry", "Exec", executableFileName);
+        setDefault("Desktop Entry", "Icon", executableFileName);
+        setDefault("Desktop Entry", "Type", "Application");
+        setDefault("Desktop Entry", "Categories", "Utility;");
+
+        return rv;
     }
 }

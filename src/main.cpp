@@ -245,7 +245,7 @@ int main(int argc, char** argv) {
         }
 
         desktopfile::DesktopFile desktopFile;
-        if (!desktopFile.addDefaultKeys(executableName)) {
+        if (!addDefaultKeys(desktopFile, executableName)) {
             ldLog() << LD_WARNING << "Tried to overwrite existing entries in desktop file:" << desktopFilePath << std::endl;
         }
 
