@@ -14,60 +14,20 @@ linuxdeploy is designed to be an AppDir maintenance tool. It provides extensive 
 linuxdeploy was greatly influenced by [linuxdeployqt](https://github.com/probonopd/linuxdeployqt), and while it employs stricter rules on AppDirs, it's more flexible in use. If you use linuxdeployqt at the moment, consider switching to linuxdeploy today!
 
 
-## Usage
+## User guides and examples
 
-linuxdeploy, being a tool for creating AppDirs and eventually AppImages, is released as an AppImage itself. Please download and use the AppImage for normal use. If you encounter errors, e.g., when building the tool from source, please try with the AppImage first before [creating an issue](https://github.com/TheAssassin/linuxdeploy/issues/new).
+Please see the [linuxdeploy user guide](https://docs.appimage.org/packaging-guide/linuxdeploy-user-guide.html) and the [native binaries packaging guide](https://docs.appimage.org/packaging-guide/native-binaries.html) in the [AppImage documentation](https://docs.appimage.org). There's also an [examples section](https://docs.appimage.org/packaging-guide/native-binaries.html#examples).
 
-There are two main ways to use linuxdeploy: Provide the paths to all files you want to bundle manually, or create an FHS-like directory and run linuxdeploy on it.
 
-Most build systems provide some kind of `make install` functionality that is capable of producing FHS-like directory trees that can be turned into AppDirs:
+## Projects using linuxdeploy
 
-```sh
-# automake
-./configure --prefix=/usr
-make install DESTDIR=AppDir
+This is an incomplete list of projects using linuxdeploy. You might want to read their build scripts to see how they use linuxdeploy.
 
-# cmake
-mkdir build && cd build
-cmake .. -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=/usr
-make install DESTDIR=AppDir
-
-# qmake
-qmake CONFIG+=release PREFIX=/usr .
-make install INSTALL_ROOT=AppDir
-```
-
-Next, download the latest linuxdeploy AppImage. It's available on the [release page](https://github.com/linuxdeploy/linuxdeploy/releases). Make sure to pick the right one for your (target) architecture.
-
-Now, simply run linuxdeploy like `./linuxdeploy*.AppImage --appdir AppDir`.
-
-Please use `./linuxdeploy*.AppImage --help` to get a list of options supported by linuxdeploy.
-
-If your build system cannot produce such install trees or you prefer to bundle everything manually, you can also specify the paths to the resources yourself. linuxdeploy provides the following options for this use case:
-
-```
--l[library...],
---lib=[library...],
---library=[library...]            Shared library to deploy
--e[executable...],
---executable=[executable...]      Executable to deploy
--d[desktop file...],
---desktop-file=[desktop file...]  Desktop file to deploy
-                                  enough for some tests
--i[icon file...],
---icon-file=[icon file...]        Icon to deploy
-```
-
-An example run could look like this:
-
-```bash
-./linuxdeploy*.AppImage --appdir AppDir -e myapp -d myapp.desktop -i myapp_64x64.png
-```
-
-Of course both approaches can be combined, e.g., you can bundle additional executables with your main app.
-
-linuxdeploy doesn't mind being run on an AppDir more than once, as it recognize previous runs, and should not break files within the AppDir. This is called an "iterative workflow". In case of errors, you can simply fix them, and re-run linuxdeploy afterwards.
-If you ever encounter issues when running linuxdeploy on an existing AppDir, please let us know by [creating an issue](https://github.com/TheAssassin/linuxdeploy/issues/new).
+- [Pext](https://github.com/Pext/Pext)
+- [AppImageLauncher](https://github.com/TheAssassin/AppImageLauncher)
+- [OpenRCT2](https://github.com/OpenRCT2/OpenRCT2)
+- [AppImageUpdate](https://github.com/AppImage/AppImageUpdate)
+- [appimaged](https://github.com/AppImage/appimaged)
 
 
 ## Plugins
@@ -91,22 +51,6 @@ If you want to use a plugin to bundle additional resources, please add `./linuxd
 **A list of official and community plugins can be found in the [awesome-linuxdeploy](http://github.com/linuxdeploy/awesome-linuxdeploy) project.**
 
 **Note:** If you want to suggest a plugin for a specific framework, language etc., please feel free to [create a new issue](https://github.com/linuxdeploy/linuxdeploy/issues/new). Current plugin requests can be found [here](https://github.com/linuxdeploy/linuxdeploy/issues?utf8=%E2%9C%93&q=label%3A%22plugin+request%22).
-
-
-## User guides and examples
-
-Please see the [linuxdeploy user guide](https://docs.appimage.org/packaging-guide/linuxdeploy-user-guide.html) and the [native binaries packaging guide](https://docs.appimage.org/packaging-guide/native-binaries.html) in the [AppImage documentation](https://docs.appimage.org). There's also an [examples section](https://docs.appimage.org/packaging-guide/native-binaries.html#examples).
-
-
-## Projects using linuxdeploy
-
-This is an incomplete list of projects using linuxdeploy. You might want to read their build scripts to see how they use linuxdeploy.
-
-- [Pext](https://github.com/Pext/Pext)
-- [AppImageLauncher](https://github.com/TheAssassin/AppImageLauncher)
-- [OpenRCT2](https://github.com/OpenRCT2/OpenRCT2)
-- [AppImageUpdate](https://github.com/AppImage/AppImageUpdate)
-- [appimaged](https://github.com/AppImage/appimaged)
 
 
 ## Troubleshooting
