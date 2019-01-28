@@ -28,7 +28,11 @@ namespace linuxdeploy {
                     // the directory will be created if it doesn't exist
                     explicit AppDir(const boost::filesystem::path& path);
 
-                    ~AppDir();
+                    // we don't want any copy/move(-assignment) behavior, therefore we delete those operators/constructors
+                    AppDir(const AppDir&) = delete;
+                    AppDir(AppDir&&) = delete;
+                    void operator=(const AppDir&) = delete;
+                    void operator=(AppDir&&) = delete;
 
                     // alternative constructor
                     // shortcut for using a normal string instead of a path
