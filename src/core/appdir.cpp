@@ -532,13 +532,9 @@ namespace linuxdeploy {
             };
 
             AppDir::AppDir(const bf::path& path) {
-                d = new PrivateData();
+                d = std::make_shared<PrivateData>();
 
                 d->appDirPath = path;
-            }
-
-            AppDir::~AppDir() {
-                delete d;
             }
 
             AppDir::AppDir(const std::string& path) : AppDir(bf::path(path)) {}

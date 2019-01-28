@@ -1,4 +1,5 @@
 // system includes
+#include <memory>
 #include <string>
 
 // library includes
@@ -19,7 +20,7 @@ namespace linuxdeploy {
                 private:
                     // private data class pattern
                     class PrivateData;
-                    PrivateData* d;
+                    std::shared_ptr<PrivateData> d;
 
                 public:
                     // default constructor
