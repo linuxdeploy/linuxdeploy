@@ -221,10 +221,16 @@ namespace linuxdeploy {
                             const auto& filePath = currentEntry.first;
                             const auto& rpath = currentEntry.second;
 
-                            ldLog() << "Setting rpath in ELF file" << filePath << "to" << rpath << std::endl;
-                            if (!elf::ElfFile(filePath).setRPath(rpath)) {
-                                ldLog() << LD_ERROR << "Failed to set rpath in ELF file:" << filePath << std::endl;
-                                success = false;
+                            // no need to set rpath in debug symbols files
+                            // also, patchelf crashes on such symbols
+                            if (isInDebugSymbolsLocation(filePath)) {
+                                ldLog() << LD_WARNING << "Not setting rpath in debug symbols file:" << filePath << std::endl;
+                            } else {
+                                ldLog() << "Setting rpath in ELF file" << filePath << "to" << rpath << std::endl;
+                                if (!elf::ElfFile(filePath).setRPath(rpath)) {
+                                    ldLog() << LD_ERROR << "Failed to set rpath in ELF file:" << filePath << std::endl;
+                                    success = false;
+                                }
                             }
 
                             setElfRPathOperations.erase(setElfRPathOperations.begin());
@@ -238,8 +244,6 @@ namespace linuxdeploy {
                         if (disableCopyrightFilesDeployment)
                             return true;
 
-                        ldLog() << logPrefix << LD_NO_SPACE << "Deploying copyright files for file" << from << std::endl;
-
                         if (copyrightFilesManager == nullptr)
                             return false;
 
@@ -247,6 +251,8 @@ namespace linuxdeploy {
 
                         if (copyrightFiles.empty())
                             return false;
+
+                        ldLog() << logPrefix << LD_NO_SPACE << "Deploying copyright files for file" << from << std::endl;
 
                         for (const auto& file : copyrightFiles) {
                             std::string targetDir = file.string();
@@ -391,8 +397,12 @@ namespace linuxdeploy {
                             rpath = "$ORIGIN/" + relPath.string() + ":$ORIGIN";
                         }
 
+                        // no need to set rpath in debug symbols files
+                        // also, patchelf crashes on such symbols
+                        if (!isInDebugSymbolsLocation(destinationPath)) {
+                            setElfRPathOperations[destinationPath] = rpath;
+                        }
 
-                        setElfRPathOperations[destinationPath] = rpath;
                         stripOperations.insert(destinationPath);
 
                         if (!deployElfDependencies(path, recursionLevel))
@@ -528,6 +538,16 @@ namespace linuxdeploy {
                         deployCopyrightFiles(path);
 
                         return true;
+                    }
+
+                    bool isInDebugSymbolsLocation(const bf::path& path) {
+                        // TODO: check if there's more potential locations for debug symbol files
+                        for (const std::string& dbgSymbolsPrefix : {".debug/"}) {
+                            if (path.string().substr(0, dbgSymbolsPrefix.size()) == dbgSymbolsPrefix)
+                                return true;
+                        }
+
+                        return false;
                     }
             };
 
@@ -799,6 +819,10 @@ namespace linuxdeploy {
                 std::vector<bf::path> sharedLibraries;
 
                 for (const auto& file : listFilesInDirectory(path() / "usr" / "lib", true)) {
+                    // exclude debug symbols
+                    if (d->isInDebugSymbolsLocation(file))
+                        continue;
+
                     // make sure it's an ELF file
                     try {
                         elf::ElfFile elfFile(file);
