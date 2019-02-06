@@ -266,19 +266,22 @@ namespace linuxdeploy {
                     // register copy operation that will be executed later
                     // by compiling a list of files to copy instead of just copying everything, one can ensure that
                     // the files are touched once only
-                    void deployFile(const bf::path& from, bf::path to, bool verbose = false) {
-                        if (verbose)
-                            ldLog() << "Deploying file" << from << "to" << to << std::endl;
-
+                    // returns the full path of the deployment destination (useful if to is a directory
+                    bf::path deployFile(const bf::path& from, bf::path to, bool verbose = false) {
                         // not sure whether this is 100% bullet proof, but it simulates the cp command behavior
                         if (to.string().back() == '/' || bf::is_directory(to)) {
                             to /= from.filename();
                         }
 
+                        if (verbose)
+                            ldLog() << "Deploying file" << from << "to" << to << std::endl;
+
                         copyOperations[from] = to;
 
                         // mark file as visited
                         visitedFiles.insert(from);
+
+                        return to;
                     }
 
                     std::string getLogPrefix(int recursionLevel) {
@@ -321,7 +324,7 @@ namespace linuxdeploy {
                         return stripPath;
                     }
 
-                    bool deployLibrary(const bf::path& path, int recursionLevel = 0, bool forceDeploy = false,const bf::path &destination = bf::path()) {
+                    bool deployLibrary(const bf::path& path, int recursionLevel = 0, bool forceDeploy = false, const bf::path& destination = bf::path()) {
                         auto logPrefix = getLogPrefix(recursionLevel);
 
                         if (!forceDeploy && hasBeenVisitedAlready(path)) {
@@ -369,14 +372,15 @@ namespace linuxdeploy {
                             ldLog() << " (destination:" << destination << LD_NO_SPACE << ")";
                         ldLog() << std::endl;
 
-                        auto destinationPath = destination.empty() ? libraryDir : destination;
+                        auto actualDestination = destination.empty() ? libraryDir : destination;
 
                         // not sure whether this is 100% bullet proof, but it simulates the cp command behavior
-                        if (destinationPath.string().back() == '/' || bf::is_directory(destinationPath)) {
-                            destinationPath /= path.filename();
+                        if (actualDestination.string().back() == '/' || bf::is_directory(actualDestination)) {
+                            actualDestination /= path.filename();
                         }
 
-                        deployFile(path, destinationPath);
+                        // in case destinationPath is a directory, deployFile will give us the deployed file's path
+                        actualDestination = deployFile(path, actualDestination);
                         deployCopyrightFiles(path, logPrefix);
 
                         std::string rpath = "$ORIGIN";
@@ -399,11 +403,11 @@ namespace linuxdeploy {
 
                         // no need to set rpath in debug symbols files
                         // also, patchelf crashes on such symbols
-                        if (!isInDebugSymbolsLocation(destinationPath)) {
-                            setElfRPathOperations[destinationPath] = rpath;
+                        if (!isInDebugSymbolsLocation(actualDestination)) {
+                            setElfRPathOperations[actualDestination] = rpath;
                         }
 
-                        stripOperations.insert(destinationPath);
+                        stripOperations.insert(actualDestination);
 
                         if (!deployElfDependencies(path, recursionLevel))
                             return false;
@@ -789,7 +793,7 @@ namespace linuxdeploy {
                 return true;
             }
 
-            void AppDir::deployFile(const boost::filesystem::path& from, const boost::filesystem::path& to) {
+            bf::path AppDir::deployFile(const boost::filesystem::path& from, const boost::filesystem::path& to) {
                 return d->deployFile(from, to, true);
             }
 
