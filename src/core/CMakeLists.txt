@@ -21,7 +21,7 @@ add_subdirectory(copyright)
 
 add_library(linuxdeploy_core STATIC elf.cpp appdir.cpp ${HEADERS})
 target_link_libraries(linuxdeploy_core PUBLIC
-    linuxdeploy_plugin linuxdeploy_core_log linuxdeploy_util linuxdeploy_desktopfile
+    linuxdeploy_plugin linuxdeploy_core_log linuxdeploy_util linuxdeploy_desktopfile_static
     ${BOOST_LIBS} CImg ${CMAKE_THREAD_LIBS_INIT}
 )
 target_link_libraries(linuxdeploy_core PRIVATE linuxdeploy_core_copyright)
