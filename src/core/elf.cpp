@@ -33,16 +33,33 @@ namespace linuxdeploy {
                     static std::string getPatchelfPath() {
                         // by default, try to use a patchelf next to the linuxdeploy binary
                         // if that isn't available, fall back to searching for patchelf in the PATH
-                        std::string patchelfPath = "patchelf";
+                        std::string patchelfPath;
 
                         auto binDirPath = bf::path(util::getOwnExecutablePath());
                         auto localPatchelfPath = binDirPath.parent_path() / "patchelf";
 
-                        if (bf::exists(localPatchelfPath))
+                        if (bf::exists(localPatchelfPath)) {
                             patchelfPath = localPatchelfPath.string();
+                        } else {
+                            for (const bf::path directory : util::split(getenv("PATH"), ':')) {
+                                if (!bf::is_directory(directory))
+                                    continue;
+
+                                auto path = directory / "patchelf";
+
+                                if (bf::is_regular_file(path)) {
+                                    patchelfPath = path.string();
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (patchelfPath.empty()) {
+                            ldLog() << LD_ERROR << "Could not find patchelf" << std::endl;
+                            throw std::runtime_error("could not find patchelf");
+                        }
 
                         ldLog() << LD_DEBUG << "Using patchelf:" << patchelfPath << std::endl;
-
                         return patchelfPath;
                     }
 
