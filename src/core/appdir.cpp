@@ -332,6 +332,10 @@ namespace linuxdeploy {
                             return true;
                         }
 
+                        if (!bf::exists(path)) {
+                            ldLog() << LD_ERROR << logPrefix << LD_NO_SPACE << "Cannot deploy non-existing library file:" << path << std::endl;
+                            return false;
+                        }
 
                         static auto isInExcludelist = [&logPrefix](const bf::path& fileName) {
                             for (const auto& excludePattern : generatedExcludelist) {
