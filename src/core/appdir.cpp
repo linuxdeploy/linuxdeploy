@@ -146,11 +146,6 @@ namespace linuxdeploy {
 
                         auto relativeTargetPath = bf::relative(target, symlinkBase);
 
-                        for (auto i : {"ln", "-f", "-s", relativeTargetPath.c_str(), symlink.c_str()}) {
-                            std::cout << i << " ";
-                        }
-                        std::cout << std::endl;
-
                         subprocess::Popen proc({"ln", "-f", "-s", relativeTargetPath.c_str(), symlink.c_str()},
                             subprocess::output(subprocess::PIPE),
                             subprocess::error(subprocess::PIPE)
