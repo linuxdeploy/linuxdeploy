@@ -108,7 +108,7 @@ namespace linuxdeploy {
                     }
 
                     // create symlink
-                    bool symlinkFile(const bf::path& target, const bf::path& symlink, const bool useRelativePath = true) {
+                    bool symlinkFile(const bf::path& target, bf::path symlink, const bool useRelativePath = true) {
                         ldLog() << "Creating symlink for file" << target << "in/as" << symlink << std::endl;
 
                         /*try {
@@ -137,7 +137,21 @@ namespace linuxdeploy {
                             return false;
                         }
 
-                        subprocess::Popen proc({"ln", "-f", "-s", "--relative", target.c_str(), symlink.c_str()},
+                        // cannot use ln's --relative option any more since we want to support old distros as well
+                        // (looking at you, CentOS 6!)
+                        auto symlinkBase = symlink;
+
+                        if (!bf::is_directory(symlinkBase))
+                            symlinkBase = symlinkBase.parent_path();
+
+                        auto relativeTargetPath = bf::relative(target, symlinkBase);
+
+                        for (auto i : {"ln", "-f", "-s", relativeTargetPath.c_str(), symlink.c_str()}) {
+                            std::cout << i << " ";
+                        }
+                        std::cout << std::endl;
+
+                        subprocess::Popen proc({"ln", "-f", "-s", relativeTargetPath.c_str(), symlink.c_str()},
                             subprocess::output(subprocess::PIPE),
                             subprocess::error(subprocess::PIPE)
                         );
