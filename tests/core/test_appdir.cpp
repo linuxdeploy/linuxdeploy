@@ -72,7 +72,7 @@ namespace AppDirTest {
 
 
     TEST_F(AppDirUnitTestsFixture, deployLibraryWrongPath) {
-        ASSERT_THROW(appDir.deployLibrary("/lib/fakelib.so"), std::exception);
+        ASSERT_TRUE(!appDir.deployLibrary("/lib/fakelib.so"));
     }
 
     TEST_F(AppDirUnitTestsFixture, deployLibrary) {
