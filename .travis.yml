@@ -55,6 +55,11 @@ matrix:
         - sudo pip install gcovr
       script: travis/test-coverage.sh
       after_success: true  # also, we don't intend to upload release binaries
+    - env: ARCH=x86_64 BUILD_TYPE=centos6
+      services:
+        - docker
+      script: travis/build-centos6-docker.sh
+      after_success: true  # also, we don't intend to upload release binaries
 
 
 install:
