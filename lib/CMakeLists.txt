@@ -11,77 +11,27 @@ target_include_directories(args INTERFACE args)
 
 add_subdirectory(linuxdeploy-desktopfile)
 
+function(ld_add_boost_headeronly_lib)
+    set(options "")
+    set(oneValueArgs TARGET_NAME ROOT_DIR)
+    set(multiValueArgs LINK_LIBRARIES)
+    cmake_parse_arguments(A "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+
+#    message(STATUS "Adding boost header-only library ${A_TARGET_NAME} in directory ${A_ROOT_DIR} with dependencies to ${A_LINK_LIBRARIES}")
+    add_library(${A_TARGET_NAME} INTERFACE)
+    set_property(TARGET ${A_TARGET_NAME} PROPERTY INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${A_ROOT_DIR}/include>")
+    set_property(TARGET ${A_TARGET_NAME} PROPERTY INTERFACE_LINK_LIBRARIES ${A_LINK_LIBRARIES})
+endfunction()
+
+
 if(NOT USE_SYSTEM_BOOST)
-    add_library(boost_config INTERFACE)
-    set_property(TARGET boost_config PROPERTY INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/boost-config/include>")
+    ld_add_boost_headeronly_lib(TARGET_NAME boost_config ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/boost-config)
 
-    add_library(boost_utility INTERFACE)
-    set_property(TARGET boost_utility PROPERTY INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/boost-utility/include>")
-    set_property(TARGET boost_utility PROPERTY INTERFACE_LINK_LIBRARIES "boost_config")
+    foreach(boost_lib_name utility predef assert core type_traits iterator mpl preprocessor static_assert detail smart_ptr exception io container_hash range integer)
+        ld_add_boost_headeronly_lib(TARGET_NAME boost_${boost_lib_name} ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/boost-${boost_lib_name} LINK_LIBRARIES boost_config)
+    endforeach()
 
-    add_library(boost_predef INTERFACE)
-    set_property(TARGET boost_predef PROPERTY INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/boost-predef/include>")
-    set_property(TARGET boost_predef PROPERTY INTERFACE_LINK_LIBRARIES "boost_config")
-
-    add_library(boost_assert INTERFACE)
-    set_property(TARGET boost_assert PROPERTY INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/boost-assert/include>")
-    set_property(TARGET boost_assert PROPERTY INTERFACE_LINK_LIBRARIES "boost_config")
-
-    add_library(boost_core INTERFACE)
-    set_property(TARGET boost_core PROPERTY INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/boost-core/include>")
-    set_property(TARGET boost_core PROPERTY INTERFACE_LINK_LIBRARIES "boost_config")
-
-    add_library(boost_type_traits INTERFACE)
-    set_property(TARGET boost_type_traits PROPERTY INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/boost-type_traits/include>")
-    set_property(TARGET boost_type_traits PROPERTY INTERFACE_LINK_LIBRARIES "boost_config")
-
-    add_library(boost_iterator INTERFACE)
-    set_property(TARGET boost_iterator PROPERTY INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/boost-iterator/include>")
-    set_property(TARGET boost_iterator PROPERTY INTERFACE_LINK_LIBRARIES "boost_config")
-
-    add_library(boost_mpl INTERFACE)
-    set_property(TARGET boost_mpl PROPERTY INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/boost-mpl/include>")
-    set_property(TARGET boost_mpl PROPERTY INTERFACE_LINK_LIBRARIES "boost_config")
-
-    add_library(boost_preprocessor INTERFACE)
-    set_property(TARGET boost_preprocessor PROPERTY INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/boost-preprocessor/include>")
-    set_property(TARGET boost_preprocessor PROPERTY INTERFACE_LINK_LIBRARIES "boost_config")
-
-    add_library(boost_static_assert INTERFACE)
-    set_property(TARGET boost_static_assert PROPERTY INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/boost-static_assert/include>")
-    set_property(TARGET boost_static_assert PROPERTY INTERFACE_LINK_LIBRARIES "boost_config")
-
-    add_library(boost_detail INTERFACE)
-    set_property(TARGET boost_detail PROPERTY INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/boost-detail/include>")
-    set_property(TARGET boost_detail PROPERTY INTERFACE_LINK_LIBRARIES "boost_config")
-
-    add_library(boost_smart_ptr INTERFACE)
-    set_property(TARGET boost_smart_ptr PROPERTY INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/boost-smart_ptr/include>")
-    set_property(TARGET boost_smart_ptr PROPERTY INTERFACE_LINK_LIBRARIES "boost_config")
-
-    add_library(boost_throw_exception INTERFACE)
-    set_property(TARGET boost_throw_exception PROPERTY INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/boost-throw_exception/include>")
-    set_property(TARGET boost_throw_exception PROPERTY INTERFACE_LINK_LIBRARIES "boost_config")
-
-    add_library(boost_io INTERFACE)
-    set_property(TARGET boost_io PROPERTY INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/boost-io/include>")
-    set_property(TARGET boost_io PROPERTY INTERFACE_LINK_LIBRARIES "boost_config")
-
-    add_library(boost_container_hash INTERFACE)
-    set_property(TARGET boost_container_hash PROPERTY INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/boost-container_hash/include>")
-    set_property(TARGET boost_container_hash PROPERTY INTERFACE_LINK_LIBRARIES "boost_config")
-
-    add_library(boost_functional INTERFACE)
-    set_property(TARGET boost_functional PROPERTY INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/boost-functional/include>")
-    set_property(TARGET boost_functional PROPERTY INTERFACE_LINK_LIBRARIES "boost_config;boost_container_hash")
-
-    add_library(boost_range INTERFACE)
-    set_property(TARGET boost_range PROPERTY INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/boost-range/include>")
-    set_property(TARGET boost_range PROPERTY INTERFACE_LINK_LIBRARIES "boost_config")
-
-    add_library(boost_integer INTERFACE)
-    set_property(TARGET boost_integer PROPERTY INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/boost-integer/include>")
-    set_property(TARGET boost_integer PROPERTY INTERFACE_LINK_LIBRARIES "boost_config")
+    ld_add_boost_headeronly_lib(TARGET_NAME boost_functional ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/boost-utility LINK_LIBRARIES boost_config;boost_container_hash)
 
     file(GLOB boost_system_srcs ${CMAKE_CURRENT_SOURCE_DIR}/boost-system/src/*.cpp)
     add_library(boost_system STATIC ${boost_system_srcs})
