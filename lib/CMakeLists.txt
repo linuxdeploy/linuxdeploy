@@ -27,8 +27,10 @@ endfunction()
 if(NOT USE_SYSTEM_BOOST)
     ld_add_boost_headeronly_lib(TARGET_NAME boost_config ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/boost-config)
 
+    ld_add_boost_headeronly_lib(TARGET_NAME boost_throw_exception ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/boost-throw_exception LINK_LIBRARIES boost_throw_exception)
+
     foreach(boost_lib_name utility predef assert core type_traits iterator mpl preprocessor static_assert detail smart_ptr exception io container_hash range integer)
-        ld_add_boost_headeronly_lib(TARGET_NAME boost_${boost_lib_name} ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/boost-${boost_lib_name} LINK_LIBRARIES boost_config)
+        ld_add_boost_headeronly_lib(TARGET_NAME boost_${boost_lib_name} ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/boost-${boost_lib_name} LINK_LIBRARIES boost_config;boost_throw_exception)
     endforeach()
 
     ld_add_boost_headeronly_lib(TARGET_NAME boost_functional ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/boost-utility LINK_LIBRARIES boost_config;boost_container_hash)
@@ -44,7 +46,7 @@ if(NOT USE_SYSTEM_BOOST)
     file(GLOB boost_filesystem_srcs ${CMAKE_CURRENT_SOURCE_DIR}/boost-filesystem/src/*.cpp)
     add_library(boost_filesystem STATIC ${boost_filesystem_srcs})
     target_include_directories(boost_filesystem PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/boost-filesystem/include)
-    target_link_libraries(boost_filesystem PUBLIC boost_config boost_utility boost_system)
+    target_link_libraries(boost_filesystem PUBLIC boost_config boost_utility boost_system boost_throw_exception)
 
     file(GLOB boost_regex_srcs ${CMAKE_CURRENT_SOURCE_DIR}/boost-regex/src/*.cpp)
     add_library(boost_regex STATIC ${boost_regex_srcs})
