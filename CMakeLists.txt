@@ -12,7 +12,7 @@ set(USE_SYSTEM_CIMG ON CACHE BOOL "Set to OFF to use CImg library bundled in lib
 
 if (EXISTS "${PROJECT_SOURCE_DIR}/lib/cpp-subprocess/subprocess.hpp")
 else()
-  message (FATAL_ERROR "Missing submodule(s), please 'git submodule update --init --recursive'")
+  message (FATAL_ERROR "Missing submodule(s), please 'git submodule update --init --recursive'...")
 endif()
 
 # support for ccache
