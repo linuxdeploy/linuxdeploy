@@ -10,6 +10,11 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake/Modules/
 set(USE_SYSTEM_BOOST OFF CACHE BOOL "Set to ON to use system boost libraries instead of building up to date boost libraries from source")
 set(USE_SYSTEM_CIMG ON CACHE BOOL "Set to OFF to use CImg library bundled in lib directory")
 
+if (EXISTS "${PROJECT_SOURCE_DIR}/lib/cpp-subprocess/subprocess.hpp")
+else()
+  message (FATAL_ERROR "Missing submodule(s), please 'git submodule update --init --recursive'")
+endif()
+
 # support for ccache
 # call CMake with -DUSE_CCACHE=ON to make use of it
 set(USE_CCACHE ON CACHE BOOL "")
