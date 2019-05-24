@@ -526,13 +526,27 @@ namespace linuxdeploy {
                                         invalidYRes = false;
                                 }
 
+                                auto printIconHint = [&knownResolutions]() {
+                                    std::stringstream ss;
+                                    for (const auto res : knownResolutions) {
+                                        ss << res << "x" << res;
+
+                                        if (res != *(knownResolutions.end() - 1))
+                                            ss << ", ";
+                                    }
+
+                                    ldLog() << LD_ERROR << "Valid resolutions for icons are:" << ss.str() << std::endl;
+                                };
+
                                 if (invalidXRes) {
                                     ldLog() << LD_ERROR << "Icon" << path << "has invalid x resolution:" << xRes << std::endl;
+                                    printIconHint();
                                     return false;
                                 }
 
                                 if (invalidYRes) {
                                     ldLog() << LD_ERROR << "Icon" << path << "has invalid y resolution:" << yRes << std::endl;
+                                    printIconHint();
                                     return false;
                                 }
                             } catch (const CImgException& e) {
