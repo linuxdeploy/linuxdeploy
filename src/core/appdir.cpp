@@ -527,12 +527,12 @@ namespace linuxdeploy {
                                 }
 
                                 if (invalidXRes) {
-                                    ldLog() << LD_ERROR << "Icon" << path << "has invalid x resolution:" << xRes;
+                                    ldLog() << LD_ERROR << "Icon" << path << "has invalid x resolution:" << xRes << std::endl;
                                     return false;
                                 }
 
                                 if (invalidYRes) {
-                                    ldLog() << LD_ERROR << "Icon" << path << "has invalid y resolution:" << yRes;
+                                    ldLog() << LD_ERROR << "Icon" << path << "has invalid y resolution:" << yRes << std::endl;
                                     return false;
                                 }
                             } catch (const CImgException& e) {
