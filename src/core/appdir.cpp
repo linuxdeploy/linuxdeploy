@@ -249,7 +249,7 @@ namespace linuxdeploy {
                     }
 
                     // search for copyright file for file and deploy it to AppDir
-                    bool deployCopyrightFiles(const bf::path& from, const std::string& logPrefix = "") {
+                    bool deployCopyrightFiles(const bf::path& from) {
                         if (disableCopyrightFilesDeployment)
                             return true;
 
@@ -261,7 +261,7 @@ namespace linuxdeploy {
                         if (copyrightFiles.empty())
                             return false;
 
-                        ldLog() << logPrefix << LD_NO_SPACE << "Deploying copyright files for file" << from << std::endl;
+                        ldLog() << "Deploying copyright files for file" << from << std::endl;
 
                         for (const auto& file : copyrightFiles) {
                             std::string targetDir = file.string();
@@ -293,22 +293,12 @@ namespace linuxdeploy {
                         return to;
                     }
 
-                    std::string getLogPrefix(int recursionLevel) {
-                        std::string logPrefix;
-                        for (int i = 0; i < recursionLevel; i++)
-                            logPrefix += "  ";
-                        return logPrefix;
-                    }
-
-                    bool deployElfDependencies(const bf::path& path, int recursionLevel = 0) {
-                        auto logPrefix = getLogPrefix(recursionLevel);
-
-                        ldLog() << logPrefix << LD_NO_SPACE << "Deploying dependencies for ELF file" << path << std::endl;
+                    bool deployElfDependencies(const bf::path& path) {
+                        ldLog() << "Deploying dependencies for ELF file" << path << std::endl;
                         try {
-                            for (const auto &dependencyPath : elf::ElfFile(path).traceDynamicDependencies()) {
-                                if (!deployLibrary(dependencyPath, recursionLevel + 1))
+                            for (const auto &dependencyPath : elf::ElfFile(path).traceDynamicDependencies())
+                                if (!deployLibrary(dependencyPath))
                                     return false;
-                            }
                         } catch (const elf::DependencyNotFoundError& e) {
                             ldLog() << LD_ERROR << e.what() << std::endl;
                             return false;
@@ -333,20 +323,18 @@ namespace linuxdeploy {
                         return stripPath;
                     }
 
-                    bool deployLibrary(const bf::path& path, int recursionLevel = 0, bool forceDeploy = false, const bf::path& destination = bf::path()) {
-                        auto logPrefix = getLogPrefix(recursionLevel);
-
+                    bool deployLibrary(const bf::path& path, bool forceDeploy = false, const bf::path& destination = bf::path()) {
                         if (!forceDeploy && hasBeenVisitedAlready(path)) {
-                            ldLog() << LD_DEBUG << logPrefix << LD_NO_SPACE << "File has been visited already:" << path << std::endl;
+                            ldLog() << LD_DEBUG << "File has been visited already:" << path << std::endl;
                             return true;
                         }
 
                         if (!bf::exists(path)) {
-                            ldLog() << LD_ERROR << logPrefix << LD_NO_SPACE << "Cannot deploy non-existing library file:" << path << std::endl;
+                            ldLog() << LD_ERROR << "Cannot deploy non-existing library file:" << path << std::endl;
                             return false;
                         }
 
-                        static auto isInExcludelist = [&logPrefix](const bf::path& fileName) {
+                        static auto isInExcludelist = [](const bf::path& fileName) {
                             for (const auto& excludePattern : generatedExcludelist) {
                                 // simple string match is faster than using fnmatch
                                 if (excludePattern == fileName)
@@ -359,7 +347,7 @@ namespace linuxdeploy {
                                     case FNM_NOMATCH:
                                         break;
                                     default:
-                                        ldLog() << LD_ERROR << logPrefix << LD_NO_SPACE << "fnmatch() reported error:" << fnmatchResult << std::endl;
+                                        ldLog() << LD_ERROR << "fnmatch() reported error:" << fnmatchResult << std::endl;
                                         return false;
                                 }
                             }
@@ -368,7 +356,7 @@ namespace linuxdeploy {
                         };
 
                         if (!forceDeploy && isInExcludelist(path.filename())) {
-                            ldLog() << logPrefix << LD_NO_SPACE << "Skipping deployment of blacklisted library" << path << std::endl;
+                            ldLog() << "Skipping deployment of blacklisted library" << path << std::endl;
 
                             // mark file as visited
                             visitedFiles.insert(path);
@@ -380,7 +368,7 @@ namespace linuxdeploy {
                         // create a directory
                         bf::path libraryDir = appDirPath / "usr" / (getLibraryDirName(path) + "/");
 
-                        ldLog() << logPrefix << LD_NO_SPACE << "Deploying shared library" << path;
+                        ldLog() << "Deploying shared library" << path;
                         if (!destination.empty())
                             ldLog() << " (destination:" << destination << LD_NO_SPACE << ")";
                         ldLog() << std::endl;
@@ -394,7 +382,7 @@ namespace linuxdeploy {
 
                         // in case destinationPath is a directory, deployFile will give us the deployed file's path
                         actualDestination = deployFile(path, actualDestination);
-                        deployCopyrightFiles(path, logPrefix);
+                        deployCopyrightFiles(path);
 
                         std::string rpath = "$ORIGIN";
 
@@ -421,9 +409,6 @@ namespace linuxdeploy {
                         }
 
                         stripOperations.insert(actualDestination);
-
-                        if (!deployElfDependencies(path, recursionLevel))
-                            return false;
 
                         return true;
                     }
@@ -624,11 +609,11 @@ namespace linuxdeploy {
             }
 
             bool AppDir::deployLibrary(const bf::path& path, const bf::path& destination) {
-                return d->deployLibrary(path, 0, false, destination);
+                return d->deployLibrary(path, false, destination);
             }
 
             bool AppDir::forceDeployLibrary(const bf::path& path, const bf::path& destination) {
-                return d->deployLibrary(path, 0, true, destination);
+                return d->deployLibrary(path, true, destination);
             }
 
             bool AppDir::deployExecutable(const bf::path& path, const boost::filesystem::path& destination) {
