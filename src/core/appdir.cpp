@@ -297,7 +297,7 @@ namespace linuxdeploy {
                         ldLog() << "Deploying dependencies for ELF file" << path << std::endl;
                         try {
                             for (const auto &dependencyPath : elf::ElfFile(path).traceDynamicDependencies())
-                                if (!deployLibrary(dependencyPath))
+                                if (!deployLibrary(dependencyPath, false, false))
                                     return false;
                         } catch (const elf::DependencyNotFoundError& e) {
                             ldLog() << LD_ERROR << e.what() << std::endl;
@@ -323,7 +323,7 @@ namespace linuxdeploy {
                         return stripPath;
                     }
 
-                    bool deployLibrary(const bf::path& path, bool forceDeploy = false, const bf::path& destination = bf::path()) {
+                    bool deployLibrary(const bf::path& path, bool forceDeploy = false, bool deployDependencies = true, const bf::path& destination = bf::path()) {
                         if (!forceDeploy && hasBeenVisitedAlready(path)) {
                             ldLog() << LD_DEBUG << "File has been visited already:" << path << std::endl;
                             return true;
@@ -410,7 +410,10 @@ namespace linuxdeploy {
 
                         stripOperations.insert(actualDestination);
 
-                        return true;
+                        if (!deployDependencies)
+                            return true;
+                        
+                        return deployElfDependencies(path);
                     }
 
                     bool deployExecutable(const bf::path& path, const boost::filesystem::path& destination) {
@@ -609,11 +612,11 @@ namespace linuxdeploy {
             }
 
             bool AppDir::deployLibrary(const bf::path& path, const bf::path& destination) {
-                return d->deployLibrary(path, false, destination);
+                return d->deployLibrary(path, false, true, destination);
             }
 
             bool AppDir::forceDeployLibrary(const bf::path& path, const bf::path& destination) {
-                return d->deployLibrary(path, true, destination);
+                return d->deployLibrary(path, true, true, destination);
             }
 
             bool AppDir::deployExecutable(const bf::path& path, const boost::filesystem::path& destination) {
