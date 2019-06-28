@@ -580,6 +580,16 @@ namespace linuxdeploy {
 
                         return false;
                     }
+
+                    bool makeExecutable(const bf::path& path) {
+                        try {
+                            ldLog() << LD_DEBUG << "Making" << path << "executable" << std::endl;
+                            bf::permissions(path, bf::add_perms | bf::owner_exe | bf::group_exe | bf::others_exe);
+                            return true;
+                        } catch (const bf::filesystem_error& e) {
+                            ldLog() << LD_ERROR << "Could not set permissions for path" << path << LD_NO_SPACE << ":" << e.what() << std::endl;
+                        }
+                    }
             };
 
             AppDir::AppDir(const bf::path& path) {
@@ -763,6 +773,8 @@ namespace linuxdeploy {
                     ldLog() << "Deploying custom AppRun:" << customAppRunPath;
 
                     if (!d->copyFile(customAppRunPath, path() / "AppRun"))
+                        return false;
+                    if (!d->makeExecutable(path() / "AppRun"))
                         return false;
                 } else {
                     // check if there is a custom AppRun already
