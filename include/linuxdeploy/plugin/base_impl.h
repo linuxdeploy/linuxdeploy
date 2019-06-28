@@ -11,6 +11,7 @@
 
 // local headers
 #include "linuxdeploy/core/log.h"
+#include "linuxdeploy/util/util.h"
 
 #pragma once
 
@@ -48,10 +49,16 @@ namespace linuxdeploy {
                         auto output = subprocess::check_output({pluginPath.c_str(), "--plugin-api-version"});
                         std::string stdoutOutput = output.buf.data();
 
+                        // only interpret last line (fixes issues with --appimage-extract-and-run, where the runtime
+                        // prints all the paths it extracts out to stdout)
+                        const auto& lines = util::splitLines(stdoutOutput);
+                        const auto& lastLine = lines.back();
+
                         try {
-                            auto apiLevel = std::stoi(stdoutOutput);
-                            return apiLevel;
+                            const auto pluginApiLevel = std::stoi(lastLine);
+                            return pluginApiLevel;
                         } catch (const std::invalid_argument&) {
+                            ldLog() << LD_DEBUG << "Failed to understand plugin response:" << lastLine << std::endl;
                             return -1;
                         }
                     }
@@ -87,7 +94,12 @@ namespace linuxdeploy {
 
                 if (d->apiLevel != API_LEVEL) {
                     std::stringstream msg;
-                    msg << "This class only supports API level " << API_LEVEL << ", not " << d->apiLevel;
+                    if (d->apiLevel < 0) {
+                        msg << "Could not read plugin API level";
+                    } else {
+                        msg << "This class only supports API level " << API_LEVEL << ", not " << d->apiLevel;
+                    }
+
                     throw WrongApiLevelError(msg.str());
                 }
             }
