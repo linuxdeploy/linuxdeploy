@@ -768,7 +768,7 @@ namespace linuxdeploy {
                     // check if there is a custom AppRun already
                     // in that case, skip deployment of symlink
                     if (bf::exists(path() / "AppRun")) {
-                        ldLog() << LD_WARNING << "Custom AppRun detected, skipping deployment of symlink" << std::endl;
+                        ldLog() << LD_WARNING << "Existing AppRun detected, skipping deployment of symlink" << std::endl;
                     } else {
                         // look for suitable binary to create AppRun symlink
                         DesktopFileEntry executableEntry;
