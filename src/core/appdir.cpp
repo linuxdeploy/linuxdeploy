@@ -571,7 +571,7 @@ namespace linuxdeploy {
                         return true;
                     }
 
-                    bool isInDebugSymbolsLocation(const bf::path& path) {
+                    static bool isInDebugSymbolsLocation(const bf::path& path) {
                         // TODO: check if there's more potential locations for debug symbol files
                         for (const std::string& dbgSymbolsPrefix : {".debug/"}) {
                             if (path.string().substr(0, dbgSymbolsPrefix.size()) == dbgSymbolsPrefix)
