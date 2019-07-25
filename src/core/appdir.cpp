@@ -704,7 +704,7 @@ namespace linuxdeploy {
                 return desktopFiles;
             }
 
-            bool AppDir::createLinksInAppDirRoot(const DesktopFile& desktopFile, boost::filesystem::path customAppRunPath) {
+            bool AppDir::setUpAppDirRoot(const DesktopFile& desktopFile, boost::filesystem::path customAppRunPath) {
                 ldLog() << "Deploying desktop file to AppDir root:" << desktopFile.path() << std::endl;
 
                 // copy desktop file to root directory

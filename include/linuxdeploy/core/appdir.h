@@ -85,7 +85,7 @@ namespace linuxdeploy {
                     std::vector<desktopfile::DesktopFile> deployedDesktopFiles();
 
                     // create symlinks for AppRun, desktop file and icon in the AppDir root directory
-                    bool createLinksInAppDirRoot(const desktopfile::DesktopFile& desktopFile, boost::filesystem::path customAppRunPath = "");
+                    bool setUpAppDirRoot(const desktopfile::DesktopFile& desktopFile, boost::filesystem::path customAppRunPath = "");
 
                     // list all executables in <AppDir>/usr/bin
                     // this function does not perform a recursive search, but only searches the bin directory
