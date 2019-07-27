@@ -39,7 +39,7 @@ namespace linuxdeploy {
                     explicit AppDir(const std::string& path);
 
                     // creates basic directory structure of an AppDir in "FHS" mode
-                    bool createBasicStructure();
+                    bool createBasicStructure() const;
 
                     // deploy shared library
                     //
@@ -67,38 +67,38 @@ namespace linuxdeploy {
                     boost::filesystem::path deployFile(const boost::filesystem::path& from, const boost::filesystem::path& to);
 
                     // create an <AppDir> relative symlink to <target> at <symlink>.
-                    bool createRelativeSymlink(const boost::filesystem::path& target, const boost::filesystem::path& symlink);
+                    bool createRelativeSymlink(const boost::filesystem::path& target, const boost::filesystem::path& symlink) const;
 
                     // execute deferred copy operations
                     bool executeDeferredOperations();
 
                     // return path to AppDir
-                    boost::filesystem::path path();
+                    boost::filesystem::path path() const;
 
                     // create a list of all icon paths in the AppDir
-                    std::vector<boost::filesystem::path> deployedIconPaths();
+                    std::vector<boost::filesystem::path> deployedIconPaths() const;
 
                     // create a list of all executable paths in the AppDir
-                    std::vector<boost::filesystem::path> deployedExecutablePaths();
+                    std::vector<boost::filesystem::path> deployedExecutablePaths() const;
 
                     // create a list of all desktop file paths in the AppDir
-                    std::vector<desktopfile::DesktopFile> deployedDesktopFiles();
+                    std::vector<desktopfile::DesktopFile> deployedDesktopFiles() const;
 
                     // create symlinks for AppRun, desktop file and icon in the AppDir root directory
                     bool setUpAppDirRoot(const desktopfile::DesktopFile& desktopFile, boost::filesystem::path customAppRunPath = "");
 
                     // list all executables in <AppDir>/usr/bin
                     // this function does not perform a recursive search, but only searches the bin directory
-                    std::vector<boost::filesystem::path> listExecutables();
+                    std::vector<boost::filesystem::path> listExecutables() const;
 
                     // list all shared libraries in <AppDir>/usr/lib
                     // this function recursively searches the entire lib directory for shared libraries
-                    std::vector<boost::filesystem::path> listSharedLibraries();
+                    std::vector<boost::filesystem::path> listSharedLibraries() const;
 
                     // search for executables and libraries and deploy their dependencies
                     // calling this function can turn sure file trees created by make install commands into working
                     // AppDirs
-                    bool deployDependenciesForExistingFiles();
+                    bool deployDependenciesForExistingFiles() const;
 
                     // disable deployment of copyright files for this instance
                     void setDisableCopyrightFilesDeployment(bool disable);

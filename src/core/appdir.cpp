@@ -590,7 +590,7 @@ namespace linuxdeploy {
 
             AppDir::AppDir(const std::string& path) : AppDir(bf::path(path)) {}
 
-            bool AppDir::createBasicStructure() {
+            bool AppDir::createBasicStructure() const {
                 std::vector<std::string> dirPaths = {
                     "usr/bin/",
                     "usr/lib/",
@@ -647,7 +647,7 @@ namespace linuxdeploy {
                 return d->executeDeferredOperations();
             }
 
-            boost::filesystem::path AppDir::path() {
+            boost::filesystem::path AppDir::path() const {
                 return d->appDirPath;
             }
 
@@ -677,7 +677,7 @@ namespace linuxdeploy {
                 return foundPaths;
             }
 
-            std::vector<bf::path> AppDir::deployedIconPaths() {
+            std::vector<bf::path> AppDir::deployedIconPaths() const {
                 auto icons = listFilesInDirectory(path() / "usr/share/icons/");
                 auto pixmaps = listFilesInDirectory(path() / "usr/share/pixmaps/", false);
                 icons.reserve(pixmaps.size());
@@ -685,11 +685,11 @@ namespace linuxdeploy {
                 return icons;
             }
 
-            std::vector<bf::path> AppDir::deployedExecutablePaths() {
+            std::vector<bf::path> AppDir::deployedExecutablePaths() const {
                 return listFilesInDirectory(path() / "usr/bin/", false);
             }
 
-            std::vector<DesktopFile> AppDir::deployedDesktopFiles() {
+            std::vector<DesktopFile> AppDir::deployedDesktopFiles() const {
                 std::vector<DesktopFile> desktopFiles;
 
                 auto paths = listFilesInDirectory(path() / "usr/share/applications/", false);
@@ -824,11 +824,11 @@ namespace linuxdeploy {
                 return d->deployFile(from, to, true);
             }
 
-            bool AppDir::createRelativeSymlink(const bf::path& target, const bf::path& symlink) {
+            bool AppDir::createRelativeSymlink(const bf::path& target, const bf::path& symlink) const {
                 return d->symlinkFile(target, symlink, true);
             }
 
-            std::vector<bf::path> AppDir::listExecutables() {
+            std::vector<bf::path> AppDir::listExecutables() const {
                 std::vector<bf::path> executables;
 
                 for (const auto& file : listFilesInDirectory(path() / "usr" / "bin", false)) {
@@ -846,7 +846,7 @@ namespace linuxdeploy {
                 return executables;
             }
 
-            std::vector<bf::path> AppDir::listSharedLibraries() {
+            std::vector<bf::path> AppDir::listSharedLibraries() const {
                 std::vector<bf::path> sharedLibraries;
 
                 for (const auto& file : listFilesInDirectory(path() / "usr" / "lib", true)) {
@@ -868,7 +868,7 @@ namespace linuxdeploy {
                 return sharedLibraries;
             }
 
-            bool AppDir::deployDependenciesForExistingFiles() {
+            bool AppDir::deployDependenciesForExistingFiles() const {
                 for (const auto& executable : listExecutables()) {
                     if (bf::is_symlink(executable))
                         continue;
