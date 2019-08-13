@@ -824,6 +824,10 @@ namespace linuxdeploy {
                 return d->deployFile(from, to, true);
             }
 
+            bool AppDir::copyFile(const bf::path& from, const bf::path& to, bool overwrite) const {
+                return d->copyFile(from, to, overwrite);
+            }
+
             bool AppDir::createRelativeSymlink(const bf::path& target, const bf::path& symlink) const {
                 return d->symlinkFile(target, symlink, true);
             }

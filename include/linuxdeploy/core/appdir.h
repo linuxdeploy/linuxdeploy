@@ -66,6 +66,9 @@ namespace linuxdeploy {
                     // deploy arbitrary file
                     boost::filesystem::path deployFile(const boost::filesystem::path& from, const boost::filesystem::path& to);
 
+                    // copy arbitrary file (immediately)
+                    bool copyFile(const boost::filesystem::path& from, const boost::filesystem::path& to, bool overwrite = false) const;
+
                     // create an <AppDir> relative symlink to <target> at <symlink>.
                     bool createRelativeSymlink(const boost::filesystem::path& target, const boost::filesystem::path& symlink) const;
 
