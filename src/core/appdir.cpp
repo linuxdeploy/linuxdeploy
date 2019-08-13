@@ -81,7 +81,7 @@ namespace linuxdeploy {
 
                     // actually copy file
                     // mimics cp command behavior
-                    bool copyFile(const bf::path& from, bf::path to, bool overwrite = false) {
+                    static bool copyFile(const bf::path& from, bf::path to, bool overwrite = false) {
                         ldLog() << "Copying file" << from << "to" << to << std::endl;
 
                         try {
