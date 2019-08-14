@@ -76,7 +76,7 @@ namespace linuxdeploy {
                 }
             }
 
-            bool deployCustomAppRunFile(const bf::path& customAppRunPath) {
+            bool deployCustomAppRunFile(const bf::path& customAppRunPath) const {
                 // copy custom AppRun executable
                 // FIXME: make sure this file is executable
                 ldLog() << "Deploying custom AppRun:" << customAppRunPath;
@@ -85,7 +85,7 @@ namespace linuxdeploy {
                     return false;
             }
 
-            bool deployStandardAppRunFromDesktopFile(const DesktopFile& desktopFile, const bf::path& customAppRunPath) {
+            bool deployStandardAppRunFromDesktopFile(const DesktopFile& desktopFile, const bf::path& customAppRunPath) const {
                 // check if there is a custom AppRun already
                 // in that case, skip deployment of symlink
                 if (bf::exists(appDir.path() / "AppRun")) {
