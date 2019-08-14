@@ -88,6 +88,8 @@ namespace linuxdeploy {
 
                 if (!appDir.copyFile(customAppRunPath, appDir.path() / "AppRun"))
                     return false;
+
+                return true;
             }
 
             bool deployStandardAppRunFromDesktopFile(const DesktopFile& desktopFile, const bf::path& customAppRunPath) const {
@@ -141,6 +143,8 @@ namespace linuxdeploy {
                         return false;
                     }
                 }
+
+                return true;
             }
 
             bool deployAppRunWrapperIfNecessary() const {
