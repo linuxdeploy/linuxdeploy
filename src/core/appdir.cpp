@@ -109,29 +109,8 @@ namespace linuxdeploy {
                     }
 
                     // create symlink
-                    bool symlinkFile(const bf::path& target, bf::path symlink, const bool useRelativePath = true) {
+                    static bool symlinkFile(const bf::path& target, const bf::path& symlink, const bool useRelativePath = true) {
                         ldLog() << "Creating symlink for file" << target << "in/as" << symlink << std::endl;
-
-                        /*try {
-                            if (!symlink.parent_path().empty() && !bf::is_directory(symlink.parent_path()) && !bf::create_directories(symlink.parent_path())) {
-                                ldLog() << LD_ERROR << "Failed to create parent directory" << symlink.parent_path() << "for path" << symlink << std::endl;
-                                return false;
-                            }
-
-                            if (*(symlink.string().end() - 1) == '/' || bf::is_directory(symlink))
-                                symlink /= target.filename();
-
-                            if (bf::exists(symlink) || bf::symbolic_link_exists(symlink))
-                                bf::remove(symlink);
-
-                            if (relativeDirectory != "") {
-                                // TODO
-                            }
-
-                            bf::create_symlink(target, symlink);
-                        } catch (const bf::filesystem_error& e) {
-                            return false;
-                        }*/
 
                         if (!useRelativePath) {
                             ldLog() << LD_ERROR << "Not implemented" << std::endl;
