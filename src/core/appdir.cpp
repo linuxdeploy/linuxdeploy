@@ -109,7 +109,7 @@ namespace linuxdeploy {
                     }
 
                     // create symlink
-                    static bool symlinkFile(const bf::path& target, const bf::path& symlink, const bool useRelativePath = true) {
+                    static bool symlinkFile(const bf::path& target, bf::path symlink, const bool useRelativePath = true) {
                         ldLog() << "Creating symlink for file" << target << "in/as" << symlink << std::endl;
 
                         if (!useRelativePath) {
@@ -117,25 +117,33 @@ namespace linuxdeploy {
                             return false;
                         }
 
+                        bf::path relativeTargetPath;
+
                         // cannot use ln's --relative option any more since we want to support old distros as well
                         // (looking at you, CentOS 6!)
-                        auto symlinkBase = symlink;
+                        {
+                            auto symlinkBase = symlink;
 
-                        if (!bf::is_directory(symlinkBase))
-                            symlinkBase = symlinkBase.parent_path();
+                            if (!bf::is_directory(symlinkBase))
+                                symlinkBase = symlinkBase.parent_path();
 
-                        auto relativeTargetPath = bf::relative(target, symlinkBase);
+                            relativeTargetPath = bf::relative(target, symlinkBase);
+                        }
 
-                        subprocess::Popen proc({"ln", "-f", "-s", relativeTargetPath.c_str(), symlink.c_str()},
-                            subprocess::output(subprocess::PIPE),
-                            subprocess::error(subprocess::PIPE)
-                        );
+                        // if a directory is passed as path to create the symlink as/in, we need to complete it with
+                        // the filename of the source file to mimic ln's behavior
+                        if (bf::is_directory(symlink))
+                            symlink /= target.filename();
 
-                        auto outputs = util::subprocess::check_output_error(proc);
+                        // override existing target (similar to ln's -f flag)
+                        if (bf::exists(symlink))
+                            bf::remove(symlink);
 
-                        if (proc.retcode() != 0) {
-                            ldLog() << LD_ERROR << "ln subprocess failed:" << std::endl
-                                    << outputs.first << std::endl << outputs.second << std::endl;
+                        // actually perform symlink creation
+                        try {
+                            bf::create_symlink(relativeTargetPath, symlink);
+                        } catch (const bf::filesystem_error& e) {
+                            ldLog() << LD_ERROR << "symlink creation failed:" << e.what() << std::endl;
                             return false;
                         }
 
