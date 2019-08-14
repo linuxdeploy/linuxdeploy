@@ -20,6 +20,7 @@
 
 // auto-generated headers
 #include "excludelist.h"
+#include "appdir_root_setup.h"
 
 using namespace linuxdeploy::core;
 using namespace linuxdeploy::desktopfile;
@@ -81,7 +82,7 @@ namespace linuxdeploy {
 
                     // actually copy file
                     // mimics cp command behavior
-                    bool copyFile(const bf::path& from, bf::path to, bool overwrite = false) {
+                    static bool copyFile(const bf::path& from, bf::path to, bool overwrite = false) {
                         ldLog() << "Copying file" << from << "to" << to << std::endl;
 
                         try {
@@ -559,7 +560,7 @@ namespace linuxdeploy {
                         return true;
                     }
 
-                    bool isInDebugSymbolsLocation(const bf::path& path) {
+                    static bool isInDebugSymbolsLocation(const bf::path& path) {
                         // TODO: check if there's more potential locations for debug symbol files
                         for (const std::string& dbgSymbolsPrefix : {".debug/"}) {
                             if (path.string().substr(0, dbgSymbolsPrefix.size()) == dbgSymbolsPrefix)
@@ -578,7 +579,7 @@ namespace linuxdeploy {
 
             AppDir::AppDir(const std::string& path) : AppDir(bf::path(path)) {}
 
-            bool AppDir::createBasicStructure() {
+            bool AppDir::createBasicStructure() const {
                 std::vector<std::string> dirPaths = {
                     "usr/bin/",
                     "usr/lib/",
@@ -635,7 +636,7 @@ namespace linuxdeploy {
                 return d->executeDeferredOperations();
             }
 
-            boost::filesystem::path AppDir::path() {
+            boost::filesystem::path AppDir::path() const {
                 return d->appDirPath;
             }
 
@@ -665,7 +666,7 @@ namespace linuxdeploy {
                 return foundPaths;
             }
 
-            std::vector<bf::path> AppDir::deployedIconPaths() {
+            std::vector<bf::path> AppDir::deployedIconPaths() const {
                 auto icons = listFilesInDirectory(path() / "usr/share/icons/");
                 auto pixmaps = listFilesInDirectory(path() / "usr/share/pixmaps/", false);
                 icons.reserve(pixmaps.size());
@@ -673,11 +674,11 @@ namespace linuxdeploy {
                 return icons;
             }
 
-            std::vector<bf::path> AppDir::deployedExecutablePaths() {
+            std::vector<bf::path> AppDir::deployedExecutablePaths() const {
                 return listFilesInDirectory(path() / "usr/bin/", false);
             }
 
-            std::vector<DesktopFile> AppDir::deployedDesktopFiles() {
+            std::vector<DesktopFile> AppDir::deployedDesktopFiles() const {
                 std::vector<DesktopFile> desktopFiles;
 
                 auto paths = listFilesInDirectory(path() / "usr/share/applications/", false);
@@ -692,131 +693,24 @@ namespace linuxdeploy {
                 return desktopFiles;
             }
 
-            bool AppDir::createLinksInAppDirRoot(const DesktopFile& desktopFile, boost::filesystem::path customAppRunPath) {
-                ldLog() << "Deploying desktop file to AppDir root:" << desktopFile.path() << std::endl;
-
-                // copy desktop file to root directory
-                if (!d->symlinkFile(desktopFile.path(), path())) {
-                    ldLog() << LD_ERROR << "Failed to create link to desktop file in AppDir root:" << desktopFile.path() << std::endl;
-                    return false;
-                }
-
-                // look for suitable icon
-                DesktopFileEntry iconEntry;
-
-                if (!desktopFile.getEntry("Desktop Entry", "Icon", iconEntry)) {
-                    ldLog() << LD_ERROR << "Icon entry missing in desktop file:" << desktopFile.path() << std::endl;
-                    return false;
-                }
-
-                bool iconDeployed = false;
-
-                const auto foundIconPaths = deployedIconPaths();
-
-                if (foundIconPaths.empty()) {
-                    ldLog() << LD_ERROR << "Could not find icon executable for Icon entry:" << iconEntry.value() << std::endl;
-                    return false;
-                }
-
-                for (const auto& iconPath : foundIconPaths) {
-                    ldLog() << LD_DEBUG << "Icon found:" << iconPath << std::endl;
-
-                    const bool matchesFilenameWithExtension = iconPath.filename() == iconEntry.value();
-
-                    if (iconPath.stem() == iconEntry.value() || matchesFilenameWithExtension) {
-                        if (matchesFilenameWithExtension) {
-                            ldLog() << LD_WARNING << "Icon= entry filename contains extension" << std::endl;
-                        }
-
-                        ldLog() << "Deploying icon to AppDir root:" << iconPath << std::endl;
-
-                        if (!d->symlinkFile(iconPath, path())) {
-                            ldLog() << LD_ERROR << "Failed to create symlink for icon in AppDir root:" << iconPath << std::endl;
-                            return false;
-                        }
-
-                        iconDeployed = true;
-                        break;
-                    }
-                }
-
-                if (!iconDeployed) {
-                    ldLog() << LD_ERROR << "Could not find suitable icon for Icon entry:" << iconEntry.value() << std::endl;
-                    return false;
-                }
-
-                if (!customAppRunPath.empty()) {
-                    // copy custom AppRun executable
-                    // FIXME: make sure this file is executable
-                    ldLog() << "Deploying custom AppRun:" << customAppRunPath;
-
-                    if (!d->copyFile(customAppRunPath, path() / "AppRun"))
-                        return false;
-                } else {
-                    // check if there is a custom AppRun already
-                    // in that case, skip deployment of symlink
-                    if (bf::exists(path() / "AppRun")) {
-                        ldLog() << LD_WARNING << "Custom AppRun detected, skipping deployment of symlink" << std::endl;
-                    } else {
-                        // look for suitable binary to create AppRun symlink
-                        DesktopFileEntry executableEntry;
-
-                        if (!desktopFile.getEntry("Desktop Entry", "Exec", executableEntry)) {
-                            ldLog() << LD_ERROR << "Exec entry missing in desktop file:" << desktopFile.path()
-                                    << std::endl;
-                            return false;
-                        }
-
-                        auto executableName = util::split(executableEntry.value())[0];
-
-                        const auto foundExecutablePaths = deployedExecutablePaths();
-
-                        if (foundExecutablePaths.empty()) {
-                            ldLog() << LD_ERROR << "Could not find suitable executable for Exec entry:" << executableName
-                                    << std::endl;
-                            return false;
-                        }
-
-                        bool deployedExecutable = false;
-
-                        for (const auto& executablePath : foundExecutablePaths) {
-                            ldLog() << LD_DEBUG << "Executable found:" << executablePath << std::endl;
-
-                            if (executablePath.filename() == executableName) {
-                                ldLog() << "Deploying AppRun symlink for executable in AppDir root:" << executablePath
-                                        << std::endl;
-
-                                if (!d->symlinkFile(executablePath, path() / "AppRun")) {
-                                    ldLog() << LD_ERROR
-                                            << "Failed to create AppRun symlink for executable in AppDir root:"
-                                            << executablePath << std::endl;
-                                    return false;
-                                }
-
-                                deployedExecutable = true;
-                                break;
-                            }
-                        }
-
-                        if (!deployedExecutable) {
-                            ldLog() << LD_ERROR << "Could not deploy symlink for executable: could not find suitable executable for Exec entry:" << executableName << std::endl;
-                            return false;
-                        }
-                    }
-                }
-
-                return true;
+            bool AppDir::setUpAppDirRoot(const DesktopFile& desktopFile, boost::filesystem::path customAppRunPath) {
+                AppDirRootSetup setup(*this);
+                setup.run(desktopFile, customAppRunPath);
             }
 
             bf::path AppDir::deployFile(const boost::filesystem::path& from, const boost::filesystem::path& to) {
                 return d->deployFile(from, to, true);
             }
 
-            bool AppDir::createRelativeSymlink(const bf::path& target, const bf::path& symlink) {
+            bool AppDir::copyFile(const bf::path& from, const bf::path& to, bool overwrite) const {
+                return d->copyFile(from, to, overwrite);
+            }
+
+            bool AppDir::createRelativeSymlink(const bf::path& target, const bf::path& symlink) const {
                 return d->symlinkFile(target, symlink, true);
             }
 
-            std::vector<bf::path> AppDir::listExecutables() {
+            std::vector<bf::path> AppDir::listExecutables() const {
                 std::vector<bf::path> executables;
 
                 for (const auto& file : listFilesInDirectory(path() / "usr" / "bin", false)) {
@@ -834,7 +728,7 @@ namespace linuxdeploy {
                 return executables;
             }
 
-            std::vector<bf::path> AppDir::listSharedLibraries() {
+            std::vector<bf::path> AppDir::listSharedLibraries() const {
                 std::vector<bf::path> sharedLibraries;
 
                 for (const auto& file : listFilesInDirectory(path() / "usr" / "lib", true)) {
@@ -856,7 +750,7 @@ namespace linuxdeploy {
                 return sharedLibraries;
             }
 
-            bool AppDir::deployDependenciesForExistingFiles() {
+            bool AppDir::deployDependenciesForExistingFiles() const {
                 for (const auto& executable : listExecutables()) {
                     if (bf::is_symlink(executable))
                         continue;

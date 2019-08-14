@@ -79,8 +79,8 @@ namespace linuxdeploy {
 
         try {
             desktopfile::DesktopFile desktopFile = getMainDesktopFile(desktopFilePaths, deployedDesktopFiles);
-            ldLog() << "Deploying desktop file:" << desktopFile.path() << std::endl;
-            return appDir.createLinksInAppDirRoot(desktopFile, customAppRunPath);
+            ldLog() << "Deploying files to AppDir root using desktop file:" << desktopFile.path() << std::endl;
+            return appDir.setUpAppDirRoot(desktopFile, customAppRunPath);
         } catch (const DeployError& er) {
             return false;
         }

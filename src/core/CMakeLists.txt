@@ -19,7 +19,7 @@ target_link_libraries(linuxdeploy_core_log PUBLIC ${BOOST_LIBS})
 
 add_subdirectory(copyright)
 
-add_library(linuxdeploy_core STATIC elf.cpp appdir.cpp ${HEADERS})
+add_library(linuxdeploy_core STATIC elf.cpp appdir.cpp ${HEADERS} appdir_root_setup.cpp)
 target_link_libraries(linuxdeploy_core PUBLIC
     linuxdeploy_plugin linuxdeploy_core_log linuxdeploy_util linuxdeploy_desktopfile_static
     ${BOOST_LIBS} CImg ${CMAKE_THREAD_LIBS_INIT}
