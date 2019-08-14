@@ -197,6 +197,9 @@ namespace linuxdeploy {
                 // FIXME: try to find a way how to rewrap AppRun on subsequent runs or, even better, become idempotent
                 if (bf::exists(wrappedAppRunPath)) {
                     ldLog() << LD_WARNING << "Already found wrapped AppRun, using existing file/symlink" << std::endl;
+                } else {
+                    // backup original AppRun
+                    bf::rename(appRunPath, wrappedAppRunPath);
                 }
 
                 // in case the above check triggered a warning, it's possible that there is another AppRun in the AppDir
@@ -206,9 +209,6 @@ namespace linuxdeploy {
                                             "overwriting" << std::endl;
                     bf::remove(appRunPath);
                 }
-
-                // backup original AppRun
-                bf::rename(appRunPath, wrappedAppRunPath);
 
 
                 // install new script
