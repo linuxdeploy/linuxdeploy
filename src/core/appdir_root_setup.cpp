@@ -243,8 +243,10 @@ namespace linuxdeploy {
 
         bool AppDirRootSetup::run(const DesktopFile& desktopFile, const bf::path& customAppRunPath) const {
             // first step that is always required is to deploy the desktop file and the corresponding icon
-            if (!d->deployDesktopFileAndIcon(desktopFile))
+            if (!d->deployDesktopFileAndIcon(desktopFile)) {
+                ldLog() << LD_DEBUG << "deployDesktopFileAndIcon returned false" << std::endl;
                 return false;
+            }
 
             // the algorithm depends on whether the user wishes to deploy their own AppRun file
             // in case they do, the algorithm shall deploy that file
@@ -253,11 +255,15 @@ namespace linuxdeploy {
             // this allows power users to define their own AppImage initialization steps or run different binaries
             // based on parameters etc.
             if (!customAppRunPath.empty()) {
-                if (!d->deployCustomAppRunFile(customAppRunPath))
+                if (!d->deployCustomAppRunFile(customAppRunPath)) {
+                    ldLog() << LD_DEBUG << "deployCustomAppRunFile returned false" << std::endl;
                     return false;
+                }
             } else {
-                if (!d->deployStandardAppRunFromDesktopFile(desktopFile, customAppRunPath))
+                if (!d->deployStandardAppRunFromDesktopFile(desktopFile, customAppRunPath)) {
+                    ldLog() << LD_DEBUG << "deployStandardAppRunFromDesktopFile returned false" << std::endl;
                     return false;
+                }
             }
 
             // plugins might need to run some initializing code to make certain features work
@@ -266,8 +272,10 @@ namespace linuxdeploy {
             // inside the AppImage, etc.
             // the linuxdeploy plugin specification states that if plugins put files into a specified directory in
             // the AppImage, linuxdeploy will make sure they're run before running the regular AppRun
-            if (!d->deployAppRunWrapperIfNecessary())
+            if (!d->deployAppRunWrapperIfNecessary()) {
+                ldLog() << LD_DEBUG << "deployAppRunWrapperIfNecessary returned false" << std::endl;
                 return false;
+            }
 
             return true;
         }
