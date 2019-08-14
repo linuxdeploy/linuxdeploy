@@ -682,7 +682,7 @@ namespace linuxdeploy {
 
             bool AppDir::setUpAppDirRoot(const DesktopFile& desktopFile, boost::filesystem::path customAppRunPath) {
                 AppDirRootSetup setup(*this);
-                setup.run(desktopFile, customAppRunPath);
+                return setup.run(desktopFile, customAppRunPath);
             }
 
             bf::path AppDir::deployFile(const boost::filesystem::path& from, const boost::filesystem::path& to) {
