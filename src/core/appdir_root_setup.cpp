@@ -77,6 +77,8 @@ namespace linuxdeploy {
                     ldLog() << LD_ERROR << "Could not find suitable icon for Icon entry:" << iconEntry.value() << std::endl;
                     return false;
                 }
+
+                return true;
             }
 
             bool deployCustomAppRunFile(const bf::path& customAppRunPath) const {
