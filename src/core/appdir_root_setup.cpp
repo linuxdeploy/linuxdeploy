@@ -20,74 +20,75 @@ namespace linuxdeploy {
 
         public:
             explicit Private(const AppDir& appDir) : appDir(appDir) {}
-        };
 
-        AppDirRootSetup::AppDirRootSetup(const AppDir& appDir) : d(new Private(appDir)) {}
+        public:
+            bool deployDesktopFileAndIcon(const DesktopFile& desktopFile) const {
+                ldLog() << "Deploying desktop file to AppDir root:" << desktopFile.path() << std::endl;
 
-        bool AppDirRootSetup::run(const DesktopFile& desktopFile, const bf::path& customAppRunPath) const {
-            ldLog() << "Deploying desktop file to AppDir root:" << desktopFile.path() << std::endl;
+                // copy desktop file to root directory
+                if (!appDir.createRelativeSymlink(desktopFile.path(), appDir.path())) {
+                    ldLog() << LD_ERROR << "Failed to create link to desktop file in AppDir root:" << desktopFile.path() << std::endl;
+                    return false;
+                }
 
-            // copy desktop file to root directory
-            if (!d->appDir.createRelativeSymlink(desktopFile.path(), d->appDir.path())) {
-                ldLog() << LD_ERROR << "Failed to create link to desktop file in AppDir root:" << desktopFile.path() << std::endl;
-                return false;
-            }
+                // look for suitable icon
+                DesktopFileEntry iconEntry;
 
-            // look for suitable icon
-            DesktopFileEntry iconEntry;
+                if (!desktopFile.getEntry("Desktop Entry", "Icon", iconEntry)) {
+                    ldLog() << LD_ERROR << "Icon entry missing in desktop file:" << desktopFile.path() << std::endl;
+                    return false;
+                }
 
-            if (!desktopFile.getEntry("Desktop Entry", "Icon", iconEntry)) {
-                ldLog() << LD_ERROR << "Icon entry missing in desktop file:" << desktopFile.path() << std::endl;
-                return false;
-            }
+                bool iconDeployed = false;
 
-            bool iconDeployed = false;
+                const auto foundIconPaths = appDir.deployedIconPaths();
 
-            const auto foundIconPaths = d->appDir.deployedIconPaths();
+                if (foundIconPaths.empty()) {
+                    ldLog() << LD_ERROR << "Could not find icon executable for Icon entry:" << iconEntry.value() << std::endl;
+                    return false;
+                }
 
-            if (foundIconPaths.empty()) {
-                ldLog() << LD_ERROR << "Could not find icon executable for Icon entry:" << iconEntry.value() << std::endl;
-                return false;
-            }
+                for (const auto& iconPath : foundIconPaths) {
+                    ldLog() << LD_DEBUG << "Icon found:" << iconPath << std::endl;
 
-            for (const auto& iconPath : foundIconPaths) {
-                ldLog() << LD_DEBUG << "Icon found:" << iconPath << std::endl;
+                    const bool matchesFilenameWithExtension = iconPath.filename() == iconEntry.value();
 
-                const bool matchesFilenameWithExtension = iconPath.filename() == iconEntry.value();
+                    if (iconPath.stem() == iconEntry.value() || matchesFilenameWithExtension) {
+                        if (matchesFilenameWithExtension) {
+                            ldLog() << LD_WARNING << "Icon= entry filename contains extension" << std::endl;
+                        }
 
-                if (iconPath.stem() == iconEntry.value() || matchesFilenameWithExtension) {
-                    if (matchesFilenameWithExtension) {
-                        ldLog() << LD_WARNING << "Icon= entry filename contains extension" << std::endl;
+                        ldLog() << "Deploying icon to AppDir root:" << iconPath << std::endl;
+
+                        if (!appDir.createRelativeSymlink(iconPath, appDir.path())) {
+                            ldLog() << LD_ERROR << "Failed to create symlink for icon in AppDir root:" << iconPath << std::endl;
+                            return false;
+                        }
+
+                        iconDeployed = true;
+                        break;
                     }
+                }
 
-                    ldLog() << "Deploying icon to AppDir root:" << iconPath << std::endl;
-
-                    if (!d->appDir.createRelativeSymlink(iconPath, d->appDir.path())) {
-                        ldLog() << LD_ERROR << "Failed to create symlink for icon in AppDir root:" << iconPath << std::endl;
-                        return false;
-                    }
-
-                    iconDeployed = true;
-                    break;
+                if (!iconDeployed) {
+                    ldLog() << LD_ERROR << "Could not find suitable icon for Icon entry:" << iconEntry.value() << std::endl;
+                    return false;
                 }
             }
 
-            if (!iconDeployed) {
-                ldLog() << LD_ERROR << "Could not find suitable icon for Icon entry:" << iconEntry.value() << std::endl;
-                return false;
-            }
-
-            if (!customAppRunPath.empty()) {
+            bool deployCustomAppRunFile(const bf::path& customAppRunPath) {
                 // copy custom AppRun executable
                 // FIXME: make sure this file is executable
                 ldLog() << "Deploying custom AppRun:" << customAppRunPath;
 
-                if (!d->appDir.copyFile(customAppRunPath, d->appDir.path() / "AppRun"))
+                if (!appDir.copyFile(customAppRunPath, appDir.path() / "AppRun"))
                     return false;
-            } else {
+            }
+
+            bool deployStandardAppRunFromDesktopFile(const DesktopFile& desktopFile, const bf::path& customAppRunPath) {
                 // check if there is a custom AppRun already
                 // in that case, skip deployment of symlink
-                if (bf::exists(d->appDir.path() / "AppRun")) {
+                if (bf::exists(appDir.path() / "AppRun")) {
                     ldLog() << LD_WARNING << "Existing AppRun detected, skipping deployment of symlink" << std::endl;
                 } else {
                     // look for suitable binary to create AppRun symlink
@@ -101,7 +102,7 @@ namespace linuxdeploy {
 
                     auto executableName = util::split(executableEntry.value())[0];
 
-                    const auto foundExecutablePaths = d->appDir.deployedExecutablePaths();
+                    const auto foundExecutablePaths = appDir.deployedExecutablePaths();
 
                     if (foundExecutablePaths.empty()) {
                         ldLog() << LD_ERROR << "Could not find suitable executable for Exec entry:" << executableName
@@ -118,7 +119,7 @@ namespace linuxdeploy {
                             ldLog() << "Deploying AppRun symlink for executable in AppDir root:" << executablePath
                                     << std::endl;
 
-                            if (!d->appDir.createRelativeSymlink(executablePath, d->appDir.path() / "AppRun")) {
+                            if (!appDir.createRelativeSymlink(executablePath, appDir.path() / "AppRun")) {
                                 ldLog() << LD_ERROR
                                         << "Failed to create AppRun symlink for executable in AppDir root:"
                                         << executablePath << std::endl;
@@ -135,6 +136,28 @@ namespace linuxdeploy {
                         return false;
                     }
                 }
+            }
+        };
+
+        AppDirRootSetup::AppDirRootSetup(const AppDir& appDir) : d(new Private(appDir)) {}
+
+        bool AppDirRootSetup::run(const DesktopFile& desktopFile, const bf::path& customAppRunPath) const {
+            // first step that is always required is to deploy the desktop file and the corresponding icon
+            if (!d->deployDesktopFileAndIcon(desktopFile))
+                return false;
+
+            // the algorithm depends on whether the user wishes to deploy their own AppRun file
+            // in case they do, the algorithm shall deploy that file
+            // otherwise, the standard algorithm shall be run which takes information from the desktop file to
+            // deploy a symlink pointing to the AppImage's main binary
+            // this allows power users to define their own AppImage initialization steps or run different binaries
+            // based on parameters etc.
+            if (!customAppRunPath.empty()) {
+                if (!d->deployCustomAppRunFile(customAppRunPath))
+                    return false;
+            } else {
+                if (!d->deployStandardAppRunFromDesktopFile(desktopFile, customAppRunPath))
+                    return false;
             }
 
             return true;
