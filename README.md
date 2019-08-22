@@ -28,6 +28,7 @@ This is an incomplete list of projects using linuxdeploy. You might want to read
 - [OpenRCT2](https://github.com/OpenRCT2/OpenRCT2)
 - [AppImageUpdate](https://github.com/AppImage/AppImageUpdate)
 - [appimaged](https://github.com/AppImage/appimaged)
+- [MediaElch](https://github.com/Komet/MediaElch/)
 
 
 ## Plugins
