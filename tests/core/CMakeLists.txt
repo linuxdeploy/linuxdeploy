@@ -12,7 +12,7 @@ target_compile_definitions(test_appdir PRIVATE
 )
 
 # register in CTest
-add_test(test_appdir test_appdir)
+ld_add_test(test_appdir)
 
 # make sure library and executable are built before test_appdir
 add_dependencies(test_appdir simple_library simple_executable)
@@ -33,7 +33,7 @@ target_compile_definitions(test_linuxdeploy PRIVATE
 )
 
 # register in CTest
-add_test(test_linuxdeploy test_linuxdeploy)
+ld_add_test(test_linuxdeploy)
 
 # make sure library and executable are built before test_appdir
 add_dependencies(test_linuxdeploy simple_library simple_executable)
