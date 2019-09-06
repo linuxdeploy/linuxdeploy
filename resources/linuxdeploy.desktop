@@ -6,3 +6,4 @@ NoDisplay=true
 Exec=linuxdeploy
 Icon=linuxdeploy
 Categories=Development;
+X-AppImage-Integrate=false
