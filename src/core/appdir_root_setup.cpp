@@ -198,7 +198,7 @@ namespace linuxdeploy {
                 });
 
                 oss << std::endl
-                    << "exec \"$this_dir\"/AppRun.wrapped" << std::endl;
+                    << "exec \"$this_dir\"/AppRun.wrapped \"$@\"" << std::endl;
 
                 // first we need to make sure we're not running this more than once
                 // this might cause more harm than good
