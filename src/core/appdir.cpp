@@ -767,6 +767,60 @@ namespace linuxdeploy {
                     d->setElfRPathOperations[sharedLibrary] = "$ORIGIN";
                 }
 
+                // used to bundle dependencies of executables or libraries in the AppDir without moving them
+                // useful e.g., for plugin systems, etc.
+                {
+                    constexpr auto VAR_NAME = "ADDITIONAL_BIN_DIRS";
+
+                    const auto additionalBinDirs = getenv(VAR_NAME);
+
+                    if (additionalBinDirs != nullptr) {
+                        ldLog() << LD_DEBUG << "Read value of" << VAR_NAME << LD_NO_SPACE << ":" << additionalBinDirs << std::endl;
+
+                        auto additionalBinaryDirs = util::split(getenv(VAR_NAME));
+
+                        for (const auto& additionalBinaryDir : additionalBinaryDirs) {
+                            ldLog() << "Deploying additional executables in directory:" << additionalBinaryDir << std::endl;
+
+                            if (!bf::is_directory(additionalBinaryDir)) {
+                                ldLog() << LD_ERROR << "Could not find additional binary dir, skipping:" << additionalBinaryDir;
+                            }
+
+                            for (bf::directory_iterator it(additionalBinaryDir); it != bf::directory_iterator(); ++it) {
+                                const auto entry = *it;
+                                const auto& path = entry.path();
+
+                                // can't bundle directories
+                                if (!bf::is_regular_file(entry)) {
+                                    ldLog() << LD_DEBUG << "Skipping non-file directory entry:" << entry.path() << std::endl;
+                                    continue;
+                                }
+
+                                // make sure we have an ELF file
+                                try {
+                                    elf::ElfFile(entry.path().string());
+                                } catch (const elf::ElfFileParseError& e) {
+                                    ldLog() << LD_DEBUG << "Skipping non-ELF directory entry:" << entry.path() << std::endl;
+                                }
+
+                                ldLog() << "Deploying additional executable:" << entry.path().string() << std::endl;
+
+                                // bundle dependencies
+                                if (!d->deployElfDependencies(path))
+                                    return false;
+
+                                // set rpath correctly
+                                const auto rpathDestination = this->path() / "usr/lib";
+
+                                const auto rpath = PrivateData::calculateRelativeRPath(additionalBinaryDir, rpathDestination);
+                                ldLog() << LD_DEBUG << "Calculated rpath:" << rpath << std::endl;
+
+                                d->setElfRPathOperations[path] = rpath;
+                            }
+                        }
+                    }
+                }
+
                 return true;
             }
 
