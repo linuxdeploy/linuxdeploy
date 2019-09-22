@@ -311,6 +311,12 @@ namespace linuxdeploy {
                         return stripPath;
                     }
 
+                    static std::string calculateRelativeRPath(const bf::path& originDir, const bf::path& dependencyLibrariesDir) {
+                        auto relPath = bf::relative(bf::absolute(dependencyLibrariesDir), bf::absolute(originDir));
+                        std::string rpath = "$ORIGIN/" + relPath.string() + ":$ORIGIN";
+                        return rpath;
+                    }
+
                     bool deployLibrary(const bf::path& path, bool forceDeploy = false, bool deployDependencies = true, const bf::path& destination = bf::path()) {
                         if (!forceDeploy && hasBeenVisitedAlready(path)) {
                             ldLog() << LD_DEBUG << "File has been visited already:" << path << std::endl;
@@ -375,19 +381,20 @@ namespace linuxdeploy {
                         std::string rpath = "$ORIGIN";
 
                         if (!destination.empty()) {
-                            std::string rpathDestination = destination.string();
+                            // destination is the place where to deploy this file
+                            // therefore, rpathDestination means
+                            std::string rpathOriginDir = destination.string();
 
                             if (destination.string().back() == '/') {
-                                rpathDestination = destination.string();
+                                rpathOriginDir = destination.string();
 
-                                while (rpathDestination.back() == '/')
-                                    rpathDestination.erase(rpathDestination.end() - 1, rpathDestination.end());
+                                while (rpathOriginDir.back() == '/')
+                                    rpathOriginDir.erase(rpathOriginDir.end() - 1, rpathOriginDir.end());
                             } else {
-                                rpathDestination = destination.parent_path().string();
+                                rpathOriginDir = destination.parent_path().string();
                             }
 
-                            auto relPath = bf::relative(bf::absolute(libraryDir), bf::absolute(rpathDestination));
-                            rpath = "$ORIGIN/" + relPath.string() + ":$ORIGIN";
+                            rpath = calculateRelativeRPath(rpathOriginDir, libraryDir);
                         }
 
                         // no need to set rpath in debug symbols files
@@ -400,7 +407,7 @@ namespace linuxdeploy {
 
                         if (!deployDependencies)
                             return true;
-                        
+
                         return deployElfDependencies(path);
                     }
 
