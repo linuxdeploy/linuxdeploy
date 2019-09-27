@@ -63,6 +63,14 @@ matrix:
         - if [ "$TRAVIS_BRANCH" != "$TRAVIS_TAG" ] && [ "$TRAVIS_BRANCH" != "master" ]; then export TRAVIS_EVENT_TYPE=pull_request; fi
         - wget -c https://github.com/probonopd/uploadtool/raw/master/upload.sh
         - bash upload.sh linuxdeploy-centos6-"$ARCH".AppImage*
+    - env: ARCH=i386 BUILD_TYPE=centos6
+      services:
+        - docker
+      script: travis/build-centos6-docker.sh
+      after_success:
+        - if [ "$TRAVIS_BRANCH" != "$TRAVIS_TAG" ] && [ "$TRAVIS_BRANCH" != "master" ]; then export TRAVIS_EVENT_TYPE=pull_request; fi
+        - wget -c https://github.com/probonopd/uploadtool/raw/master/upload.sh
+        - bash upload.sh linuxdeploy-centos6-"$ARCH".AppImage*
 
 install:
   - git clone https://github.com/NixOS/patchelf.git -b 0.8
