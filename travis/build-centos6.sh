@@ -2,12 +2,6 @@
 
 set -xe
 
-# get a compiler that allows for using modern-ish C++ (>= 11) on a distro that doesn't normally support it
-# before you ask: yes, the binaries will work on CentOS 6 even without devtoolset (they somehow partially link C++
-# things statically while using others from the system...)
-# so, basically, it's magic!
-. /opt/rh/devtoolset-6/enable
-
 mkdir build
 cd build
 
@@ -28,12 +22,15 @@ tar cfvz /out/appdir.tgz AppDir
 # cannot add appimage plugin yet, since it won't work on CentOS 6 (at least for now)
 # therefore we also need to use appimagetool directly to build an AppImage
 # but we can still prepare the AppDir
-wget https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
-chmod +x appimagetool-x86_64.AppImage
+APPIMAGETOOL_ARCH="$ARCH"
+if [ "$APPIMAGETOOL_ARCH" == "i386" ]; then APPIMAGETOOL_ARCH="i686"; fi
+
+wget https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-"$APPIMAGETOOL_ARCH".AppImage
+chmod +x appimagetool-"$APPIMAGETOOL_ARCH".AppImage
 sed -i 's/AI\x02/\x00\x00\x00/' appimagetool*.AppImage
 
-appimage=linuxdeploy-centos6-x86_64.AppImage
-./appimagetool-x86_64.AppImage --appimage-extract
+appimage=linuxdeploy-centos6-"$ARCH".AppImage
+./appimagetool-"$APPIMAGETOOL_ARCH".AppImage --appimage-extract
 squashfs-root/AppRun AppDir "$appimage" 2>&1
 
 chown "$OUTDIR_OWNER" "$appimage"
