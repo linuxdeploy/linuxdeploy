@@ -9,10 +9,6 @@ COPY entrypoint.sh /
 SHELL ["/entrypoint.sh", "bash", "-x", "-c"]
 ENTRYPOINT ["/entrypoint.sh"]
 
-#RUN wget http://springdale.math.ias.edu/data/puias/computational/6/x86_64//patchelf-0.8-2.sdl6.x86_64.rpm && \
-#    echo "3d746306f5f7958b9487e6d08f53bb13  patchelf-0.8-2.sdl6.x86_64.rpm" || md5sum -c && \
-#    rpm -i patchelf-0.8-2.sdl6.x86_64.rpm
-
 RUN yum install -y gcc-c++ && \
     git clone https://github.com/NixOS/patchelf.git && \
     pushd patchelf && \
