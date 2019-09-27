@@ -17,8 +17,6 @@ LINUXDEPLOY_ARGS=("--appdir" "AppDir" "-e" "bin/linuxdeploy" "-i" "/ws/resources
 # deploy patchelf which is a dependency of linuxdeploy
 bin/linuxdeploy "${LINUXDEPLOY_ARGS[@]}"
 
-tar cfvz /out/appdir.tgz AppDir
-
 # cannot add appimage plugin yet, since it won't work on CentOS 6 (at least for now)
 # therefore we also need to use appimagetool directly to build an AppImage
 # but we can still prepare the AppDir
