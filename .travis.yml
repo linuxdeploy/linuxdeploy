@@ -56,6 +56,7 @@ matrix:
       script: travis/test-coverage.sh
       after_success: true  # also, we don't intend to upload release binaries
     - env: ARCH=x86_64 BUILD_TYPE=centos6
+      install: true
       services:
         - docker
       script: travis/build-centos6-docker.sh
@@ -64,6 +65,7 @@ matrix:
         - wget -c https://github.com/probonopd/uploadtool/raw/master/upload.sh
         - bash upload.sh linuxdeploy-centos6-"$ARCH".AppImage*
     - env: ARCH=i386 BUILD_TYPE=centos6
+      install: true
       services:
         - docker
       script: travis/build-centos6-docker.sh
