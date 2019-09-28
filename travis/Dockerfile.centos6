@@ -20,3 +20,5 @@ RUN yum install -y gcc-c++ && \
     make install && \
     popd && \
     rm -r patchelf/
+
+CMD ["bash"]
