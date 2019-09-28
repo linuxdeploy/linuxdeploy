@@ -75,12 +75,13 @@ mv squashfs-root/ AppDir/plugins/linuxdeploy-plugin-appimage
 ln -s ../../plugins/linuxdeploy-plugin-appimage/AppRun AppDir/usr/bin/linuxdeploy-plugin-appimage
 
 export UPD_INFO="gh-releases-zsync|linuxdeploy|linuxdeploy|continuous|linuxdeploy-$ARCH.AppImage"
+export OUTPUT="linuxdeploy-devbuild-$ARCH.AppImage"
 
 # build AppImage using plugin
 AppDir/usr/bin/linuxdeploy-plugin-appimage --appdir AppDir/
 
 # rename AppImage to avoid "Text file busy" issues when using it to create another one
-mv ./linuxdeploy-"$ARCH".AppImage test.AppImage
+mv "$OUTPUT" test.AppImage
 
 # verify that the resulting AppImage works
 ./test.AppImage "${LINUXDEPLOY_ARGS[@]}"
@@ -88,4 +89,4 @@ mv ./linuxdeploy-"$ARCH".AppImage test.AppImage
 # check whether AppImage plugin is found and works
 ./test.AppImage "${LINUXDEPLOY_ARGS[@]}" --output appimage
 
-mv linuxdeploy-"$ARCH".AppImage* "$OLD_CWD"
+mv "$OUTPUT"* "$OLD_CWD"/
