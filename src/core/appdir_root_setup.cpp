@@ -194,7 +194,7 @@ namespace linuxdeploy {
                     if (!bf::is_regular_file(p))
                         return;
 
-                    oss << "source \"$this_dir\"/" << APPRUN_HOOKS_DIRNAME << "/" << p.filename();
+                    oss << "source \"$this_dir\"/" << APPRUN_HOOKS_DIRNAME << "/" << p.filename() << std::endl;
                 });
 
                 oss << std::endl
