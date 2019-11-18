@@ -21,7 +21,7 @@ namespace linuxdeploy {
                     return p.wait();
                 };
 
-                if (check_command("which dpkg-query") == 0) {
+                if (check_command("command -v dpkg-query") == 0) {
                     ldLog() << LD_DEBUG << "Using dpkg-query to search for copyright files" << std::endl;
                     return std::make_shared<DpkgQueryCopyrightFilesManager>();
                 }
