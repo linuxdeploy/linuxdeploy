@@ -1,5 +1,6 @@
 #pragma once
 
+// system headers
 #include <algorithm>
 #include <climits>
 #include <cstring>
@@ -7,6 +8,9 @@
 #include <string>
 #include <unistd.h>
 #include <vector>
+
+// libraries
+#include <boost/filesystem.hpp>
 
 namespace linuxdeploy {
     namespace util {
@@ -87,6 +91,33 @@ namespace linuxdeploy {
 
                 return buf.data();
             }
+
+            // very simple but for our purposes good enough which like algorithm to find binaries in $PATH
+            static boost::filesystem::path which(const std::string& name) {
+                const auto* path = getenv("PATH");
+
+                namespace bf = boost::filesystem;
+
+                if (path == nullptr)
+                    return "";
+
+                for (const auto& binDir : split(path, ':')) {
+                    if (!bf::is_directory(binDir)) {
+                        continue;
+                    }
+
+                    for (bf::directory_iterator it(binDir); it != bf::directory_iterator{}; ++it) {
+                        const auto binary = it->path();
+
+                        if (binary.filename() == name) {
+                            // TODO: check if file is executable (skip otherwise)
+                            return binary;
+                        }
+                    }
+                }
+
+                return {};
+            };
         }
     }
 }
