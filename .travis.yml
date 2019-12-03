@@ -25,6 +25,24 @@ matrix:
         - wget -c https://github.com/probonopd/uploadtool/raw/master/upload.sh
         - bash upload.sh linuxdeploy-"$ARCH".AppImage*
 
+    - name: Ubuntu bionic arm64 build
+      env: ARCH=arm64 BUILD_TYPE=arm64
+      dist: bionic
+      arch: arm64
+      addons:
+        apt:
+          update: true
+          packages:
+            - libmagic-dev
+            - libjpeg-dev
+            - libpng-dev
+            - cimg-dev
+      script: travis/build.sh
+      after_success:
+        - if [ "$TRAVIS_BRANCH" != "$TRAVIS_TAG" ] && [ "$TRAVIS_BRANCH" != "master" ]; then export TRAVIS_EVENT_TYPE=pull_request; fi
+        - wget -c https://github.com/probonopd/uploadtool/raw/master/upload.sh
+        - bash upload.sh linuxdeploy-"$ARCH".AppImage*
+
     - name: Ubuntu xenial x86_64 coverage build (no binaries uploaded)
       env: ARCH=x86_64 BUILD_TYPE=coverage
       dist: xenial
@@ -59,6 +77,7 @@ matrix:
         - sudo pip install gcovr
       script: travis/test-coverage.sh
       after_success: true  # also, we don't intend to upload release binaries
+
 
 branches:
   except:
