@@ -37,6 +37,19 @@ matrix:
             - libjpeg-dev
             - libpng-dev
             - cimg-dev
+            - patchelf
+      before_script:
+        - git clone https://github.com/NixOS/patchelf.git && \
+        -  pushd patchelf && \
+        - # cannot use -b since it's not supported in really old versions of git
+        - git checkout 0.8 && \
+        - ./bootstrap.sh && \
+        - ./configure --prefix=/usr && \
+        - make -j $(nproc) && \
+        - make install && \
+        - popd && \
+        - rm -r patchelf/
+
       script: travis/build.sh
       after_success:
         - if [ "$TRAVIS_BRANCH" != "$TRAVIS_TAG" ] && [ "$TRAVIS_BRANCH" != "master" ]; then export TRAVIS_EVENT_TYPE=pull_request; fi
