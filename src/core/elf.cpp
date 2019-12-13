@@ -142,8 +142,14 @@ namespace linuxdeploy {
                 std::map<std::string, std::string> env;
                 env.insert(std::make_pair(std::string("LC_ALL"), std::string("C")));
 
+                // workaround for https://sourceware.org/bugzilla/show_bug.cgi?id=25263
+                // when you pass an absolute path to ldd, it can find libraries referenced in the rpath properly
+                // this bug was first found when trying to find a library next to the binary which contained $ORIGIN
+                // note that this is just a bug in ldd, the linker has always worked as intended
+                const auto resolvedPath = bf::absolute(d->path);
+
                 subprocess::Popen lddProc(
-                        {"ldd", d->path.string().c_str()},
+                        {"ldd", resolvedPath.string().c_str()},
                         subprocess::output{subprocess::PIPE},
                         subprocess::error{subprocess::PIPE},
                         subprocess::environment(env)
