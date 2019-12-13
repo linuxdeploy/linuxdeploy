@@ -146,7 +146,7 @@ namespace linuxdeploy {
                 // when you pass an absolute path to ldd, it can find libraries referenced in the rpath properly
                 // this bug was first found when trying to find a library next to the binary which contained $ORIGIN
                 // note that this is just a bug in ldd, the linker has always worked as intended
-                const auto resolvedPath = bf::absolute(d->path);
+                const auto resolvedPath = bf::canonical(d->path);
 
                 subprocess::Popen lddProc(
                         {"ldd", resolvedPath.string().c_str()},
