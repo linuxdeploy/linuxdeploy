@@ -1,0 +1,24 @@
+FROM multiarch/debian-debootstrap:amd64-jessie
+
+RUN apt-get update && \
+    apt-get install -y gcc g++ wget make gnupg zip git subversion libglib2.0-dev automake libtool patch zlib1g-dev libcairo2-dev libssl-dev libfuse-dev fuse libgtest-dev vim-common desktop-file-utils zsync bzip2 xz-utils libcurl4-gnutls-dev libjpeg-dev libpng-dev
+
+RUN wget -O - https://github.com/Kitware/CMake/releases/download/v3.16.1/cmake-3.16.1.tar.gz | tar -xz && \
+    cd cmake-3.16.1 && \
+    ./configure --prefix=/usr --parallel=$(nproc) --no-qt-gui --system-curl && \
+    make -j$(nproc) cmake && \
+    make install && \
+    cd .. && \
+    rm -fr cmake-3.16.1
+
+RUN git clone --depth 1 https://github.com/NixOS/patchelf.git && \
+    pushd patchelf && \
+    git checkout 0.8 && \
+    ./bootstrap.sh && \
+    ./configure --prefix=/usr/local && \
+    make -j $(nproc) && \
+    make install && \
+    popd && \
+    rm -r patchelf/
+
+SHELL ["bash", "-x", "-c"]
