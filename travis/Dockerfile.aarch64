@@ -1,0 +1,11 @@
+FROM multiarch/ubuntu-core:arm64-xenial
+
+ENV ARCH=aarch64
+
+SHELL ["bash", "-x", "-c"]
+
+RUN apt-get update && \
+    apt-get install -y gcc g++ wget make gnupg zip git subversion libglib2.0-dev automake libtool patch zlib1g-dev libcairo2-dev libssl-dev libfuse-dev fuse libgtest-dev vim-common desktop-file-utils zsync bzip2 xz-utils libcurl4-gnutls-dev libjpeg-dev libpng-dev cmake patchelf && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+CMD ["bash"]

@@ -3,23 +3,45 @@ sudo: required
 
 matrix:
   include:
-    - name: CentOS 6 x86_64 build
-      env: ARCH=x86_64 BUILD_TYPE=centos6
-      install: true
+    - name: x86_64 build
+      env: ARCH=x86_64
       services:
         - docker
-      script: travis/build-centos6-docker.sh
+      install: true
+      script: travis/build-docker.sh
       after_success:
         - if [ "$TRAVIS_BRANCH" != "$TRAVIS_TAG" ] && [ "$TRAVIS_BRANCH" != "master" ]; then export TRAVIS_EVENT_TYPE=pull_request; fi
         - wget -c https://github.com/probonopd/uploadtool/raw/master/upload.sh
         - bash upload.sh linuxdeploy-"$ARCH".AppImage*
 
-    - name: CentOS 6 i386 build
-      env: ARCH=i386 BUILD_TYPE=centos6
-      install: true
+    - name: i386 build
+      env: ARCH=i386
       services:
         - docker
-      script: travis/build-centos6-docker.sh
+      install: true
+      script: travis/build-docker.sh
+      after_success:
+        - if [ "$TRAVIS_BRANCH" != "$TRAVIS_TAG" ] && [ "$TRAVIS_BRANCH" != "master" ]; then export TRAVIS_EVENT_TYPE=pull_request; fi
+        - wget -c https://github.com/probonopd/uploadtool/raw/master/upload.sh
+        - bash upload.sh linuxdeploy-"$ARCH".AppImage*
+
+    - name: armhf build
+      env: ARCH=armhf
+      services:
+        - docker
+      install: docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+      script: travis/build-docker.sh
+      after_success:
+        - if [ "$TRAVIS_BRANCH" != "$TRAVIS_TAG" ] && [ "$TRAVIS_BRANCH" != "master" ]; then export TRAVIS_EVENT_TYPE=pull_request; fi
+        - wget -c https://github.com/probonopd/uploadtool/raw/master/upload.sh
+        - bash upload.sh linuxdeploy-"$ARCH".AppImage*
+
+    - name: aarch64 build
+      env: ARCH=aarch64
+      services:
+        - docker
+      install: docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+      script: travis/build-docker.sh
       after_success:
         - if [ "$TRAVIS_BRANCH" != "$TRAVIS_TAG" ] && [ "$TRAVIS_BRANCH" != "master" ]; then export TRAVIS_EVENT_TYPE=pull_request; fi
         - wget -c https://github.com/probonopd/uploadtool/raw/master/upload.sh
