@@ -35,28 +35,36 @@ namespace linuxdeploy {
                         // if that isn't available, fall back to searching for patchelf in the PATH
                         std::string patchelfPath;
 
-                        auto binDirPath = bf::path(util::getOwnExecutablePath());
-                        auto localPatchelfPath = binDirPath.parent_path() / "patchelf";
+                        const auto envPatchelf = getenv("PATCHELF");
 
-                        if (bf::exists(localPatchelfPath)) {
-                            patchelfPath = localPatchelfPath.string();
+                        // allows users to use a custom patchelf instead of the bundled one
+                        if (envPatchelf != nullptr) {
+                            ldLog() << LD_DEBUG << "Using patchelf specified in $PATCHELF:" << envPatchelf << std::endl;
+                            patchelfPath = envPatchelf;
                         } else {
-                            for (const bf::path directory : util::split(getenv("PATH"), ':')) {
-                                if (!bf::is_directory(directory))
-                                    continue;
+                            auto binDirPath = bf::path(util::getOwnExecutablePath());
+                            auto localPatchelfPath = binDirPath.parent_path() / "patchelf";
 
-                                auto path = directory / "patchelf";
+                            if (bf::exists(localPatchelfPath)) {
+                                patchelfPath = localPatchelfPath.string();
+                            } else {
+                                for (const bf::path directory : util::split(getenv("PATH"), ':')) {
+                                    if (!bf::is_directory(directory))
+                                        continue;
 
-                                if (bf::is_regular_file(path)) {
-                                    patchelfPath = path.string();
-                                    break;
+                                    auto path = directory / "patchelf";
+
+                                    if (bf::is_regular_file(path)) {
+                                        patchelfPath = path.string();
+                                        break;
+                                    }
                                 }
                             }
                         }
 
-                        if (patchelfPath.empty()) {
-                            ldLog() << LD_ERROR << "Could not find patchelf" << std::endl;
-                            throw std::runtime_error("could not find patchelf");
+                        if (!bf::is_regular_file(patchelfPath)) {
+                            ldLog() << LD_ERROR << "Could not find patchelf: no such file:" << patchelfPath << std::endl;
+                            throw std::runtime_error("Could not find patchelf");
                         }
 
                         ldLog() << LD_DEBUG << "Using patchelf:" << patchelfPath << std::endl;
@@ -183,9 +191,12 @@ namespace linuxdeploy {
             }
 
             std::string ElfFile::getRPath() {
+                // don't try to fetch patchelf path in a catchall to make sure the process exists when the tool cannot be found
+                const auto patchelfPath = PrivateData::getPatchelfPath();
+
                 try {
                     subprocess::Popen patchelfProc(
-                        {PrivateData::getPatchelfPath().c_str(), "--print-rpath", d->path.c_str()},
+                        {patchelfPath.c_str(), "--print-rpath", d->path.c_str()},
                         subprocess::output(subprocess::PIPE),
                         subprocess::error(subprocess::PIPE)
                     );
@@ -214,9 +225,12 @@ namespace linuxdeploy {
             }
 
             bool ElfFile::setRPath(const std::string& value) {
+                // don't try to fetch patchelf path in a catchall to make sure the process exists when the tool cannot be found
+                const auto patchelfPath = PrivateData::getPatchelfPath();
+
                 try {
                     subprocess::Popen patchelfProc(
-                        {PrivateData::getPatchelfPath().c_str(), "--set-rpath", value.c_str(), d->path.c_str()},
+                        {patchelfPath.c_str(), "--set-rpath", value.c_str(), d->path.c_str()},
                         subprocess::output(subprocess::PIPE),
                         subprocess::error(subprocess::PIPE)
                     );
