@@ -11,6 +11,7 @@
 
 // local headers
 #include "linuxdeploy/core/log.h"
+#include "linuxdeploy/util/util.h"
 
 #pragma once
 
@@ -136,8 +137,21 @@ namespace linuxdeploy {
                 }
                 log << std::endl;
 
-                auto process = subprocess::Popen(args, subprocess::output{subprocess::PIPE}, subprocess::error{subprocess::PIPE});
+                std::map<std::string, std::string> environmentVariables{};
 
+                if (this->pluginType() == PLUGIN_TYPE::INPUT_TYPE) {
+                    // add $LINUXDEPLOY, which points to the current binary
+                    // we do not need to pass $APPIMAGE or alike, since while linuxdeploy is running, the path in the
+                    // temporary mountpoint of its AppImage will be valid anyway
+                    environmentVariables["LINUXDEPLOY"] = linuxdeploy::util::getOwnExecutablePath();
+                }
+
+                auto process = subprocess::Popen(
+                    args,
+                    subprocess::output{subprocess::PIPE},
+                    subprocess::error{subprocess::PIPE},
+                    subprocess::environment{environmentVariables}
+                );
 
                 std::vector<pollfd> pfds(2);
                 auto* opfd = &pfds[0];
