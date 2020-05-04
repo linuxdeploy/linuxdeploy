@@ -3,7 +3,7 @@ sudo: required
 
 matrix:
   include:
-    - name: x86_64 build
+    - name: CentOS 6 x86_64 build
       env: ARCH=x86_64
       services:
         - docker
