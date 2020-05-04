@@ -5,8 +5,18 @@ set -xe
 old_cwd=$(readlink -f .)
 here=$(readlink -f $(dirname "$0"))
 
+if [ -z "$ARCH" ]; then
+    echo '$ARCH not set' 1>&2
+    exit 1
+fi
+
 DOCKERFILE="$here/Dockerfile.$ARCH"
 IMAGE="linuxdeploy-build-$ARCH"
+
+if [ ! -f "$DOCKERFILE" ]; then
+    echo "Architecture not supported: $ARCH" 1>&2
+    exit 1
+fi
 
 (cd "$here" && docker build -f "$DOCKERFILE" -t "$IMAGE" .)
 
