@@ -29,6 +29,7 @@ This is an incomplete list of projects using linuxdeploy. You might want to read
 - [AppImageUpdate](https://github.com/AppImage/AppImageUpdate)
 - [appimaged](https://github.com/AppImage/appimaged)
 - [MediaElch](https://github.com/Komet/MediaElch/)
+- [CPU-X](https://github.com/X0rg/CPU-X) (details available [here](https://github.com/AppImage/AppImageKit/wiki/Bundling-GTK3-apps#fully-automated-deployment-from-sources-with-github-actions-cpu-x))
 
 
 ## Plugins
