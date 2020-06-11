@@ -40,6 +40,7 @@ int main(int argc, char** argv) {
     args::Flag createDesktopFile(parser, "", "Create basic desktop file that is good enough for some tests", {"create-desktop-file"});
 
     args::ValueFlagList<std::string> iconPaths(parser, "icon file", "Icon to deploy", {'i', "icon-file"});
+    args::ValueFlag<std::string> iconTargetFilename(parser, "filename", "Filename all icons passed via -i should be renamed to", {"icon-filename"});
 
     args::ValueFlag<std::string> customAppRunPath(parser, "AppRun path", "Path to custom AppRun script (linuxdeploy will not create a symlink but copy this file instead)", {"custom-apprun"});
 
@@ -195,7 +196,15 @@ int main(int argc, char** argv) {
                 return 1;
             }
 
-            if (!appDir.deployIcon(iconPath)) {
+            bool iconDeployedSuccessfully;
+
+            if (iconTargetFilename) {
+                iconDeployedSuccessfully = appDir.deployIcon(iconPath, iconTargetFilename.Get());
+            } else {
+                iconDeployedSuccessfully = appDir.deployIcon(iconPath);
+            }
+
+            if (!iconDeployedSuccessfully) {
                 std::cerr << "Failed to deploy icon: " << iconPath << std::endl;
                 return 1;
             }

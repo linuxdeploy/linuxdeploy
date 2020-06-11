@@ -63,6 +63,9 @@ namespace linuxdeploy {
                     // deploy icon
                     bool deployIcon(const boost::filesystem::path& path);
 
+                    // deploy icon, changing its name to <target filename>.<ext>
+                    bool deployIcon(const boost::filesystem::path& path, const std::string& targetFilename);
+
                     // deploy arbitrary file
                     boost::filesystem::path deployFile(const boost::filesystem::path& from, const boost::filesystem::path& to);
 

@@ -58,7 +58,7 @@ namespace linuxdeploy {
                     bool disableCopyrightFilesDeployment = false;
 
                 public:
-                    PrivateData() : copyOperations(), stripOperations(), setElfRPathOperations(), visitedFiles(), appDirPath(), appName() {
+                    PrivateData() : copyOperations(), stripOperations(), setElfRPathOperations(), visitedFiles(), appDirPath() {
                         copyrightFilesManager = copyright::ICopyrightFilesManager::getInstance();
                     };
 
@@ -470,7 +470,7 @@ namespace linuxdeploy {
                         return true;
                     }
 
-                    bool deployIcon(const bf::path& path) {
+                    bool deployIcon(const bf::path& path, const std::string targetFilename = "") {
                         if (hasBeenVisitedAlready(path)) {
                             ldLog() << LD_DEBUG << "File has been visited already:" << path << std::endl;
                             return true;
@@ -538,12 +538,14 @@ namespace linuxdeploy {
                             }
                         }
 
-                        // rename files like <appname>_*.ext to <appname>.ext
                         auto filename = path.filename().string();
-                        if (!appName.empty() && util::stringStartsWith(path.string(), appName)) {
-                            auto newFilename = appName + path.extension().string();
+
+                        // if the user wants us to automatically rename icon files, we can do so
+                        // this is useful when passing multiple icons via -i in different resolutions
+                        if (!targetFilename.empty()) {
+                            auto newFilename = targetFilename + path.extension().string();
                             if (newFilename != filename) {
-                                ldLog() << LD_WARNING << "Renaming icon" << path << "to" << newFilename << std::endl;
+                                ldLog() << LD_WARNING << "Changing name of icon" << path << "to target filename" << newFilename << std::endl;
                                 filename = newFilename;
                             }
                         }
@@ -621,9 +623,13 @@ namespace linuxdeploy {
             bool AppDir::deployDesktopFile(const DesktopFile& desktopFile) {
                 return d->deployDesktopFile(desktopFile);
             }
- 
+
             bool AppDir::deployIcon(const bf::path& path) {
                 return d->deployIcon(path);
+            }
+
+            bool AppDir::deployIcon(const bf::path& path, const std::string& targetFilename) {
+                return d->deployIcon(path, targetFilename);
             }
 
             bool AppDir::executeDeferredOperations() {
