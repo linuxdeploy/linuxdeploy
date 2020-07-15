@@ -57,6 +57,11 @@ namespace linuxdeploy {
                     // deploy executable
                     bool deployExecutable(const boost::filesystem::path& path, const boost::filesystem::path& destination = "");
 
+                    // deploy dependencies for ELF file in AppDir, without copying it into the library dir
+                    //
+                    // the dependencies end up in the regular location
+                    bool deployDependenciesOnlyForElfFile(const boost::filesystem::path& elfFilePath, bool failSilentForNonElfFile = false);
+
                     // deploy desktop file
                     bool deployDesktopFile(const desktopfile::DesktopFile& desktopFile);
 

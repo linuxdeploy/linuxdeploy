@@ -36,6 +36,8 @@ int main(int argc, char** argv) {
 
     args::ValueFlagList<std::string> executablePaths(parser, "executable", "Executable to deploy", {'e', "executable"});
 
+    args::ValueFlagList<std::string> deployDepsOnlyPaths(parser, "path", "Path to ELF file or directory containing such files (libraries or executables) in the AppDir whose dependencies shall be deployed by linuxdeploy without copying them into the AppDir", {"deploy-deps-only"});
+
     args::ValueFlagList<std::string> desktopFilePaths(parser, "desktop file", "Desktop file to deploy", {'d', "desktop-file"});
     args::Flag createDesktopFile(parser, "", "Create basic desktop file that is good enough for some tests", {"create-desktop-file"});
 
@@ -142,6 +144,36 @@ int main(int argc, char** argv) {
 
             if (!appDir.deployExecutable(executablePath)) {
                 ldLog() << LD_ERROR << "Failed to deploy executable: " << executablePath << std::endl;
+                return 1;
+            }
+        }
+    }
+
+    // deploy executables to usr/bin, and deploy their dependencies to usr/lib
+    if (deployDepsOnlyPaths) {
+        ldLog() << std::endl << "-- Deploying dependencies only for ELF files --" << std::endl;
+
+        for (const auto& path : deployDepsOnlyPaths.Get()) {
+            if (bf::is_directory(path)) {
+                ldLog() << "Deploying files in directory" << path << std::endl;
+
+                for (auto it = bf::directory_iterator{path}; it != bf::directory_iterator{}; ++it) {
+                    if (!bf::is_regular_file(*it)) {
+                        continue;
+                    }
+
+                    if (!appDir.deployDependenciesOnlyForElfFile(*it, true)) {
+                        ldLog() << LD_WARNING << "Failed to deploy dependencies for ELF file" << *it << LD_NO_SPACE << ", skipping" << std::endl;
+                        return 1;
+                    }
+                }
+            } else if (bf::is_regular_file(path)) {
+                if (!appDir.deployDependenciesOnlyForElfFile(path)) {
+                    ldLog() << LD_ERROR << "Failed to deploy dependencies for ELF file: " << path << std::endl;
+                    return 1;
+                }
+            } else {
+                ldLog() << LD_ERROR << "No such file or directory: " << path << std::endl;
                 return 1;
             }
         }

@@ -830,6 +830,61 @@ namespace linuxdeploy {
                 return true;
             }
 
+            // TODO: quite similar to deployDependenciesForExistingFiles... maybe they should be merged or use each other
+            bool AppDir::deployDependenciesOnlyForElfFile(const boost::filesystem::path& elfFilePath, bool failSilentForNonElfFile) {
+                // preconditions: file must be an ELF one, and file must be contained in the AppDir
+                const auto absoluteElfFilePath = bf::absolute(elfFilePath);
+
+                // can't bundle directories
+                if (!bf::is_regular_file(absoluteElfFilePath)) {
+                    ldLog() << LD_DEBUG << "Skipping non-file directory entry:" << absoluteElfFilePath << std::endl;
+                    return false;
+                }
+
+                // to do a proper prefix check, we need a proper absolute path for the AppDir
+                const auto absoluteAppDirPath = bf::absolute(this->path());
+                ldLog() << LD_DEBUG << "absolute AppDir path:" << absoluteAppDirPath << std::endl;
+
+                // a fancy way to check STL strings for prefixes is to "ab"use rfind
+                if (absoluteElfFilePath.string().rfind(absoluteAppDirPath.string()) != 0) {
+                    ldLog() << LD_ERROR << "File" << absoluteElfFilePath << "is not contained in AppDir, its dependencies cannot be deployed into the AppDir" << std::endl;
+                    return false;
+                }
+
+                // make sure we have an ELF file
+                try {
+                    elf::ElfFile(absoluteElfFilePath.string());
+                } catch (const elf::ElfFileParseError& e) {
+                    auto level = LD_ERROR;
+
+                    if (failSilentForNonElfFile) {
+                        level = LD_WARNING;
+                    }
+
+                    ldLog() << level << "Not an ELF file:" << absoluteElfFilePath << std::endl;
+
+                    return failSilentForNonElfFile;
+                }
+
+                // relative path makes for a nicer and more consistent log
+                ldLog() << "Deploying dependencies for ELF file in AppDir:" << elfFilePath << std::endl;
+
+                // bundle dependencies
+                if (!d->deployElfDependencies(absoluteElfFilePath))
+                    return false;
+
+                // set rpath correctly
+                const auto rpathDestination = this->path() / "usr/lib";
+                ldLog() << LD_DEBUG << "rpath destination:" << rpathDestination << std::endl;
+
+                const auto rpath = PrivateData::calculateRelativeRPath(elfFilePath.parent_path(), rpathDestination);
+                ldLog() << LD_DEBUG << "Calculated rpath:" << rpath << std::endl;
+
+                d->setElfRPathOperations[absoluteElfFilePath] = rpath;
+
+                return true;
+            }
+
             void AppDir::setDisableCopyrightFilesDeployment(bool disable) {
                 d->disableCopyrightFilesDeployment = disable;
             }
