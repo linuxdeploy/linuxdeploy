@@ -119,12 +119,12 @@ int main(int argc, char** argv) {
 
         for (const auto& libraryPath : sharedLibraryPaths.Get()) {
             if (!bf::exists(libraryPath)) {
-                std::cerr << "No such file or directory: " << libraryPath << std::endl;
+                ldLog() << LD_ERROR << "No such file or directory: " << libraryPath << std::endl;
                 return 1;
             }
 
             if (!appDir.forceDeployLibrary(libraryPath)) {
-                std::cerr << "Failed to deploy library: " << libraryPath << std::endl;
+                ldLog() << LD_ERROR << "Failed to deploy library: " << libraryPath << std::endl;
                 return 1;
             }
         }
@@ -136,12 +136,12 @@ int main(int argc, char** argv) {
 
         for (const auto& executablePath : executablePaths.Get()) {
             if (!bf::exists(executablePath)) {
-                std::cerr << "No such file or directory: " << executablePath << std::endl;
+                ldLog() << LD_ERROR << "No such file or directory: " << executablePath << std::endl;
                 return 1;
             }
 
             if (!appDir.deployExecutable(executablePath)) {
-                std::cerr << "Failed to deploy executable: " << executablePath << std::endl;
+                ldLog() << LD_ERROR << "Failed to deploy executable: " << executablePath << std::endl;
                 return 1;
             }
         }
@@ -192,7 +192,7 @@ int main(int argc, char** argv) {
 
         for (const auto& iconPath : iconPaths.Get()) {
             if (!bf::exists(iconPath)) {
-                std::cerr << "No such file or directory: " << iconPath << std::endl;
+                ldLog() << LD_ERROR << "No such file or directory: " << iconPath << std::endl;
                 return 1;
             }
 
@@ -205,7 +205,7 @@ int main(int argc, char** argv) {
             }
 
             if (!iconDeployedSuccessfully) {
-                std::cerr << "Failed to deploy icon: " << iconPath << std::endl;
+                ldLog() << LD_ERROR << "Failed to deploy icon: " << iconPath << std::endl;
                 return 1;
             }
         }
@@ -216,14 +216,14 @@ int main(int argc, char** argv) {
 
         for (const auto& desktopFilePath : desktopFilePaths.Get()) {
             if (!bf::exists(desktopFilePath)) {
-                std::cerr << "No such file or directory: " << desktopFilePath << std::endl;
+                ldLog() << LD_ERROR << "No such file or directory: " << desktopFilePath << std::endl;
                 return 1;
             }
 
             desktopfile::DesktopFile desktopFile(desktopFilePath);
 
             if (!appDir.deployDesktopFile(desktopFile)) {
-                std::cerr << "Failed to deploy desktop file: " << desktopFilePath << std::endl;
+                ldLog() << LD_ERROR << "Failed to deploy desktop file: " << desktopFilePath << std::endl;
                 return 1;
             }
         }
