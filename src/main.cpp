@@ -54,6 +54,21 @@ int main(int argc, char** argv) {
         parser.ParseCLI(argc, argv);
     } catch (args::Help&) {
         std::cerr << parser;
+
+        // license information
+        std::cerr << std::endl
+                  << "===== library information =====" << std::endl
+                  << std::endl
+                  << "This software uses the great CImg library, as well as libjpeg and libpng as well as various Boost libraries and cpp-subprocess." << std::endl
+                  << std::endl
+                  << "libjpeg license information: this software is based in part on the work of the Independent JPEG Group" << std::endl
+                  << std::endl
+                  << "CImg license information: This software is governed either by the CeCILL or the CeCILL-C "
+                     "license under French law and abiding by the rules of distribution of free software. You can "
+                     "use, modify and or redistribute the software under the terms of the CeCILL or CeCILL-C "
+                     "licenses as circulated by CEA, CNRS and INRIA at the following URL: "
+                     "\"http://cecill.info\"." << std::endl;
+
         return 0;
     } catch (args::ParseError& e) {
         std::cerr << e.what() << std::endl;
