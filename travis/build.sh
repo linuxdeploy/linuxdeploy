@@ -37,7 +37,7 @@ fi
 
 cmake "$REPO_ROOT" -DSTATIC_BUILD=On -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=RelWithDebInfo "${EXTRA_CMAKE_ARGS[@]}"
 
-make -j$(nproc)
+make VERBOSE=1
 
 ## Run Unit Tests
 ctest -V
@@ -62,6 +62,8 @@ fi
 "$REPO_ROOT"/travis/build-static-patchelf.sh "$(readlink -f out/)"
 patchelf_path="$(readlink -f out/usr/bin/patchelf)"
 export PATH="$(readlink -f out/usr/bin):$PATH"
+
+ldd bin/linuxdeploy || true
 
 # args are used more than once
 LINUXDEPLOY_ARGS=("--appdir" "AppDir" "-e" "bin/linuxdeploy" "-i" "$REPO_ROOT/resources/linuxdeploy.png" "-d" "$REPO_ROOT/resources/linuxdeploy.desktop" "-e" "$patchelf_path" "-e" "$strip_path")

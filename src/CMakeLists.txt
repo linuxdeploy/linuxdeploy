@@ -59,6 +59,7 @@ if(STATIC_BUILD)
 
     # target_link_options is only supported by CMake 3.13+
     set_property(TARGET linuxdeploy PROPERTY LINK_OPTIONS -static -static-libgcc -static-libstdc++)
+    set_property(TARGET linuxdeploy PROPERTY INTERFACE_LINK_OPTIONS -static -static-libgcc -static-libstdc++)
 endif()
 
 
