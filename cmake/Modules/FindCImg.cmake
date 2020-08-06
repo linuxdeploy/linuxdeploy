@@ -8,12 +8,16 @@ pkg_check_modules(libpng REQUIRED IMPORTED_TARGET libpng)
 if(STATIC_BUILD)
     include(ExternalProject)
 
+    if($ENV{ARCH} STREQUAL i386 OR $ENV{ARCH} STREQUAL i586 OR $ENV{ARCH} STREQUAL i686)
+        set(configure_command_prefix env CFLAGS=-m32 CXXFLAGS=-m32)
+    endif()
+
     ExternalProject_Add(libjpeg_static_extproj
         URL https://www.ijg.org/files/jpegsrc.v9d.tar.gz
         URL_HASH SHA256=99cb50e48a4556bc571dadd27931955ff458aae32f68c4d9c39d624693f69c32
         BUILD_IN_SOURCE ON
         EXCLUDE_FROM_ALL ON
-        CONFIGURE_COMMAND ./configure --prefix=/usr
+        CONFIGURE_COMMAND ${configure_command_prefix} ./configure --prefix=/usr
         INSTALL_COMMAND ""
     )
 

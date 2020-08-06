@@ -35,7 +35,7 @@ else
     exit 1
 fi
 
-cmake "$REPO_ROOT" -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=RelWithDebInfo "${EXTRA_CMAKE_ARGS[@]}"
+cmake "$REPO_ROOT" -DSTATIC_BUILD=On -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=RelWithDebInfo "${EXTRA_CMAKE_ARGS[@]}"
 
 make -j$(nproc)
 
@@ -58,8 +58,13 @@ if [ "$ARCH" == "i386" ]; then
     export LD_LIBRARY_PATH=$(readlink -f out/usr/lib)
 fi
 
+# build patchelf
+"$REPO_ROOT"/travis/build-static-patchelf.sh "$(readlink -f out/)"
+patchelf_path="$(readlink -f out/usr/bin/patchelf)"
+export PATH="$(readlink -f out/usr/bin):$PATH"
+
 # args are used more than once
-LINUXDEPLOY_ARGS=("--appdir" "AppDir" "-e" "bin/linuxdeploy" "-i" "$REPO_ROOT/resources/linuxdeploy.png" "-d" "$REPO_ROOT/resources/linuxdeploy.desktop" "-e" "/usr/bin/patchelf" "-e" "$strip_path")
+LINUXDEPLOY_ARGS=("--appdir" "AppDir" "-e" "bin/linuxdeploy" "-i" "$REPO_ROOT/resources/linuxdeploy.png" "-d" "$REPO_ROOT/resources/linuxdeploy.desktop" "-e" "$patchelf_path" "-e" "$strip_path")
 
 # deploy patchelf which is a dependency of linuxdeploy
 bin/linuxdeploy "${LINUXDEPLOY_ARGS[@]}"
@@ -75,7 +80,7 @@ mv squashfs-root/ AppDir/plugins/linuxdeploy-plugin-appimage
 ln -s ../../plugins/linuxdeploy-plugin-appimage/AppRun AppDir/usr/bin/linuxdeploy-plugin-appimage
 
 export UPD_INFO="gh-releases-zsync|linuxdeploy|linuxdeploy|continuous|linuxdeploy-$ARCH.AppImage.zsync"
-export OUTPUT="linuxdeploy-devbuild-$ARCH.AppImage"
+export OUTPUT="linuxdeploy-$ARCH.AppImage"
 
 # build AppImage using plugin
 AppDir/usr/bin/linuxdeploy-plugin-appimage --appdir AppDir/
