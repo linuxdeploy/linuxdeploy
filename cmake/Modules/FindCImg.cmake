@@ -8,7 +8,7 @@ pkg_check_modules(libpng REQUIRED IMPORTED_TARGET libpng)
 if(STATIC_BUILD)
     include(ExternalProject)
 
-    if($ENV{ARCH} STREQUAL i386 OR $ENV{ARCH} STREQUAL i586 OR $ENV{ARCH} STREQUAL i686)
+    if($ENV{ARCH} MATCHES "i[356]86")
         set(configure_command_prefix env CFLAGS=-m32 CXXFLAGS=-m32)
     endif()
 
