@@ -54,6 +54,14 @@ target_compile_definitions(linuxdeploy PRIVATE -DLD_VERSION="${VERSION}")
 target_compile_definitions(linuxdeploy PRIVATE -DLD_BUILD_NUMBER="${BUILD_NUMBER}")
 target_compile_definitions(linuxdeploy PRIVATE -DLD_BUILD_DATE="${DATE}")
 
+if(STATIC_BUILD)
+    message(WARNING "static builds enabled")
+
+    # target_link_options is only supported by CMake 3.13+
+    set_property(TARGET linuxdeploy PROPERTY LINK_OPTIONS -static -static-libgcc -static-libstdc++)
+endif()
+
+
 add_executable(plugin_test plugin_test_main.cpp)
 target_link_libraries(plugin_test linuxdeploy_plugin)
 set_target_properties(plugin_test PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin")

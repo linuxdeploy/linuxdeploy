@@ -1,8 +1,31 @@
 # required for PNG imported target
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.6)
 
-find_package(PNG REQUIRED)
-find_package(JPEG REQUIRED)
+find_package(PkgConfig)
+pkg_check_modules(libpng REQUIRED IMPORTED_TARGET libpng)
+
+# build custom static version of libjpeg for static builds
+if(STATIC_BUILD)
+    include(ExternalProject)
+
+    ExternalProject_Add(libjpeg_static_extproj
+        URL https://www.ijg.org/files/jpegsrc.v9d.tar.gz
+        URL_HASH SHA256=99cb50e48a4556bc571dadd27931955ff458aae32f68c4d9c39d624693f69c32
+        BUILD_IN_SOURCE ON
+        EXCLUDE_FROM_ALL ON
+        CONFIGURE_COMMAND ./configure --prefix=/usr
+        INSTALL_COMMAND ""
+    )
+
+    ExternalProject_Get_property(libjpeg_static_extproj SOURCE_DIR)
+    add_library(libjpeg_static INTERFACE IMPORTED)
+    set_property(TARGET libjpeg_static PROPERTY INTERFACE_LINK_LIBRARIES ${SOURCE_DIR}/.libs/libjpeg.a)
+    add_dependencies(libjpeg_static libjpeg_static_extproj)
+
+    set(JPEG_LIBRARIES libjpeg_static)
+else()
+    find_package(JPEG REQUIRED)
+endif()
 
 if(NOT USE_SYSTEM_CIMG)
     message(STATUS "Using bundled CImg library")
@@ -22,7 +45,16 @@ else()
     endif()
 endif()
 
+set(PNG_INCLUDE_DIR ${libpng_INCLUDE_DIRS})
+if(NOT STATIC_BUILD)
+    set(PNG_LIBRARY ${libpng_LIBRARIES})
+else()
+    set(PNG_LIBRARY ${libpng_STATIC_LIBRARIES})
+endif()
+
+#message(FATAL_ERROR "${PNG_LIBRARY}")
+
 add_library(CImg INTERFACE)
-set_property(TARGET CImg PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${CIMG_H_DIR};${JPEG_INCLUDE_DIR}")
-set_property(TARGET CImg PROPERTY INTERFACE_LINK_LIBRARIES "PNG::PNG;${JPEG_LIBRARIES}")
+set_property(TARGET CImg PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${CIMG_H_DIR};${PNG_INCLUDE_DIR};${JPEG_INCLUDE_DIR}")
+set_property(TARGET CImg PROPERTY INTERFACE_LINK_LIBRARIES "${PNG_LIBRARY};${JPEG_LIBRARIES}")
 set_property(TARGET CImg PROPERTY INTERFACE_COMPILE_DEFINITIONS "cimg_display=0;cimg_use_png=1;cimg_use_jpeg=1")
