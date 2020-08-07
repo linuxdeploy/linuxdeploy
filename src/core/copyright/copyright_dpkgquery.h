@@ -1,6 +1,3 @@
-// library includes
-#include <subprocess.hpp>
-
 // local includes
 #include "copyright.h"
 

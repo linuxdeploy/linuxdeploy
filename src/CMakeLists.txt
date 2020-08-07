@@ -43,6 +43,7 @@ execute_process(
 
 add_subdirectory(util)
 add_subdirectory(plugin)
+add_subdirectory(subprocess)
 add_subdirectory(core)
 
 add_executable(linuxdeploy main.cpp core.cpp)
@@ -65,7 +66,7 @@ add_executable(plugin_test plugin_test_main.cpp)
 target_link_libraries(plugin_test linuxdeploy_plugin)
 set_target_properties(plugin_test PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin")
 
-add_executable(appdir_test appdir_test_main.cpp)
+add_executable(appdir_test appdir_test_main.cpp ../include/linuxdeploy/util/assert.h)
 target_link_libraries(appdir_test linuxdeploy_core args)
 target_include_directories(appdir_test PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/core)
 set_target_properties(appdir_test PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin")

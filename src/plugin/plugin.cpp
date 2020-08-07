@@ -7,7 +7,6 @@
 #include <boost/filesystem.hpp>
 #include <boost/regex.hpp>
 #include <fnmatch.h>
-#include <subprocess.hpp>
 
 // local headers
 #include "linuxdeploy/core/log.h"

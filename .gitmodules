@@ -1,6 +1,3 @@
-[submodule "lib/cpp-subprocess"]
-	path = lib/cpp-subprocess
-	url = https://github.com/arun11299/cpp-subprocess.git
 [submodule "lib/args"]
 	path = lib/args
 	url = https://github.com/Taywee/args.git

@@ -2,16 +2,18 @@
 #include <set>
 #include <string>
 #include <vector>
+#include <fcntl.h>
 #include <poll.h>
 
 // library headers
 #include <boost/filesystem.hpp>
 #include <fnmatch.h>
-#include <subprocess.hpp>
+#include <thread>
 
 // local headers
 #include "linuxdeploy/core/log.h"
 #include "linuxdeploy/util/util.h"
+#include "linuxdeploy/subprocess/process.h"
 
 #pragma once
 
@@ -46,8 +48,8 @@ namespace linuxdeploy {
 
                 private:
                     int getApiLevelFromExecutable() {
-                        auto output = subprocess::check_output({pluginPath.c_str(), "--plugin-api-version"});
-                        std::string stdoutOutput = output.buf.data();
+                        const subprocess::subprocess proc({pluginPath.string(), "--plugin-api-version"});
+                        const auto stdoutOutput = proc.check_output();
 
                         try {
                             auto apiLevel = std::stoi(stdoutOutput);
@@ -63,9 +65,8 @@ namespace linuxdeploy {
 
                         // check whether plugin implements --plugin-type
                         try {
-                            auto output = subprocess::check_output({pluginPath.c_str(), "--plugin-type"});
-
-                            std::string stdoutOutput = output.buf.data();
+                            const subprocess::subprocess proc({pluginPath.c_str(), "--plugin-type"});
+                            const auto stdoutOutput = proc.check_output();
 
                             // the specification requires a single line, but we'll silently accept more than that, too
                             if (std::count(stdoutOutput.begin(), stdoutOutput.end(), '\n') >= 1) {
@@ -76,7 +77,7 @@ namespace linuxdeploy {
                                 else if (firstLine == "output")
                                     type = OUTPUT_TYPE;
                             }
-                        } catch (const subprocess::CalledProcessError&) {}
+                        } catch (const std::logic_error&) {}
 
                         return type;
                     }
@@ -127,8 +128,8 @@ namespace linuxdeploy {
 
             template<int API_LEVEL>
             int PluginBase<API_LEVEL>::run(const boost::filesystem::path& appDirPath) {
-                auto pluginPath = path();
-                auto args = {pluginPath.c_str(), "--appdir", appDirPath.string().c_str()};
+                const auto pluginPath = path();
+                const std::initializer_list<std::string> args = {pluginPath.string(), "--appdir", appDirPath.string()};
 
                 auto log = ldLog();
                 log << "Running process:";
@@ -137,7 +138,7 @@ namespace linuxdeploy {
                 }
                 log << std::endl;
 
-                std::map<std::string, std::string> environmentVariables{};
+                subprocess::subprocess_env_map_t environmentVariables{};
 
                 if (this->pluginType() == PLUGIN_TYPE::INPUT_TYPE) {
                     // add $LINUXDEPLOY, which points to the current binary
@@ -146,27 +147,22 @@ namespace linuxdeploy {
                     environmentVariables["LINUXDEPLOY"] = linuxdeploy::util::getOwnExecutablePath();
                 }
 
-                auto process = subprocess::Popen(
-                    args,
-                    subprocess::output{subprocess::PIPE},
-                    subprocess::error{subprocess::PIPE},
-                    subprocess::environment{environmentVariables}
-                );
+                subprocess::process process(args, environmentVariables);
 
                 std::vector<pollfd> pfds(2);
                 auto* opfd = &pfds[0];
                 auto* epfd = &pfds[1];
 
-                opfd->fd = fileno(process.output());
+                opfd->fd = process.stdout_fd();
                 opfd->events = POLLIN;
 
-                epfd->fd = fileno(process.error());
+                epfd->fd = process.stderr_fd();
                 epfd->events = POLLIN;
 
-                for (const auto& fd : {process.output(), process.error()}) {
-                    auto flags = fcntl(fileno(fd), F_GETFL, 0);
+                for (const auto& fd : {process.stdout_fd(), process.stderr_fd()}) {
+                    auto flags = fcntl(fd, F_GETFL, 0);
                     flags |= O_NONBLOCK;
-                    fcntl(fileno(fd), F_SETFL, flags);
+                    fcntl(fd, F_SETFL, flags);
                 }
 
                 auto printOutput = [&pfds, opfd, epfd, this, &process]() {
@@ -207,11 +203,10 @@ namespace linuxdeploy {
                             throw std::runtime_error("Buffer overflow");
 
                         while (true) {
-                            auto bytesRead = fread(
+                            auto bytesRead = read(
+                                process.stdout_fd(),
                                 reinterpret_cast<void*>(stdoutBuf.data() + stdoutBufSize),
-                                sizeof(char),
-                                static_cast<size_t>(stdoutBuf.size() - stdoutBufSize),
-                                process.output()
+                                static_cast<size_t>(stdoutBuf.size() - stdoutBufSize)
                             );
 
                             if (bytesRead == 0)
@@ -230,11 +225,10 @@ namespace linuxdeploy {
                             throw std::runtime_error("Buffer overflow");
 
                         while (true) {
-                            auto bytesRead = fread(
+                            auto bytesRead = read(
+                                process.stderr_fd(),
                                 reinterpret_cast<void*>(stderrBuf.data() + stderrBufSize),
-                                sizeof(char),
-                                static_cast<size_t>(stderrBuf.size() - stderrBufSize),
-                                process.error()
+                                static_cast<size_t>(stderrBuf.size() - stderrBufSize)
                             );
 
                             if (bytesRead == 0)
@@ -251,15 +245,13 @@ namespace linuxdeploy {
                     return true;
                 };
 
-                int retcode;
-
                 do {
                     if (!printOutput()) {
                         ldLog() << LD_ERROR << "Failed to communicate with process" << std::endl;
                         process.kill();
                         return -1;
                     }
-                } while ((retcode = process.poll()) < 0);
+                } while (process.poll());
 
                 if (!printOutput()) {
                     ldLog() << LD_ERROR << "Failed to communicate with process" << std::endl;
@@ -267,6 +259,7 @@ namespace linuxdeploy {
                     return -1;
                 }
 
+                const auto retcode = process.close();
                 return retcode;
             }
         }

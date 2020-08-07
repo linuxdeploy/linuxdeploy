@@ -1,5 +1,6 @@
 // system headers
 #include <set>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -7,7 +8,6 @@
 #include <boost/filesystem.hpp>
 #include <CImg.h>
 #include <fnmatch.h>
-#include <subprocess.hpp>
 
 
 // local headers
@@ -16,6 +16,7 @@
 #include "linuxdeploy/core/log.h"
 #include "linuxdeploy/desktopfile/desktopfileentry.h"
 #include "linuxdeploy/util/util.h"
+#include "linuxdeploy/subprocess/subprocess.h"
 #include "copyright.h"
 
 // auto-generated headers
@@ -187,19 +188,15 @@ namespace linuxdeploy {
                                 } else {
                                     ldLog() << "Calling strip on library" << filePath << std::endl;
 
-                                    std::map<std::string, std::string> env;
+                                    subprocess::subprocess_env_map_t env;
                                     env.insert(std::make_pair(std::string("LC_ALL"), std::string("C")));
 
-                                    subprocess::Popen proc(
-                                        {stripPath.c_str(), filePath.c_str()},
-                                        subprocess::output(subprocess::PIPE),
-                                        subprocess::error(subprocess::PIPE),
-                                        subprocess::environment(env)
-                                    );
+                                    subprocess::subprocess proc({stripPath, filePath.string()}, env);
 
-                                    std::string err = util::subprocess::check_output_error(proc).second;
+                                    const auto result = proc.run();
+                                    const auto& err = result.stderr_string();
 
-                                    if (proc.retcode() != 0 &&
+                                    if (result.exit_code() != 0 &&
                                         !util::stringContains(err, "Not enough room for program headers")) {
                                         ldLog() << LD_ERROR << "Strip call failed:" << err << std::endl;
                                         success = false;
