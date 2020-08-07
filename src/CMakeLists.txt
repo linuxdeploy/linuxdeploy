@@ -1,5 +1,5 @@
 # 3.5 is required for imported boost targets
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.5)
 
 # globally include own includes
 include_directories(${PROJECT_SOURCE_DIR}/include)
@@ -56,7 +56,7 @@ target_compile_definitions(linuxdeploy PRIVATE -DLD_BUILD_DATE="${DATE}")
 
 if(STATIC_BUILD)
     message(WARNING "static builds enabled")
-
+    cmake_minimum_required(VERSION 3.13)
     target_link_options(linuxdeploy PUBLIC -static -static-libgcc -static-libstdc++)
 endif()
 
