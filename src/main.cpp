@@ -59,7 +59,7 @@ int main(int argc, char** argv) {
         std::cerr << std::endl
                   << "===== library information =====" << std::endl
                   << std::endl
-                  << "This software uses the great CImg library, as well as libjpeg and libpng as well as various Boost libraries and cpp-subprocess." << std::endl
+                  << "This software uses the great CImg library, as well as libjpeg and libpng as well as various Boost libraries." << std::endl
                   << std::endl
                   << "libjpeg license information: this software is based in part on the work of the Independent JPEG Group" << std::endl
                   << std::endl
