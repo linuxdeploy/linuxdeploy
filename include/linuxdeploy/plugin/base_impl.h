@@ -177,7 +177,7 @@ namespace linuxdeploy {
 
                             if (firstLineFeed == buf.end() && firstCarriageReturn == buf.end())
                                 break;
-                            
+
                             const auto endOfLine = std::min(firstLineFeed, firstCarriageReturn);
 
                             std::string line(buf.begin(), endOfLine+1);
