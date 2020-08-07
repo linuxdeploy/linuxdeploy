@@ -20,7 +20,7 @@ namespace linuxdeploy {
             // process exited
             bool exited_ = false;
             // exit code -- will be initialized by close()
-            int exit_code_;
+            int exit_code_ = -1;
 
             // these constants help make the pipe code more readable
             static constexpr int READ_END_ = 0, WRITE_END_ = 1;
