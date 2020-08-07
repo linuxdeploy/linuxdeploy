@@ -54,8 +54,6 @@ process::process(const std::vector<std::string>& args, const subprocess_env_map_
         throw std::runtime_error{"fork() failed"};
     }
 
-    std::cout << "child pid: " << std::to_string(child_pid_) << std::endl;
-
     if (child_pid_ == 0) {
         // we're in the child process
 
@@ -189,4 +187,25 @@ std::vector<char*> process::make_env_vector_(const subprocess_env_map_t& env) {
     rv.emplace_back(nullptr);
 
     return rv;
+}
+
+void process::kill(int signal) const {
+    if (::kill(child_pid_, signal) != 0) {
+        throw std::logic_error{"failed to kill child process"};
+    }
+}
+
+bool process::poll() {
+    if (exited_) {
+        return false;
+    }
+
+    int temporary;
+
+    if (waitpid(child_pid_, &temporary, WNOHANG) != 0) {
+        return true;
+    }
+
+    exit_code_ = WEXITSTATUS(temporary);
+    return false;
 }

@@ -1,6 +1,7 @@
 // system headers
 #include <unordered_map>
 #include <vector>
+#include <signal.h>
 
 // local headers
 #include "linuxdeploy/subprocess/subprocess.h"
@@ -62,10 +63,22 @@ namespace linuxdeploy {
             int stderr_fd() const;
 
             /**
-             * Close all pipes and wait for process to exit. If process was closed already, just returns exit code.
+             * Close all pipes and wait for process to exit.
+             * If process is not running any more, just returns exit code.
              * @return child process's exit code
              */
             int close();
+
+            /**
+             * Kill underlying process with given signal. By default, SIGTERM is used to end the process.
+             */
+            void kill(int signal = SIGTERM) const;
+
+            /**
+             * Check whether process is still alive. Use close() to fetch exit code.
+             * @return true while process is alive, false otherwise
+             */
+            bool poll();
         };
     }
 }
