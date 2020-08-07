@@ -339,8 +339,7 @@ int main(int argc, char** argv) {
             auto retcode = plugin->run(appDir.path());
 
             if (retcode != 0) {
-                ldLog() << LD_ERROR << "Failed to run plugin:" << pluginName << std::endl;
-                ldLog() << LD_DEBUG << "Exited with return code:" << retcode << std::endl;
+                ldLog() << LD_ERROR << "Failed to run plugin:" << pluginName << "(exit code:" << retcode << LD_NO_SPACE << ")" << std::endl;
                 return 1;
             }
         }
