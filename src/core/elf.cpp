@@ -149,7 +149,7 @@ namespace linuxdeploy {
                 std::vector<bf::path> paths;
 
                 subprocess::subprocess_env_map_t env;
-                env.insert(std::make_pair(std::string("LC_ALL"), std::string("C")));
+                env["LC_ALL"] = "C";
 
                 // workaround for https://sourceware.org/bugzilla/show_bug.cgi?id=25263
                 // when you pass an absolute path to ldd, it can find libraries referenced in the rpath properly
@@ -159,12 +159,21 @@ namespace linuxdeploy {
 
                 subprocess::subprocess lddProc({"ldd", resolvedPath.string()}, env);
 
-                const auto stdoutContents = lddProc.check_output();
+                const auto result = lddProc.run();
+
+                if (result.exit_code() != 0) {
+                    if (result.stdout_string().find("not a dynamic executable") != std::string::npos) {
+                        ldLog() << LD_WARNING << this->d->path << "is not linked dynamically" << std::endl;
+                        return {};
+                    }
+
+                    throw std::runtime_error{"Failed to run ldd: exited with code " + std::to_string(result.exit_code())};
+                }
 
                 const boost::regex expr(R"(\s*(.+)\s+\=>\s+(.+)\s+\((.+)\)\s*)");
                 boost::smatch what;
 
-                for (const auto& line : util::splitLines(stdoutContents)) {
+                for (const auto& line : util::splitLines(result.stdout_string())) {
                     if (boost::regex_search(line, what, expr)) {
                         auto libraryPath = what[2].str();
                         util::trim(libraryPath);
