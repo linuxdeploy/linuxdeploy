@@ -104,7 +104,7 @@ process::process(const std::vector<std::string>& args, const subprocess_env_map_
 }
 
 int process::close() {
-    if (exited_) {
+    if (!exited_) {
         ::close(stdout_fd_);
         stdout_fd_ = -1;
 
@@ -114,11 +114,12 @@ int process::close() {
         {
             int temporary;
 
-            if (waitpid(child_pid_, &temporary, 0) != 0) {
+            if (waitpid(child_pid_, &temporary, 0) == -1) {
                 throw std::logic_error{"waitpid() failed"};
             }
 
             exit_code_ = WEXITSTATUS(temporary);
+            exited_ = true;
         }
     }
 
