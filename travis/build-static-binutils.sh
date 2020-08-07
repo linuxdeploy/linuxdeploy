@@ -47,18 +47,13 @@ pushd "$BUILD_DIR"
 wget https://ftp.gnu.org/gnu/binutils/binutils-2.35.tar.xz -O- | tar xJ --strip-components=1
 
 # configure static build
-# unfortunately, these flags have no real effect for the build, but hey, at least we try
-common_flags="-static -static-libgcc -static-libstdc++"
-export CFLAGS="$common_flags $CFLAGS"
-export CXXFLAGS="$common_flags $CXXFLAGS"
-export LDFLAGS="$common_flags $LDFLAGS"
+# inspired by https://github.com/andrew-d/static-binaries/blob/master/binutils/build.sh
+./configure --prefix=/usr --disable-nls --enable-static-link --disable-shared-plugins --disable-dynamicplugin --disable-tls --disable-pie
 
-# this flag apparently breaks down the dependency to a minimum of libc functions and allows us to run the tool
-# on very old distros
-./configure --prefix=/usr --with-static-standard-libraries
-
-# build binary
+# citing the script linked above: "This strange dance is required to get things to be statically linked."
 make -j "$(nproc)"
+make clean
+make -j "$(nproc)" LDFLAGS="-all-static"
 
 # install into user-specified destdir
 make install DESTDIR="$(readlink -f "$INSTALL_DESTDIR")"

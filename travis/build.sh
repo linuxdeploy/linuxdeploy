@@ -54,7 +54,7 @@ ctest -V
 patchelf_path="$(readlink -f out/usr/bin/patchelf)"
 
 # build custom strip
-"$REPO_ROOT"/travis/build-mostly-static-binutils.sh "$(readlink -f out/)"
+"$REPO_ROOT"/travis/build-static-binutils.sh "$(readlink -f out/)"
 strip_path="$(readlink -f out/usr/bin/strip)"
 
 # use tools we just built for linuxdeploy run
