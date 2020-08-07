@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "subprocess.h"
+#include "linuxdeploy/subprocess/subprocess.h"
 
 using namespace linuxdeploy::subprocess;
 

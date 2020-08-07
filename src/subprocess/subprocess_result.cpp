@@ -1,5 +1,5 @@
 // local headers
-#include "subprocess_result.h"
+#include "linuxdeploy/subprocess/subprocess_result.h"
 
 // shorter than using namespace ...
 using namespace linuxdeploy::subprocess;

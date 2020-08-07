@@ -19,12 +19,6 @@ namespace linuxdeploy {
             std::vector<std::string> args_{};
             std::unordered_map<std::string, std::string> env_{};
 
-            void assert_args_not_empty_() const;
-
-            std::vector<char*> make_args_vector_() const;
-
-            std::vector<char*> make_env_vector_() const;
-
         public:
             subprocess(std::initializer_list<std::string> args, subprocess_env_map_t env = {});
 
