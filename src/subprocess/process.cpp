@@ -115,7 +115,11 @@ int process::close() {
 
         {
             int temporary;
-            waitpid(child_pid_, &temporary, 0);
+
+            if (waitpid(child_pid_, &temporary, 0) != 0) {
+                throw std::logic_error{"waitpid() failed"};
+            }
+
             exit_code_ = WEXITSTATUS(temporary);
         }
     }
