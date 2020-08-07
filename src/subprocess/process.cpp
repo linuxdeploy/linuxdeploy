@@ -32,8 +32,7 @@ int process::stderr_fd() const {
 process::process(std::initializer_list<std::string> args, const subprocess_env_map_t& env)
     : process(std::vector<std::string>(args), env) {}
 
-process::process(const std::vector<std::string>& args, const subprocess_env_map_t& env)
-    : exited_(false), exit_code_(0) {
+process::process(const std::vector<std::string>& args, const subprocess_env_map_t& env) {
     // preconditions
     util::assert::assert_not_empty(args);
 

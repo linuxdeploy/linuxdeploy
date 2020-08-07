@@ -11,11 +11,11 @@ namespace linuxdeploy {
         class process {
         private:
             // child process ID
-            int child_pid_;
+            int child_pid_ = -1;
 
             // pipes to child process's stdout/stderr
-            int stdout_fd_;
-            int stderr_fd_;
+            int stdout_fd_ = -1;
+            int stderr_fd_ = -1;
 
             // process exited
             bool exited_ = false;
