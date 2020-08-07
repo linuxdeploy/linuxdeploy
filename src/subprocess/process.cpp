@@ -112,14 +112,19 @@ int process::close() {
         stderr_fd_ = -1;
 
         {
-            int temporary;
+            int status;
 
-            if (waitpid(child_pid_, &temporary, 0) == -1) {
+            if (waitpid(child_pid_, &status, 0) == -1) {
                 throw std::logic_error{"waitpid() failed"};
             }
 
-            exit_code_ = WEXITSTATUS(temporary);
             exited_ = true;
+
+            if (WIFEXITED(status) != 0) {
+                exit_code_ = WEXITSTATUS(status);
+            } else if (WIFSIGNALED(status)) {
+                exit_code_ = WTERMSIG(status);
+            }
         }
     }
 
@@ -194,19 +199,43 @@ void process::kill(int signal) const {
     if (::kill(child_pid_, signal) != 0) {
         throw std::logic_error{"failed to kill child process"};
     }
+
+    if (waitpid(child_pid_, nullptr, 0)) {
+        throw std::logic_error{"failed to wait for killed child"};
+    }
 }
 
-bool process::poll() {
+bool process::is_running() {
     if (exited_) {
         return false;
     }
 
-    int temporary;
+    int status;
+    auto result = waitpid(child_pid_, &status, WNOHANG);
 
-    if (waitpid(child_pid_, &temporary, WNOHANG) != 0) {
+    if (result == 0) {
         return true;
     }
 
-    exit_code_ = WEXITSTATUS(temporary);
-    return false;
+    if (result == child_pid_) {
+        exited_ = true;
+
+        if (WIFSIGNALED(status) != 0) {
+            exit_code_ = WTERMSIG(status);
+        } else if (WIFEXITED(status) != 0) {
+            exit_code_ = WEXITSTATUS(status);
+        } else {
+            throw std::logic_error{"unknown child process state"};
+        }
+
+        return false;
+    }
+
+    if (result < 0) {
+        // TODO: check errno == ECHILD
+        throw std::logic_error{"waitpid() failed: " + std::string(strerror(errno))};
+    }
+
+    // can only happen if waitpid() returns an unknown process ID
+    throw std::logic_error{"unknown error occured"};
 }

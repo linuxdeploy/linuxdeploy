@@ -195,48 +195,48 @@ namespace linuxdeploy {
 
                     std::vector<char> stdoutBuf(16 * 1024);
                     std::vector<char> stderrBuf(16 * 1024);
-                    size_t stdoutBufSize = 0;
-                    size_t stderrBufSize = 0;
+                    size_t currentStdoutBufSize = 0;
+                    size_t currentStderrBufSize = 0;
 
-                    if (opfd->revents & POLLIN) {
-                        if (stdoutBufSize >= stdoutBuf.size())
+                    if ((opfd->revents & POLLIN) != 0) {
+                        if (currentStdoutBufSize >= stdoutBuf.size())
                             throw std::runtime_error("Buffer overflow");
 
                         while (true) {
                             auto bytesRead = read(
                                 process.stdout_fd(),
-                                reinterpret_cast<void*>(stdoutBuf.data() + stdoutBufSize),
-                                static_cast<size_t>(stdoutBuf.size() - stdoutBufSize)
+                                reinterpret_cast<void*>(stdoutBuf.data() + currentStdoutBufSize),
+                                static_cast<size_t>(stdoutBuf.size() - currentStdoutBufSize)
                             );
 
                             if (bytesRead == 0)
                                 break;
 
-                            stdoutBufSize += bytesRead;
+                            currentStdoutBufSize += bytesRead;
 
-                            printUntilLastLine(stdoutBuf, stdoutBufSize, "stdout");
+                            printUntilLastLine(stdoutBuf, currentStdoutBufSize, "stdout");
                         }
                     }
 
                     std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
-                    if (epfd->revents & POLLIN) {
-                        if (stderrBufSize >= stderrBuf.size())
+                    if ((epfd->revents & POLLIN) != 0) {
+                        if (currentStderrBufSize >= stderrBuf.size())
                             throw std::runtime_error("Buffer overflow");
 
                         while (true) {
                             auto bytesRead = read(
                                 process.stderr_fd(),
-                                reinterpret_cast<void*>(stderrBuf.data() + stderrBufSize),
-                                static_cast<size_t>(stderrBuf.size() - stderrBufSize)
+                                reinterpret_cast<void*>(stderrBuf.data() + currentStderrBufSize),
+                                static_cast<size_t>(stderrBuf.size() - currentStderrBufSize)
                             );
 
                             if (bytesRead == 0)
                                 break;
 
-                            stderrBufSize += bytesRead;
+                            currentStderrBufSize += bytesRead;
 
-                            printUntilLastLine(stderrBuf, stderrBufSize, "stderr");
+                            printUntilLastLine(stderrBuf, currentStderrBufSize, "stderr");
                         }
                     }
 
@@ -251,7 +251,7 @@ namespace linuxdeploy {
                         process.kill();
                         return -1;
                     }
-                } while (process.poll());
+                } while (process.is_running());
 
                 if (!printOutput()) {
                     ldLog() << LD_ERROR << "Failed to communicate with process" << std::endl;
