@@ -118,12 +118,7 @@ int process::close() {
             }
 
             exited_ = true;
-
-            if (WIFEXITED(status) != 0) {
-                exit_code_ = WEXITSTATUS(status);
-            } else if (WIFSIGNALED(status)) {
-                exit_code_ = WTERMSIG(status);
-            }
+            exit_code_ = check_waitpid_status_(status);
         }
     }
 
@@ -219,13 +214,7 @@ bool process::is_running() {
     if (result == child_pid_) {
         exited_ = true;
 
-        if (WIFSIGNALED(status) != 0) {
-            exit_code_ = WTERMSIG(status);
-        } else if (WIFEXITED(status) != 0) {
-            exit_code_ = WEXITSTATUS(status);
-        } else {
-            throw std::logic_error{"unknown child process state"};
-        }
+        exit_code_ = check_waitpid_status_(status);
 
         return false;
     }
@@ -237,4 +226,15 @@ bool process::is_running() {
 
     // can only happen if waitpid() returns an unknown process ID
     throw std::logic_error{"unknown error occured"};
+}
+
+int process::check_waitpid_status_(int status) {
+    if (WIFSIGNALED(status) != 0) {
+        // TODO: consider treating child exit caused by signals separately
+        return WTERMSIG(status);
+    } else if (WIFEXITED(status) != 0) {
+        return WEXITSTATUS(status);
+    }
+
+    throw std::logic_error{"unknown child process state"};
 }
