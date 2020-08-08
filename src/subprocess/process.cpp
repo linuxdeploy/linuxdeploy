@@ -177,7 +177,7 @@ std::vector<char*> process::make_env_vector_(const subprocess_env_map_t& env) {
                 throw std::runtime_error{"no equal sign in environment variable"};
             }
 
-            return strncmp(existing_env_var, key.c_str(), equal_sign - existing_env_var) == 0;
+            return strncmp(existing_env_var, key.c_str(), std::distance(equal_sign, existing_env_var)) == 0;
         };
 
         // delete existing env var, if any
