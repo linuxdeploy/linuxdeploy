@@ -88,6 +88,17 @@ process::process(const std::vector<std::string>& args, const subprocess_env_map_
         execvpe(args.front().c_str(), exec_args.data(), exec_env.data());
 
         // only reached if exec* fails
+
+        // clean up memory if exec should ever return
+        // prevents memleaks if the exception below would be handled by a caller
+        auto deleter = [](char* ptr) {
+            free(ptr);
+            ptr = nullptr;
+        };
+
+        std::for_each(exec_args.begin(), exec_args.end(), deleter);
+        std::for_each(exec_env.begin(), exec_env.end(), deleter);
+
         throw std::runtime_error{"exec() failed: " + std::string(strerror(errno))};
     }
 
