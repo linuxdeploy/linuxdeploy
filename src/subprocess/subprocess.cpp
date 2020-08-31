@@ -9,69 +9,69 @@
 // local headers
 #include "linuxdeploy/subprocess/subprocess.h"
 #include "linuxdeploy/subprocess/process.h"
+#include "linuxdeploy/subprocess/pipe_reader.h"
 #include "linuxdeploy/util/assert.h"
 
-// shorter than using namespace ...
-using namespace linuxdeploy::subprocess;
+namespace linuxdeploy {
+    namespace subprocess {
+        subprocess::subprocess(std::initializer_list<std::string> args, subprocess_env_map_t env)
+            : subprocess(std::vector<std::string>(args), std::move(env)) {}
 
-subprocess::subprocess(std::initializer_list<std::string> args, subprocess_env_map_t env)
-    : subprocess(std::vector<std::string>(args), std::move(env)) {}
-
-subprocess::subprocess(std::vector<std::string> args, subprocess_env_map_t env)
-    : args_(std::move(args)), env_(std::move(env)) {
-    // preconditions
-    util::assert::assert_not_empty(args_);
-}
-
-subprocess_result subprocess::run() const {
-    process proc{args_, env_};
-
-    subprocess_result_buffer_t stdout_contents{};
-    subprocess_result_buffer_t stderr_contents{};
-
-    auto read_into_buffer = [](int fd, subprocess_result_buffer_t& out_buffer) {
-        // intermediate buffer
-        subprocess_result_buffer_t buffer(4096);
-
-        for (;;) {
-            const auto bytes_read = read(fd, buffer.data(), buffer.size());
-
-            if (bytes_read == -1) {
-                // handle interrupts properly
-                if (errno == EINTR) {
-                    continue;
-                }
-
-                throw std::logic_error{"failed to read from fd"};
-            }
-
-            if (bytes_read == 0) {
-                break;
-            }
-
-            std::copy(buffer.begin(), buffer.begin() + bytes_read, std::back_inserter(out_buffer));
+        subprocess::subprocess(std::vector<std::string> args, subprocess_env_map_t env)
+            : args_(std::move(args)), env_(std::move(env)) {
+            // preconditions
+            util::assert::assert_not_empty(args_);
         }
-    };
 
-    // TODO: make sure neither stderr nor stdout overflow
-    read_into_buffer(proc.stdout_fd(), stdout_contents);
-    read_into_buffer(proc.stderr_fd(), stderr_contents);
+        subprocess_result subprocess::run() const {
+            process proc{args_, env_};
 
-    // make sure contents are null-terminated
-    stdout_contents.emplace_back('\0');
-    stderr_contents.emplace_back('\0');
+            // create pipe readers and empty buffers for both stdout and stderr
+            // we manage them in this (admittedly, kind of complex-looking) array so we can later easily perform the
+            // operations in a loop
+            std::array<std::pair<pipe_reader, subprocess_result_buffer_t>, 2> buffers{
+                std::make_pair(pipe_reader(proc.stdout_fd()), subprocess_result_buffer_t{}),
+                std::make_pair(pipe_reader(proc.stderr_fd()), subprocess_result_buffer_t{}),
+            };
 
-    auto exit_code = proc.close();
+            // TODO: add some sleep to reduce load on CPU with longer-running tasks
+            do {
+                for (auto& pair : buffers) {
+                    // make code more readable
+                    auto& reader = pair.first;
+                    auto& buffer = pair.second;
 
-    return subprocess_result{exit_code, stdout_contents, stderr_contents};
-}
+                    // read some bytes into smaller intermediate buffer to prevent either of the pipes to overflow
+                    // the results are immediately appended to the main buffer
+                    subprocess_result_buffer_t intermediate_buffer(4096);
 
-std::string subprocess::check_output() const {
-    const auto result = run();
+                    // (try to) read from pipe
+                    const auto bytes_read = reader.read(intermediate_buffer);
 
-    if (result.exit_code() != 0) {
-        throw std::logic_error{"subprocess failed (exit code " + std::to_string(result.exit_code()) + ")"};
+                    // append to main buffer
+                    buffer.reserve(buffer.size() + bytes_read);
+                    std::copy(intermediate_buffer.begin(), (intermediate_buffer.begin() + bytes_read),
+                              std::back_inserter(buffer));
+                }
+            } while (proc.is_running());
+
+            // make sure contents are null-terminated
+            buffers[0].second.emplace_back('\0');
+            buffers[1].second.emplace_back('\0');
+
+            auto exit_code = proc.close();
+
+            return subprocess_result{exit_code, buffers[0].second, buffers[1].second};
+        }
+
+        std::string subprocess::check_output() const {
+            const auto result = run();
+
+            if (result.exit_code() != 0) {
+                throw std::logic_error{"subprocess failed (exit code " + std::to_string(result.exit_code()) + ")"};
+            }
+
+            return result.stdout_string();
+        }
     }
-
-    return result.stdout_string();
 }
