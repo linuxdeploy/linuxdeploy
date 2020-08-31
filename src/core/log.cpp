@@ -122,6 +122,10 @@ namespace linuxdeploy {
 
                 return ldLog(prependSpace, logLevelSet, currentLogLevel);
             }
+
+            void ldLog::write(const char* s, const size_t n) {
+                stream.write(s, n);
+            }
         }
     }
 }

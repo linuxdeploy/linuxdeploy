@@ -65,6 +65,8 @@ namespace linuxdeploy {
                     ldLog operator<<(stdEndlType strm);
                     ldLog operator<<(const LD_LOGLEVEL logLevel);
                     ldLog operator<<(const LD_STREAM_CONTROL streamControl);
+
+                    void write(const char* s, const size_t n);
             };
         }
     }
