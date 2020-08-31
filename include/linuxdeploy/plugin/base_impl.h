@@ -14,6 +14,7 @@
 #include "linuxdeploy/core/log.h"
 #include "linuxdeploy/util/util.h"
 #include "linuxdeploy/subprocess/process.h"
+#include "linuxdeploy/plugin/plugin_process_handler.h"
 
 #pragma once
 
@@ -135,139 +136,8 @@ namespace linuxdeploy {
 
             template<int API_LEVEL>
             int PluginBase<API_LEVEL>::run(const boost::filesystem::path& appDirPath) {
-                const auto pluginPath = path();
-                const std::initializer_list<std::string> args = {pluginPath.string(), "--appdir", appDirPath.string()};
-
-                auto log = ldLog();
-                log << "Running process:";
-                for (const auto& arg : args) {
-                    log << "" << arg;
-                }
-                log << std::endl;
-
-                subprocess::subprocess_env_map_t environmentVariables{};
-
-                if (this->pluginType() == PLUGIN_TYPE::INPUT_TYPE) {
-                    // add $LINUXDEPLOY, which points to the current binary
-                    // we do not need to pass $APPIMAGE or alike, since while linuxdeploy is running, the path in the
-                    // temporary mountpoint of its AppImage will be valid anyway
-                    environmentVariables["LINUXDEPLOY"] = linuxdeploy::util::getOwnExecutablePath();
-                }
-
-                subprocess::process process(args, environmentVariables);
-
-                std::vector<pollfd> pfds(2);
-                auto* opfd = &pfds[0];
-                auto* epfd = &pfds[1];
-
-                opfd->fd = process.stdout_fd();
-                opfd->events = POLLIN;
-
-                epfd->fd = process.stderr_fd();
-                epfd->events = POLLIN;
-
-                for (const auto& fd : {process.stdout_fd(), process.stderr_fd()}) {
-                    auto flags = fcntl(fd, F_GETFL, 0);
-                    flags |= O_NONBLOCK;
-                    fcntl(fd, F_SETFL, flags);
-                }
-
-                auto printOutput = [&pfds, opfd, epfd, this, &process]() {
-                    poll(pfds.data(), pfds.size(), -1);
-
-                    auto printUntilLastLine = [this](std::vector<char>& buf, size_t& bufSize, const std::string& streamType) {
-                        std::ostringstream oss;
-
-                        while (true) {
-                            const auto firstLineFeed = std::find(buf.begin(), buf.end(), '\n');
-                            const auto firstCarriageReturn = std::find(buf.begin(), buf.end(), '\r');
-
-                            if (firstLineFeed == buf.end() && firstCarriageReturn == buf.end())
-                                break;
-
-                            const auto endOfLine = std::min(firstLineFeed, firstCarriageReturn);
-
-                            std::string line(buf.begin(), endOfLine+1);
-
-                            oss << "[" << d->name << "/" << streamType << "] " << line;
-
-                            bufSize -= std::distance(buf.begin(), endOfLine+1);
-                            buf.erase(buf.begin(), endOfLine+1);
-                        }
-
-                        auto messages = oss.str();
-                        if (!messages.empty())
-                            ldLog() << messages;
-                    };
-
-                    std::vector<char> stdoutBuf(16 * 1024);
-                    std::vector<char> stderrBuf(16 * 1024);
-                    size_t currentStdoutBufSize = 0;
-                    size_t currentStderrBufSize = 0;
-
-                    if ((opfd->revents & POLLIN) != 0) {
-                        if (currentStdoutBufSize >= stdoutBuf.size())
-                            throw std::runtime_error("Buffer overflow");
-
-                        while (true) {
-                            auto bytesRead = read(
-                                process.stdout_fd(),
-                                reinterpret_cast<void*>(stdoutBuf.data() + currentStdoutBufSize),
-                                static_cast<size_t>(stdoutBuf.size() - currentStdoutBufSize)
-                            );
-
-                            if (bytesRead == 0)
-                                break;
-
-                            currentStdoutBufSize += bytesRead;
-
-                            printUntilLastLine(stdoutBuf, currentStdoutBufSize, "stdout");
-                        }
-                    }
-
-                    std::this_thread::sleep_for(std::chrono::milliseconds(50));
-
-                    if ((epfd->revents & POLLIN) != 0) {
-                        if (currentStderrBufSize >= stderrBuf.size())
-                            throw std::runtime_error("Buffer overflow");
-
-                        while (true) {
-                            auto bytesRead = read(
-                                process.stderr_fd(),
-                                reinterpret_cast<void*>(stderrBuf.data() + currentStderrBufSize),
-                                static_cast<size_t>(stderrBuf.size() - currentStderrBufSize)
-                            );
-
-                            if (bytesRead == 0)
-                                break;
-
-                            currentStderrBufSize += bytesRead;
-
-                            printUntilLastLine(stderrBuf, currentStderrBufSize, "stderr");
-                        }
-                    }
-
-                    std::this_thread::sleep_for(std::chrono::milliseconds(50));
-
-                    return true;
-                };
-
-                do {
-                    if (!printOutput()) {
-                        ldLog() << LD_ERROR << "Failed to communicate with process" << std::endl;
-                        process.kill();
-                        return -1;
-                    }
-                } while (process.is_running());
-
-                if (!printOutput()) {
-                    ldLog() << LD_ERROR << "Failed to communicate with process" << std::endl;
-                    process.kill();
-                    return -1;
-                }
-
-                const auto retcode = process.close();
-                return retcode;
+                plugin_process_handler handler(d->name, path());
+                return handler.run(appDirPath);
             }
         }
     }

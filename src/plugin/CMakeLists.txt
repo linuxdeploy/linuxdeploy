@@ -1,4 +1,20 @@
-file(GLOB PLUGIN_HEADERS ${PROJECT_SOURCE_DIR}/include/linuxdeploy/plugin/*.h)
+set(headers_dir ${PROJECT_SOURCE_DIR}/include/linuxdeploy/plugin/)
 
-add_library(linuxdeploy_plugin STATIC plugin_type0.cpp plugin.cpp ${PLUGIN_HEADERS})
+set(headers
+    ${headers_dir}/plugin.h
+    ${headers_dir}/base.h
+    ${headers_dir}/base_impl.h
+    ${headers_dir}/exceptions.h
+    ${headers_dir}/plugin_process_handler.h
+)
+
+add_library(linuxdeploy_plugin STATIC
+    plugin.cpp
+    plugin_type0.cpp
+    plugin_process_handler.cpp
+    ${headers}
+)
 target_link_libraries(linuxdeploy_plugin PUBLIC linuxdeploy_core ${BOOST_LIBS} linuxdeploy_subprocess)
+
+unset(headers)
+unset(headers_dir)
