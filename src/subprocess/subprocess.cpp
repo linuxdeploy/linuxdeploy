@@ -5,6 +5,7 @@
 #include <stdexcept>
 #include <utility>
 #include <unistd.h>
+#include <thread>
 
 // local headers
 #include "linuxdeploy/subprocess/subprocess.h"
@@ -34,8 +35,7 @@ namespace linuxdeploy {
                 std::make_pair(pipe_reader(proc.stderr_fd()), subprocess_result_buffer_t{}),
             };
 
-            // TODO: add some sleep to reduce load on CPU with longer-running tasks
-            do {
+            for (;;) {
                 for (auto& pair : buffers) {
                     // make code more readable
                     auto& reader = pair.first;
@@ -53,7 +53,15 @@ namespace linuxdeploy {
                     std::copy(intermediate_buffer.begin(), (intermediate_buffer.begin() + bytes_read),
                               std::back_inserter(buffer));
                 }
-            } while (proc.is_running());
+
+                // do-while might be a little more elegant, but we can save this one unnecessary sleep, so...
+                if (proc.is_running()) {
+                    // reduce load on CPU
+                    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+                } else {
+                    break;
+                }
+            }
 
             // make sure contents are null-terminated
             buffers[0].second.emplace_back('\0');
