@@ -45,13 +45,19 @@ namespace linuxdeploy {
                     // the results are immediately appended to the main buffer
                     subprocess_result_buffer_t intermediate_buffer(4096);
 
-                    // (try to) read from pipe
-                    const auto bytes_read = reader.read(intermediate_buffer);
+                    // (try to) read all available data from pipe
+                    for (;;) {
+                        const auto bytes_read = reader.read(intermediate_buffer);
 
-                    // append to main buffer
-                    buffer.reserve(buffer.size() + bytes_read);
-                    std::copy(intermediate_buffer.begin(), (intermediate_buffer.begin() + bytes_read),
-                              std::back_inserter(buffer));
+                        if (bytes_read == 0) {
+                            break;
+                        }
+
+                        // append to main buffer
+                        buffer.reserve(buffer.size() + bytes_read);
+                        std::copy(intermediate_buffer.begin(), (intermediate_buffer.begin() + bytes_read),
+                                  std::back_inserter(buffer));
+                    }
                 }
 
                 // do-while might be a little more elegant, but we can save this one unnecessary sleep, so...
