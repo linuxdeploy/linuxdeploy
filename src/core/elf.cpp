@@ -162,7 +162,7 @@ namespace linuxdeploy {
                 const auto result = lddProc.run();
 
                 if (result.exit_code() != 0) {
-                    if (result.stdout_string().find("not a dynamic executable") != std::string::npos) {
+                    if (result.stdout_string().find("not a dynamic executable") != std::string::npos || result.stderr_string().find("not a dynamic executable") != std::string::npos) {
                         ldLog() << LD_WARNING << this->d->path << "is not linked dynamically" << std::endl;
                         return {};
                     }
