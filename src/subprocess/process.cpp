@@ -41,10 +41,19 @@ process::process(const std::vector<std::string>& args, const subprocess_env_map_
     int stdout_pipe_fds[2];
     int stderr_pipe_fds[2];
 
+    // FIXME: for debugging of #150
+    auto create_pipe = [](int fds[]) {
+        const auto rv = pipe(fds);
+
+        if (rv != 0) {
+            const auto error = errno;
+            throw std::logic_error("failed to create pipe: " + std::string(strerror(error)));
+        }
+    };
+
     // create actual pipes
-    if (pipe(stdout_pipe_fds) != 0 || pipe(stderr_pipe_fds) != 0) {
-        throw std::logic_error{"failed to create pipes"};
-    }
+    create_pipe(stdout_pipe_fds);
+    create_pipe(stderr_pipe_fds);
 
     // create child process
     child_pid_ = fork();
