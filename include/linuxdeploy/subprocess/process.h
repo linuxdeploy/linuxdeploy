@@ -31,6 +31,8 @@ namespace linuxdeploy {
 
             static int check_waitpid_status_(int status);
 
+            static void close_pipe_fd_(int fd);
+
         public:
             /**
              * Create a child process.

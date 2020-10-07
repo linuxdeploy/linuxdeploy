@@ -66,8 +66,8 @@ process::process(const std::vector<std::string>& args, const subprocess_env_map_
         // we're in the child process
 
         // first step: close the read end of both pipes
-        ::close(stdout_pipe_fds[READ_END_]);
-        ::close(stderr_pipe_fds[READ_END_]);
+        close_pipe_fd_(stdout_pipe_fds[READ_END_]);
+        close_pipe_fd_(stderr_pipe_fds[READ_END_]);
 
         auto connect_fd = [](int fds[], int fileno) {
             for (;;) {
@@ -86,8 +86,8 @@ process::process(const std::vector<std::string>& args, const subprocess_env_map_
         connect_fd(stderr_pipe_fds, STDERR_FILENO);
 
         // now, we also have to close the write end of both pipes
-        ::close(stdout_pipe_fds[WRITE_END_]);
-        ::close(stderr_pipe_fds[WRITE_END_]);
+        close_pipe_fd_(stdout_pipe_fds[WRITE_END_]);
+        close_pipe_fd_(stderr_pipe_fds[WRITE_END_]);
 
         // prepare arguments for exec*
         auto exec_args = make_args_vector_(args);
@@ -114,8 +114,8 @@ process::process(const std::vector<std::string>& args, const subprocess_env_map_
     // parent code
 
     // we do not intend to write to the processes
-    ::close(stdout_pipe_fds[WRITE_END_]);
-    ::close(stderr_pipe_fds[WRITE_END_]);
+    close_pipe_fd_(stdout_pipe_fds[WRITE_END_]);
+    close_pipe_fd_(stderr_pipe_fds[WRITE_END_]);
 
     // store file descriptors
     stdout_fd_ = stdout_pipe_fds[READ_END_];
@@ -124,10 +124,10 @@ process::process(const std::vector<std::string>& args, const subprocess_env_map_
 
 int process::close() {
     if (!exited_) {
-        ::close(stdout_fd_);
+        close_pipe_fd_(stdout_fd_);
         stdout_fd_ = -1;
 
-        ::close(stderr_fd_);
+        close_pipe_fd_(stderr_fd_);
         stderr_fd_ = -1;
 
         {
@@ -255,4 +255,13 @@ int process::check_waitpid_status_(int status) {
     }
 
     throw std::logic_error{"unknown child process state"};
+}
+
+void process::close_pipe_fd_(int fd) {
+    const auto rv = ::close(fd);
+
+    if (rv != 0) {
+        const auto error = errno;
+        throw std::logic_error("failed to close pipe fd: " + std::string(strerror(error)));
+    }
 }
