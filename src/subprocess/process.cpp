@@ -69,11 +69,12 @@ process::process(const std::vector<std::string>& args, const subprocess_env_map_
         close_pipe_fd_(stdout_pipe_fds[READ_END_]);
         close_pipe_fd_(stderr_pipe_fds[READ_END_]);
 
-        auto connect_fd = [](int fds[], int fileno) {
+        auto connect_fd = [](int fd, int fileno) {
             for (;;) {
-                if (dup2(fds[WRITE_END_], fileno) == -1) {
-                    if (errno != EINTR) {
-                        throw std::logic_error{"failed to connect pipes"};
+                if (dup2(fd, fileno) == -1) {
+                    const auto error = errno;
+                    if (error != EINTR) {
+                        throw std::logic_error{"failed to connect pipes: " + std::string(strerror(error))};
                     }
                     continue;
                 }
@@ -82,8 +83,8 @@ process::process(const std::vector<std::string>& args, const subprocess_env_map_
             }
         };
 
-        connect_fd(stdout_pipe_fds, STDOUT_FILENO);
-        connect_fd(stderr_pipe_fds, STDERR_FILENO);
+        connect_fd(stdout_pipe_fds[WRITE_END_], STDOUT_FILENO);
+        connect_fd(stderr_pipe_fds[WRITE_END_], STDERR_FILENO);
 
         // now, we also have to close the write end of both pipes
         close_pipe_fd_(stdout_pipe_fds[WRITE_END_]);
