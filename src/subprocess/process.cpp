@@ -231,8 +231,14 @@ bool process::is_running() {
     }
 
     if (result == child_pid_) {
-        exited_ = true;
+        // TODO: extract the following lines from both this method and close() to eliminate duplicate code
+        close_pipe_fd_(stdout_fd_);
+        stdout_fd_ = -1;
 
+        close_pipe_fd_(stderr_fd_);
+        stderr_fd_ = -1;
+
+        exited_ = true;
         exit_code_ = check_waitpid_status_(status);
 
         return false;
