@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <functional>
 #include <cstring>
+#include <stdexcept>
 
 // local headers
 #include "linuxdeploy/subprocess/pipe_reader.h"
