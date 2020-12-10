@@ -50,11 +50,11 @@ make -j"$(nproc)" linuxdeploy
 ctest -V
 
 # build patchelf
-"$REPO_ROOT"/travis/build-static-patchelf.sh "$(readlink -f out/)"
+"$REPO_ROOT"/ci/build-static-patchelf.sh "$(readlink -f out/)"
 patchelf_path="$(readlink -f out/usr/bin/patchelf)"
 
 # build custom strip
-"$REPO_ROOT"/travis/build-static-binutils.sh "$(readlink -f out/)"
+"$REPO_ROOT"/ci/build-static-binutils.sh "$(readlink -f out/)"
 strip_path="$(readlink -f out/usr/bin/strip)"
 
 # use tools we just built for linuxdeploy run
