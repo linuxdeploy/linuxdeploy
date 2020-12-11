@@ -28,7 +28,7 @@ jobs:
     name: Ubuntu latest i386 AppImage build
     runs-on: ubuntu-latest
     env:
-      ARCH: x86_64
+      ARCH: i386
     steps:
       - uses: actions/checkout@v2
         with:
