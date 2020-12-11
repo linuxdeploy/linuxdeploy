@@ -36,7 +36,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libmagic-dev libjpeg-dev libpng-dev cimg-dev
+          sudo apt-get install -y libmagic-dev:i386 libjpeg-dev:i386 libpng-dev:i386 cimg-dev gcc-multilib g++-multilib
       - name: Build AppImage
         run: bash -ex ci/build.sh
       - name: Archive artifacts
