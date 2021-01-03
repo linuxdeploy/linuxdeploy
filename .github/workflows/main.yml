@@ -40,7 +40,7 @@ jobs:
 
       - name: Archive artifacts
         uses: actions/upload-artifact@v2
-        if: ${{ matrix.BUILD_TYPE != "coverage" }}
+        if: matrix.BUILD_TYPE != 'coverage'
         with:
           name: AppImage
           path: linuxdeploy*.AppImage*
