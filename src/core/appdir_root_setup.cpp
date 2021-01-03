@@ -188,6 +188,9 @@ namespace linuxdeploy {
                     << "set -e" << std::endl
                     << std::endl
                     << "this_dir=$(readlink -f $(dirname \"$0\"))" << std::endl
+                    << std::endl
+                    << "# set the location of the message catalog files" << std::endl
+                    << "export TEXTDOMAINDIR=\"$this_dir/usr/share/locale\"" << std::endl
                     << std::endl;
 
                 std::for_each(bf::directory_iterator(appRunHooksPath), bf::directory_iterator{}, [&oss](const bf::path& p) {
