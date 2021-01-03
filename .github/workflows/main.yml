@@ -3,88 +3,52 @@ name: CI
 on: [push, pull_request]
 
 jobs:
-  appimage-x86_64:
-    name: Ubuntu latest x86_64 AppImage build
+  build-and-test:
+    strategy:
+      matrix:
+        ARCH: [x86_64, i386]
+        BUILD_TYPE: [appimage, coverage]
+      fail-fast: false
+
+    name: ${{ matrix.BUILD_TYPE }} ${{ matrix.ARCH }}
     runs-on: ubuntu-latest
+
     env:
-      ARCH: x86_64
+      ARCH: ${{ matrix.ARCH }}
+      BUILD_TYPE: ${{ matrix.BUILD_TYPE }}
+
     steps:
       - uses: actions/checkout@v2
         with:
           submodules: recursive
-      - name: Install dependencies
+
+      - name: Install dependencies (x86_64)
+        if: ${{ matrix.ARCH == "x86_64" }}
         run: |
           sudo apt-get update
           sudo apt-get install -y libmagic-dev libjpeg-dev libpng-dev cimg-dev
-      - name: Build AppImage
-        run: bash -ex ci/build.sh
-      - name: Archive artifacts
-        uses: actions/upload-artifact@v2
-        with:
-          name: AppImage x86_64
-          path: linuxdeploy*.AppImage*
 
-  appimage-i386:
-    name: Ubuntu latest i386 AppImage build
-    runs-on: ubuntu-latest
-    env:
-      ARCH: i386
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: recursive
-      - name: Install dependencies
+      - name: Install dependencies (i386)
+        if: ${{ matrix.ARCH == "i386" }}
         run: |
           sudo dpkg --add-architecture i386
           sudo apt-get update
           sudo apt-get install -y libmagic-dev:i386 libjpeg-dev:i386 libpng-dev:i386 cimg-dev gcc-multilib g++-multilib libfuse2:i386
-      - name: Build AppImage
+
+      - name: Build and test
         run: bash -ex ci/build.sh
+
       - name: Archive artifacts
         uses: actions/upload-artifact@v2
+        if: ${{ matrix.BUILD_TYPE != "coverage" }}
         with:
-          name: AppImage i386
+          name: AppImage
           path: linuxdeploy*.AppImage*
-
-  coverage-x86_64:
-    name: Ubuntu latest x86_64 coverage build (no binaries uploaded)
-    runs-on: ubuntu-latest
-    env:
-      ARCH: x86_64
-      BUILD_TYPE: coverage
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: recursive
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libmagic-dev libjpeg-dev libpng-dev cimg-dev
-      - name: Build AppImage
-        run: bash -ex ci/build.sh
-
-  coverage-i386:
-    name: Ubuntu latest x86_64 coverage build (no binaries uploaded)
-    runs-on: ubuntu-latest
-    env:
-      ARCH: x86_64
-      BUILD_TYPE: coverage
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: recursive
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libmagic-dev libjpeg-dev libpng-dev cimg-dev
-      - name: Build AppImage
-        run: bash -ex ci/build.sh
 
   upload:
     name: Create release and upload artifacts
     needs:
-      - appimage-x86_64
-      - appimage-i386
+      - build-and-test
     runs-on: ubuntu-latest
     steps:
       - name: Download artifacts
