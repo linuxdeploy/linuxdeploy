@@ -23,13 +23,13 @@ jobs:
           submodules: recursive
 
       - name: Install dependencies (x86_64)
-        if: ${{ matrix.ARCH == "x86_64" }}
+        if: matrix.ARCH == 'x86_64'
         run: |
           sudo apt-get update
           sudo apt-get install -y libmagic-dev libjpeg-dev libpng-dev cimg-dev
 
       - name: Install dependencies (i386)
-        if: ${{ matrix.ARCH == "i386" }}
+        if: matrix.ARCH == 'i386'
         run: |
           sudo dpkg --add-architecture i386
           sudo apt-get update
