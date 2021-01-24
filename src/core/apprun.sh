@@ -6,6 +6,7 @@
 set -e
 
 this_dir="$(readlink -f "$(dirname "$0")")"
+APPRUN_TMP_DIR="$(mktemp --tmpdir --directory .AppRun.XXXXXXXX)"
 
 # any file within that directory is considered to be a script
 # we can't perform any validity checks, that would be way too much complexity and even tools which
@@ -19,4 +20,28 @@ for hook in "$hooks_dir"/*; do
     fi
 done
 
-exec "$this_dir"/AppRun.wrapped "$@"
+# remove temporary directory on exit
+# shellcheck disable=SC2120
+cleanup() {
+    local sig="$1"
+    if [ -n "$APPRUN_TMP_DIR" ]; then
+        rm -rf "$APPRUN_TMP_DIR"
+    fi
+    if [ -n "$sig" ]; then
+        trap - "$sig"
+        kill -s "$sig" -$$
+    fi
+}
+
+# catch signals
+for sig in HUP INT QUIT KILL TERM; do
+    # shellcheck disable=SC2064
+    trap "cleanup $sig" "$sig"
+done
+
+# execute wrapped AppRun as a child process
+exec "$this_dir"/AppRun.wrapped "$@" &
+
+# wait for a graceful exit of child process, then clean up
+wait $!
+cleanup
