@@ -7,6 +7,12 @@ find_package(Threads)
 
 find_package(CImg REQUIRED)
 
+message(STATUS "Converting AppRun to raw string")
+file(READ   ${CMAKE_CURRENT_SOURCE_DIR}/apprun.sh APPRUN)
+file(WRITE  ${CMAKE_CURRENT_BINARY_DIR}/apprun.sh.raw "R\"~hereroc~(")
+file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/apprun.sh.raw "${APPRUN}")
+file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/apprun.sh.raw ")~hereroc~\"")
+
 message(STATUS "Generating excludelist")
 execute_process(
     COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/generate-excludelist.sh
