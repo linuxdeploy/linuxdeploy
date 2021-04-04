@@ -667,11 +667,28 @@ namespace linuxdeploy {
                 return foundPaths;
             }
 
-            std::vector<bf::path> AppDir::deployedIconPaths() const {
-                auto icons = listFilesInDirectory(path() / "usr/share/icons/");
-                auto pixmaps = listFilesInDirectory(path() / "usr/share/pixmaps/", false);
-                icons.reserve(pixmaps.size());
-                std::copy(pixmaps.begin(), pixmaps.end(), std::back_inserter(icons));
+            std::vector<bf::path> AppDir::deployedIconPaths() const
+            {
+                // Rough equivalent in shell:
+                // appIconDirs=`ls -d $APPDIR/usr/share/icons/hicolor/*/apps/ $APPDIR/usr/share/pixmaps/`
+                std::vector<bf::path> appIconDirs;
+                forEachInDirectory(path() / "usr/share/icons/hicolor/", false,
+                                   [&appIconDirs](const bf::directory_entry &dirEntry) {
+                                       if (bf::is_directory(dirEntry.status()))
+                                           appIconDirs.emplace_back(dirEntry.path() / "apps/");
+                                   });
+                appIconDirs.emplace_back(path() / "usr/share/pixmaps/");
+
+                // for dirEntry in $appIconDirs; do icons="$icons `ls $dirEntry/*.{svg,png,xpm}`"; done
+                std::vector<bf::path> icons;
+                for (const auto& dir : appIconDirs) {
+                    forEachInDirectory(dir, false, [&icons](const bf::directory_entry& dirEntry) {
+                        const auto extension = dirEntry.path().extension();
+                        if ((extension == "svg" || extension == "png" || extension == "xpm")
+                            && bf::is_regular_file(dirEntry.status()))
+                            icons.emplace_back(dirEntry.path());
+                    });
+                }
                 return icons;
             }
 
