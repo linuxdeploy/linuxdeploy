@@ -643,29 +643,27 @@ namespace linuxdeploy {
                 return d->appDirPath;
             }
 
-            static std::vector<bf::path> listFilesInDirectory(const bf::path& path, const bool recursive = true) {
-                std::vector<bf::path> foundPaths;
-
+            template <typename Consumer>
+            static void forEachInDirectory(const bf::path& path, const bool recursive, Consumer&& consumer) {
                 // directory_iterators throw exceptions if the directory doesn't exist
                 if (!bf::is_directory(path)) {
                     ldLog() << LD_DEBUG << "No such directory:" << path << std::endl;
-                    return {};
+                    return;
                 }
 
                 if (recursive) {
-                    for (bf::recursive_directory_iterator i(path); i != bf::recursive_directory_iterator(); ++i) {
-                        if (bf::is_regular_file(*i)) {
-                            foundPaths.push_back((*i).path());
-                        }
-                    }
+                    std::for_each(bf::recursive_directory_iterator(path), bf::recursive_directory_iterator(), consumer);
                 } else {
-                    for (bf::directory_iterator i(path); i != bf::directory_iterator(); ++i) {
-                        if (bf::is_regular_file(*i)) {
-                            foundPaths.push_back((*i).path());
-                        }
-                    }
+                    std::for_each(bf::directory_iterator(path), bf::directory_iterator(), consumer);
                 }
+            }
 
+            static std::vector<bf::path> listFilesInDirectory(const bf::path& path, const bool recursive = true) {
+                std::vector<bf::path> foundPaths;
+                forEachInDirectory(path, recursive, [&foundPaths](const bf::directory_entry& dirEntry) {
+                    if (bf::is_regular_file(dirEntry.status()))
+                        foundPaths.push_back(dirEntry.path());
+                });
                 return foundPaths;
             }
 
