@@ -14,7 +14,7 @@ if(STATIC_BUILD)
 
     ExternalProject_Add(libjpeg_static_extproj
         URL https://www.ijg.org/files/jpegsrc.v9d.tar.gz
-        URL_HASH SHA256=99cb50e48a4556bc571dadd27931955ff458aae32f68c4d9c39d624693f69c32
+        URL_HASH SHA256=6c434a3be59f8f62425b2e3c077e785c9ce30ee5874ea1c270e843f273ba71ee
         BUILD_IN_SOURCE ON
         EXCLUDE_FROM_ALL ON
         CONFIGURE_COMMAND ${configure_command_prefix} ./configure --prefix=/usr
