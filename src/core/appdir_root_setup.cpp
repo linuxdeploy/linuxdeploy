@@ -45,7 +45,7 @@ namespace linuxdeploy {
                 // look for suitable icon
                 DesktopFileEntry iconEntry;
 
-                if (!desktopFile.getEntry("Desktop Entry", "Icon", iconEntry)) {
+                if (!desktopFile.getEntry("Desktop Entry", "Icon", iconEntry) || iconEntry.value().empty()) {
                     ldLog() << LD_ERROR << "Icon entry missing in desktop file:" << desktopFile.path() << std::endl;
                     return false;
                 }
