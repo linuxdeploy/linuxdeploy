@@ -683,7 +683,7 @@ namespace linuxdeploy {
                 std::vector<bf::path> icons;
                 for (const auto& dir : appIconDirs) {
                     forEachInDirectory(dir, false, [&icons](const bf::directory_entry& dirEntry) {
-                        const auto extension = dirEntry.path().extension();
+                        const auto extension = util::strLower(dirEntry.path().extension().string());
                         if ((extension == ".svg" || extension == ".png" || extension == ".xpm")
                             && bf::is_regular_file(dirEntry.status()))
                             icons.emplace_back(dirEntry.path());
