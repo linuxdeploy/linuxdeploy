@@ -121,12 +121,14 @@ namespace linuxdeploy {
 
                     // From here, the code comparing the current icon and the so far best icon begins
 
+                    const auto currentExtension = util::strLower(iconPath.extension().string());
+                    const auto bestIconExtension = util::strLower(bestIcon->extension().string());
                     // SVGs are preferred, and (normally) only come in scalable/apps/; process them early
-                    if (iconPath.extension() == ".svg") {
+                    if (currentExtension == ".svg") {
                         // There's only one spec-compliant place for an SVG icon (icons/scalable/apps); but if
                         // a full filename is used in the desktop file (Icon=a.svg) then two SVG icons can
                         // match it: scalable/apps/a.svg and scalable/apps/a.svg.svg; in this case a.svg wins
-                        if (matchesFilenameWithExtension || bestIcon->extension() != ".svg")
+                        if (matchesFilenameWithExtension || bestIconExtension != ".svg")
                             bestIcon = &iconPath;
 
                         break; // Further icons can't be better than what bestIcon has now.
@@ -134,7 +136,7 @@ namespace linuxdeploy {
 
                     // As of here, the _current_ icon is a raster one (PNG or XPM)
 
-                    if (bestIcon->extension() == ".svg" // SVG is always better
+                    if (bestIconExtension == ".svg" // SVG is always better
                         || (!matchesFilenameWithExtension && bestIcon->filename() == iconName)) // Better filename match
                         continue;
 
@@ -150,11 +152,13 @@ namespace linuxdeploy {
                     // The code diverts from Icon Naming Spec here, since the spec relies on reading
                     // index.theme data and taking Threshold and MinSize/MaxSize values from there. Instead,
                     // merely figure which size is "logarithmically further" from the sweet spot of 64,
-                    // preferring larger icons in case of a tie (see getIconPreference() implementation).
+                    // preferring larger icons in case of a tie (see getIconPreference() implementation);
+                    // as a last resort, if the preference is the same (e.g. two icons deployed to pixmaps/),
+                    // PNGs win over XPMs.
                     const auto currentPreference = getIconPreference(iconPath);
                     const auto bestPreference = getIconPreference(*bestIcon);
                     if (currentPreference > bestPreference
-                        || (currentPreference == bestPreference && iconPath.extension() < bestIcon->extension()))
+                        || (currentPreference == bestPreference && currentExtension < bestIconExtension))
                         bestIcon = &iconPath;
                 }
 
