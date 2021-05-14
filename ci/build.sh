@@ -44,7 +44,7 @@ cmake --version
 # configure build for AppImage release
 cmake "$REPO_ROOT" -DSTATIC_BUILD=On -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=RelWithDebInfo "${EXTRA_CMAKE_ARGS[@]}"
 
-make -j"$(nproc)" linuxdeploy
+make -j"$(nproc)"
 
 ## Run Unit Tests
 ctest -V
