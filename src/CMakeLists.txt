@@ -28,10 +28,12 @@ execute_process(
 
 # set version and build number
 set(VERSION 1-alpha)
-if("$ENV{TRAVIS_BUILD_NUMBER}" STREQUAL "")
-    set(BUILD_NUMBER "<local dev build>")
-else()
+if(DEFINED ENV{TRAVIS_BUILD_NUMBER})
     set(BUILD_NUMBER "Travis build $ENV{TRAVIS_BUILD_NUMBER}")
+elseif(DEFINED ENV{GITHUB_RUN_NUMBER})
+    set(BUILD_NUMBER "GitHub actions build $ENV{GITHUB_RUN_NUMBER}")
+else()
+    set(BUILD_NUMBER "<local dev build>")
 endif()
 
 # get current date
