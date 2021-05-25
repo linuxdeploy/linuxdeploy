@@ -311,6 +311,21 @@ int main(int argc, char** argv) {
             return 1;
         }
     }
+
+    // linuxdeploy offers a special "plugin mode" where plugins can run linuxdeploy again to deploy dependencies
+    // this way, they don't have to use liblinuxdeploy (like, e.g., the Qt plugin), but can just be, e.g., shell scripts
+    // copying .so files into the AppDir
+    // as linuxdeploy aims to be idempotent, so this just costs some time/performance/file I/O, but should not change
+    // the outcome
+    // the AppDir root deployment, however, does make some assumptions that are only valid when not being run from a
+    // plugin
+    // therefore, we let plugins signalize that they are calling linuxdeploy, and skip those steps
+    // TODO: eliminate the need for this mode in the AppDir root deployment
+    if (getenv("LINUXDEPLOY_PLUGIN_MODE") != nullptr) {
+        ldLog() << LD_WARNING << "Running in plugin mode, exiting" << std::endl;
+        return 0;
+    }
+
     if (!linuxdeploy::deployAppDirRootFiles(desktopFilePaths.Get(), customAppRunPath.Get(), appDir))
         return 1;
 
