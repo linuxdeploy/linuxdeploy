@@ -179,7 +179,7 @@ int main(int argc, char** argv) {
 
                     if (!appDir.deployDependenciesOnlyForElfFile(*it, true)) {
                         ldLog() << LD_WARNING << "Failed to deploy dependencies for ELF file" << *it << LD_NO_SPACE << ", skipping" << std::endl;
-                        return 1;
+                        continue;
                     }
                 }
             } else if (bf::is_regular_file(path)) {
