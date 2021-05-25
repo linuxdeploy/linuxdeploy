@@ -25,6 +25,14 @@ namespace linuxdeploy {
             explicit Private(const AppDir& appDir) : appDir(appDir) {}
 
         public:
+            static void makeFileExecutable(const bf::path& path) {
+                bf::permissions(path,
+                    bf::perms::owner_all | bf::perms::group_read | bf::perms::others_read |
+                    bf::perms::group_exe | bf::perms::others_exe
+                );
+            }
+
+        public:
             bool deployDesktopFileAndIcon(const DesktopFile& desktopFile) const {
                 ldLog() << "Deploying desktop file to AppDir root:" << desktopFile.path() << std::endl;
 
@@ -83,11 +91,15 @@ namespace linuxdeploy {
 
             bool deployCustomAppRunFile(const bf::path& customAppRunPath) const {
                 // copy custom AppRun executable
-                // FIXME: make sure this file is executable
-                ldLog() << "Deploying custom AppRun:" << customAppRunPath;
+                ldLog() << "Deploying custom AppRun:" << customAppRunPath << std::endl;
 
-                if (!appDir.copyFile(customAppRunPath, appDir.path() / "AppRun"))
+                const auto appRunPath = appDir.path() / "AppRun";
+
+                if (!appDir.copyFile(customAppRunPath, appRunPath))
                     return false;
+
+                ldLog() << "Making AppRun file executable: " << appRunPath << std::endl;
+                makeFileExecutable(appRunPath);
 
                 return true;
             }
@@ -229,10 +241,7 @@ namespace linuxdeploy {
                 ofs.close();
 
                 // make new file executable
-                bf::permissions(appRunPath,
-                    bf::perms::owner_all | bf::perms::group_read | bf::perms::others_read |
-                    bf::perms::group_exe | bf::perms::others_exe
-                );
+                makeFileExecutable(appRunPath);
 
                 // we're done!
                 return true;
