@@ -199,7 +199,7 @@ namespace linuxdeploy {
                     << "# make sure errors in sourced scripts will cause this script to stop" << std::endl
                     << "set -e" << std::endl
                     << std::endl
-                    << "this_dir=\"$(readlink -f \"$(dirname \"$0\")\")" << std::endl
+                    << "this_dir=\"$(readlink -f \"$(dirname \"$0\")\")\"" << std::endl
                     << std::endl;
 
                 std::for_each(bf::directory_iterator(appRunHooksPath), bf::directory_iterator{}, [&oss](const bf::path& p) {
