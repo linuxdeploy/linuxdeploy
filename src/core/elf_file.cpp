@@ -26,6 +26,8 @@ namespace linuxdeploy {
                     const bf::path path;
                     uint8_t elfClass = ELFCLASSNONE;
                     uint8_t elfABI = 0;
+                    bool isDebugSymbolsFile = false;
+                    bool isDynamicallyLinked = false;
 
                 public:
                     explicit PrivateData(bf::path path) : path(std::move(path)) {}
@@ -72,6 +74,56 @@ namespace linuxdeploy {
                         return patchelfPath;
                     }
 
+                private:
+                    template<typename Ehdr_T, typename Shdr_T, typename Phdr_T>
+                    void parseElfHeader(std::shared_ptr<uint8_t> data) {
+                        // TODO: the following code will _only_ work if the native byte order equals the program's
+                        // this should not be a big problem as we don't offer ARM builds yet, and require the user to
+                        // use a matching binary for the target binaries
+
+                        auto* ehdr = reinterpret_cast<Ehdr_T*>(data.get());
+
+                        elfABI = ehdr->e_ident[EI_OSABI];
+
+                        std::vector<Shdr_T> sections;
+
+                        // parse section header table
+                        // first, we collect all entries in a vector so we can conveniently iterate over it
+                        for (uint64_t i = 0; i < ehdr->e_shnum; ++i) {
+                            auto* nextShdr = reinterpret_cast<Shdr_T*>(data.get() + ehdr->e_shoff + i * sizeof(Shdr_T));
+                            sections.emplace_back(*nextShdr);
+                        }
+
+                        auto getString = [data, &sections, ehdr](uint64_t offset) {
+                            assert(ehdr->e_shstrndx != SHN_UNDEF);
+                            const auto& stringTableSection = sections[ehdr->e_shstrndx];
+                            return std::string{reinterpret_cast<char*>(data.get() + stringTableSection.sh_offset + offset)};
+                        };
+
+                        // now that we can look up texts, we can create a map to easily access the sections by name
+                        std::unordered_map<std::string, Shdr_T> sectionsMap;
+                        std::for_each(sections.begin(), sections.end(), [&sectionsMap, &getString](const Shdr_T& shdr) {
+                            const auto headerName = getString(shdr.sh_name);
+                            sectionsMap.insert(std::make_pair(headerName, shdr));
+                        });
+
+                        // this function is based on observations of the behavior of:
+                        // - strip --only-keep-debug
+                        // - objcopy --only-keep-debug
+                        isDebugSymbolsFile = (sectionsMap[".text"].sh_type == SHT_NOBITS);
+
+                        // https://stackoverflow.com/a/7298931
+                        for (uint64_t i = 0; i < ehdr->e_phnum && !isDynamicallyLinked; ++i) {
+                            auto* nextPhdr = reinterpret_cast<Phdr_T*>(data.get() + ehdr->e_phoff + i * sizeof(Phdr_T));
+                            switch (nextPhdr->p_type) {
+                                case PT_DYNAMIC:
+                                case PT_INTERP:
+                                    isDynamicallyLinked = true;
+                                    break;
+                            }
+                        }
+                    }
+
                 public:
                     void readDataUsingElfAPI() {
                         int fd = open(path.c_str(), O_RDONLY);
@@ -96,19 +148,11 @@ namespace linuxdeploy {
                         elfClass = data.get()[EI_CLASS];
 
                         switch (elfClass) {
-                            case ELFCLASS32: {
-                                    auto* ehdr = reinterpret_cast<Elf32_Ehdr*>(data.get());
-                                    auto* shdr = reinterpret_cast<Elf32_Shdr*>(data.get() + ehdr->e_shoff);
-
-                                    elfABI = ehdr->e_ident[EI_OSABI];
-                                }
+                            case ELFCLASS32:
+                                parseElfHeader<Elf32_Ehdr, Elf32_Shdr, Elf32_Phdr>(data);
                                 break;
-                            case ELFCLASS64: {
-                                    auto* ehdr = reinterpret_cast<Elf32_Ehdr*>(data.get());
-                                    auto* shdr = reinterpret_cast<Elf32_Shdr*>(data.get() + ehdr->e_shoff);
-
-                                    elfABI = ehdr->e_ident[EI_OSABI];
-                                }
+                            case ELFCLASS64:
+                                parseElfHeader<Elf64_Ehdr, Elf64_Shdr, Elf64_Phdr>(data);
                                 break;
                             default:
                                 throw ElfFileParseError("Unknown ELF class: " + std::to_string(elfClass));
@@ -295,6 +339,14 @@ namespace linuxdeploy {
 
             uint8_t ElfFile::getElfABI() {
                 return d->elfABI;
+            }
+
+            bool ElfFile::isDebugSymbolsFile() {
+                return d->isDebugSymbolsFile;
+            }
+
+            bool ElfFile::isDynamicallyLinked() {
+                return d->isDynamicallyLinked;
             }
         }
     }

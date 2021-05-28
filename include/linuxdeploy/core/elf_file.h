@@ -64,6 +64,12 @@ namespace linuxdeploy {
 
                     // return OS ABI
                     uint8_t getElfABI();
+
+                    // check if this file is a debug symbols file
+                    bool isDebugSymbolsFile();
+
+                    // check whether the file contains a dynsym section
+                    bool isDynamicallyLinked();
             };
         }
     }
