@@ -14,6 +14,3 @@ target_include_directories(linuxdeploy_subprocess PUBLIC ${PROJECT_SOURCE_DIR}/i
 
 add_executable(subprocess_demo subprocess_demo.cpp)
 target_link_libraries(subprocess_demo PUBLIC linuxdeploy_subprocess)
-
-add_executable(test_limit test_limit.cpp)
-target_link_libraries(test_limit PUBLIC linuxdeploy_subprocess)
