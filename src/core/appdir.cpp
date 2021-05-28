@@ -215,10 +215,16 @@ namespace linuxdeploy {
                             const auto& filePath = currentEntry.first;
                             const auto& rpath = currentEntry.second;
 
+                            elf_file::ElfFile elfFile(filePath);
+
                             // no need to set rpath in debug symbols files
                             // also, patchelf crashes on such symbols
-                            if (isInDebugSymbolsLocation(filePath)) {
-                                ldLog() << LD_WARNING << "Not setting rpath in debug symbols file:" << filePath << std::endl;
+                            if (isInDebugSymbolsLocation(filePath) || elfFile.isDebugSymbolsFile()) {
+                                ldLog() << LD_WARNING << "Not setting rpath in debug symbols file:" << filePath
+                                        << std::endl;
+                            } else if (!elfFile.isDynamicallyLinked()) {
+                                ldLog() << LD_WARNING << "Not setting rpath in statically-linked file: " << filePath
+                                        << std::endl;
                             } else {
                                 ldLog() << "Setting rpath in ELF file" << filePath << "to" << rpath << std::endl;
                                 if (!elf_file::ElfFile(filePath).setRPath(rpath)) {
