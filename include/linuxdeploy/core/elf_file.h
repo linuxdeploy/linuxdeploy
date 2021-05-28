@@ -11,7 +11,7 @@
 
 namespace linuxdeploy {
     namespace core {
-        namespace elf {
+        namespace elf_file {
             // thrown by constructor if file is not an ELF file
             class ElfFileParseError : public std::runtime_error {
                 public:

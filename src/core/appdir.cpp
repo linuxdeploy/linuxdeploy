@@ -12,7 +12,7 @@
 
 // local headers
 #include "linuxdeploy/core/appdir.h"
-#include "linuxdeploy/core/elf.h"
+#include "linuxdeploy/core/elf_file.h"
 #include "linuxdeploy/core/log.h"
 #include "linuxdeploy/desktopfile/desktopfileentry.h"
 #include "linuxdeploy/util/util.h"
@@ -66,8 +66,8 @@ namespace linuxdeploy {
                 public:
                     // calculate library directory name for given ELF file, taking system architecture into account
                     static std::string getLibraryDirName(const bf::path& path) {
-                        const auto systemElfClass = elf::ElfFile::getSystemElfClass();
-                        const auto elfClass = elf::ElfFile(path).getElfClass();
+                        const auto systemElfClass = elf_file::ElfFile::getSystemElfClass();
+                        const auto elfClass = elf_file::ElfFile(path).getElfClass();
 
                         std::string libDirName = "lib";
 
@@ -182,7 +182,7 @@ namespace linuxdeploy {
                             while (!stripOperations.empty()) {
                                 const auto& filePath = *(stripOperations.begin());
 
-                                if (util::stringStartsWith(elf::ElfFile(filePath).getRPath(), "$")) {
+                                if (util::stringStartsWith(elf_file::ElfFile(filePath).getRPath(), "$")) {
                                     ldLog() << LD_WARNING << "Not calling strip on binary" << filePath << LD_NO_SPACE
                                             << ": rpath starts with $" << std::endl;
                                 } else {
@@ -221,7 +221,7 @@ namespace linuxdeploy {
                                 ldLog() << LD_WARNING << "Not setting rpath in debug symbols file:" << filePath << std::endl;
                             } else {
                                 ldLog() << "Setting rpath in ELF file" << filePath << "to" << rpath << std::endl;
-                                if (!elf::ElfFile(filePath).setRPath(rpath)) {
+                                if (!elf_file::ElfFile(filePath).setRPath(rpath)) {
                                     ldLog() << LD_ERROR << "Failed to set rpath in ELF file:" << filePath << std::endl;
                                     success = false;
                                 }
@@ -281,10 +281,10 @@ namespace linuxdeploy {
                     bool deployElfDependencies(const bf::path& path) {
                         ldLog() << "Deploying dependencies for ELF file" << path << std::endl;
                         try {
-                            for (const auto &dependencyPath : elf::ElfFile(path).traceDynamicDependencies())
+                            for (const auto &dependencyPath : elf_file::ElfFile(path).traceDynamicDependencies())
                                 if (!deployLibrary(dependencyPath, false, false))
                                     return false;
-                        } catch (const elf::DependencyNotFoundError& e) {
+                        } catch (const elf_file::DependencyNotFoundError& e) {
                             ldLog() << LD_ERROR << e.what() << std::endl;
                             return false;
                         }
@@ -713,8 +713,8 @@ namespace linuxdeploy {
                 for (const auto& file : listFilesInDirectory(path() / "usr" / "bin", false)) {
                     // make sure it's an ELF file
                     try {
-                        elf::ElfFile elfFile(file);
-                    } catch (const elf::ElfFileParseError&) {
+                        elf_file::ElfFile elfFile(file);
+                    } catch (const elf_file::ElfFileParseError&) {
                         // FIXME: remove this workaround once the MIME check below works as intended
                         continue;
                     }
@@ -735,8 +735,8 @@ namespace linuxdeploy {
 
                     // make sure it's an ELF file
                     try {
-                        elf::ElfFile elfFile(file);
-                    } catch (const elf::ElfFileParseError&) {
+                        elf_file::ElfFile elfFile(file);
+                    } catch (const elf_file::ElfFileParseError&) {
                         // FIXME: remove this workaround once the MIME check below works as intended
                         continue;
                     }
@@ -801,8 +801,8 @@ namespace linuxdeploy {
 
                                 // make sure we have an ELF file
                                 try {
-                                    elf::ElfFile(entry.path().string());
-                                } catch (const elf::ElfFileParseError& e) {
+                                    elf_file::ElfFile(entry.path().string());
+                                } catch (const elf_file::ElfFileParseError& e) {
                                     ldLog() << LD_DEBUG << "Skipping non-ELF directory entry:" << entry.path() << std::endl;
                                 }
 
@@ -850,8 +850,8 @@ namespace linuxdeploy {
 
                 // make sure we have an ELF file
                 try {
-                    elf::ElfFile(canonicalElfFilePath.string());
-                } catch (const elf::ElfFileParseError& e) {
+                    elf_file::ElfFile(canonicalElfFilePath.string());
+                } catch (const elf_file::ElfFileParseError& e) {
                     auto level = LD_ERROR;
 
                     if (failSilentForNonElfFile) {

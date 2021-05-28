@@ -9,7 +9,7 @@
 #include <sys/mman.h>
 
 // local headers
-#include "linuxdeploy/core/elf.h"
+#include "linuxdeploy/core/elf_file.h"
 #include "linuxdeploy/core/log.h"
 #include "linuxdeploy/util/util.h"
 #include "linuxdeploy/subprocess/subprocess.h"
@@ -20,7 +20,7 @@ namespace bf = boost::filesystem;
 
 namespace linuxdeploy {
     namespace core {
-        namespace elf {
+        namespace elf_file {
             class ElfFile::PrivateData {
                 public:
                     const bf::path path;
