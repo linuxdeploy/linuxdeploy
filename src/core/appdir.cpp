@@ -643,37 +643,52 @@ namespace linuxdeploy {
                 return d->appDirPath;
             }
 
-            static std::vector<bf::path> listFilesInDirectory(const bf::path& path, const bool recursive = true) {
-                std::vector<bf::path> foundPaths;
-
+            template <typename Consumer>
+            static void forEachInDirectory(const bf::path& path, const bool recursive, Consumer&& consumer) {
                 // directory_iterators throw exceptions if the directory doesn't exist
                 if (!bf::is_directory(path)) {
                     ldLog() << LD_DEBUG << "No such directory:" << path << std::endl;
-                    return {};
+                    return;
                 }
 
                 if (recursive) {
-                    for (bf::recursive_directory_iterator i(path); i != bf::recursive_directory_iterator(); ++i) {
-                        if (bf::is_regular_file(*i)) {
-                            foundPaths.push_back((*i).path());
-                        }
-                    }
+                    std::for_each(bf::recursive_directory_iterator(path), bf::recursive_directory_iterator(), consumer);
                 } else {
-                    for (bf::directory_iterator i(path); i != bf::directory_iterator(); ++i) {
-                        if (bf::is_regular_file(*i)) {
-                            foundPaths.push_back((*i).path());
-                        }
-                    }
+                    std::for_each(bf::directory_iterator(path), bf::directory_iterator(), consumer);
                 }
+            }
 
+            static std::vector<bf::path> listFilesInDirectory(const bf::path& path, const bool recursive = true) {
+                std::vector<bf::path> foundPaths;
+                forEachInDirectory(path, recursive, [&foundPaths](const bf::directory_entry& dirEntry) {
+                    if (bf::is_regular_file(dirEntry.status()))
+                        foundPaths.push_back(dirEntry.path());
+                });
                 return foundPaths;
             }
 
-            std::vector<bf::path> AppDir::deployedIconPaths() const {
-                auto icons = listFilesInDirectory(path() / "usr/share/icons/");
-                auto pixmaps = listFilesInDirectory(path() / "usr/share/pixmaps/", false);
-                icons.reserve(pixmaps.size());
-                std::copy(pixmaps.begin(), pixmaps.end(), std::back_inserter(icons));
+            std::vector<bf::path> AppDir::deployedIconPaths() const
+            {
+                // Rough equivalent in shell:
+                // appIconDirs=`ls -d $APPDIR/usr/share/icons/hicolor/*/apps/ $APPDIR/usr/share/pixmaps/`
+                std::vector<bf::path> appIconDirs;
+                forEachInDirectory(path() / "usr/share/icons/hicolor/", false,
+                                   [&appIconDirs](const bf::directory_entry &dirEntry) {
+                                       if (bf::is_directory(dirEntry.status()))
+                                           appIconDirs.emplace_back(dirEntry.path() / "apps/");
+                                   });
+                appIconDirs.emplace_back(path() / "usr/share/pixmaps/");
+
+                // for dirEntry in $appIconDirs; do icons="$icons `ls $dirEntry/*.{svg,png,xpm}`"; done
+                std::vector<bf::path> icons;
+                for (const auto& dir : appIconDirs) {
+                    forEachInDirectory(dir, false, [&icons](const bf::directory_entry& dirEntry) {
+                        const auto extension = util::strLower(dirEntry.path().extension().string());
+                        if ((extension == ".svg" || extension == ".png" || extension == ".xpm")
+                            && bf::is_regular_file(dirEntry.status()))
+                            icons.emplace_back(dirEntry.path());
+                    });
+                }
                 return icons;
             }
 

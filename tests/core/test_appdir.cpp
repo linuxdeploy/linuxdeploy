@@ -100,10 +100,12 @@ namespace AppDirTest {
 
 
     TEST_F(AppDirUnitTestsFixture, deployIcon) {
-        appDir.deployIcon(SIMPLE_ICON_PATH);
+        appDir.deployIcon(SIMPLE_PNG_ICON_PATH);
+        appDir.deployIcon(SIMPLE_SVG_ICON_PATH);
         appDir.executeDeferredOperations();
 
-        ASSERT_TRUE(is_regular_file(tmpAppDir / "usr/share/icons/hicolor/scalable/apps" / path(SIMPLE_ICON_PATH).filename()));
+        ASSERT_TRUE(is_regular_file(tmpAppDir / "usr/share/icons/hicolor/16x16/apps" / path(SIMPLE_PNG_ICON_PATH).filename()));
+        ASSERT_TRUE(is_regular_file(tmpAppDir / "usr/share/icons/hicolor/scalable/apps" / path(SIMPLE_SVG_ICON_PATH).filename()));
     }
 
     TEST_F(AppDirUnitTestsFixture, deployFileToDirectory) {

@@ -7,7 +7,8 @@ target_compile_definitions(test_appdir PRIVATE
     -DSIMPLE_LIBRARY_PATH="$<TARGET_FILE:simple_library>"
     -DSIMPLE_EXECUTABLE_PATH="$<TARGET_FILE:simple_executable>"
     -DSIMPLE_DESKTOP_ENTRY_PATH="${CMAKE_CURRENT_SOURCE_DIR}/../data/simple_app.desktop"
-    -DSIMPLE_ICON_PATH="${CMAKE_CURRENT_SOURCE_DIR}/../data/simple_icon.svg"
+    -DSIMPLE_PNG_ICON_PATH="${CMAKE_CURRENT_SOURCE_DIR}/../data/simple_icon.png"
+    -DSIMPLE_SVG_ICON_PATH="${CMAKE_CURRENT_SOURCE_DIR}/../data/simple_icon.svg"
     -DSIMPLE_FILE_PATH="${CMAKE_CURRENT_SOURCE_DIR}/../data/simple_file.txt"
 )
 
@@ -27,7 +28,7 @@ target_compile_definitions(test_linuxdeploy PRIVATE
     -DSIMPLE_LIBRARY_PATH="$<TARGET_FILE:simple_library>"
     -DSIMPLE_EXECUTABLE_PATH="$<TARGET_FILE:simple_executable>"
     -DSIMPLE_DESKTOP_ENTRY_PATH="${CMAKE_CURRENT_SOURCE_DIR}/../data/simple_app.desktop"
-    -DSIMPLE_ICON_PATH="${CMAKE_CURRENT_SOURCE_DIR}/../data/simple_icon.svg"
+    -DSIMPLE_ICON_PATH="${CMAKE_CURRENT_SOURCE_DIR}/../data/simple_icon.png"
     -DSIMPLE_FILE_PATH="${CMAKE_CURRENT_SOURCE_DIR}/../data/simple_file.txt"
 )
 
