@@ -94,14 +94,14 @@ namespace AppDirTest {
 
     TEST_F(AppDirUnitTestsFixture, deployLibrary) {
         appDir.deployLibrary(SIMPLE_LIBRARY_PATH);
-        appDir.executeDeferredOperations();
+        ASSERT_TRUE(appDir.executeDeferredOperations());
 
         ASSERT_TRUE(is_regular_file(tmpAppDir / "usr/lib" / path(SIMPLE_LIBRARY_PATH).filename()));
     }
 
     TEST_F(AppDirUnitTestsFixture, deployExecutable) {
         appDir.deployExecutable(SIMPLE_EXECUTABLE_PATH);
-        appDir.executeDeferredOperations();
+        ASSERT_TRUE(appDir.executeDeferredOperations());
 
         const auto binaryTargetPath = tmpAppDir / "usr/bin" / path(SIMPLE_EXECUTABLE_PATH).filename();
         const auto libTargetPath = tmpAppDir / "usr/lib" / path(SIMPLE_LIBRARY_PATH).filename();
@@ -113,7 +113,7 @@ namespace AppDirTest {
     TEST_F(AppDirUnitTestsFixture, deployDesktopFile) {
         const DesktopFile desktopFile{SIMPLE_DESKTOP_ENTRY_PATH};
         appDir.deployDesktopFile(desktopFile);
-        appDir.executeDeferredOperations();
+        ASSERT_TRUE(appDir.executeDeferredOperations());
 
         const auto targetPath = tmpAppDir / "usr/share/applications" / path(SIMPLE_DESKTOP_ENTRY_PATH).filename();
 
@@ -123,7 +123,7 @@ namespace AppDirTest {
 
     TEST_F(AppDirUnitTestsFixture, deployIcon) {
         appDir.deployIcon(SIMPLE_ICON_PATH);
-        appDir.executeDeferredOperations();
+        ASSERT_TRUE(appDir.executeDeferredOperations());
 
         const auto targetPath = tmpAppDir / "usr/share/icons/hicolor/scalable/apps" / path(SIMPLE_ICON_PATH).filename();
         assertIsRegularFile(targetPath);
@@ -132,7 +132,7 @@ namespace AppDirTest {
     TEST_F(AppDirUnitTestsFixture, deployFileToDirectory) {
         const auto destination = tmpAppDir / "usr/share/doc/simple_application/";
         appDir.deployFile(SIMPLE_FILE_PATH, destination);
-        appDir.executeDeferredOperations();
+        ASSERT_TRUE(appDir.executeDeferredOperations());
 
         const auto targetPath = destination / path(SIMPLE_FILE_PATH).filename();
         assertIsRegularFile(targetPath);
@@ -141,7 +141,7 @@ namespace AppDirTest {
     TEST_F(AppDirUnitTestsFixture, deployFileToAbsoluteFilePath) {
         const auto destination = tmpAppDir / "usr/share/doc/simple_application/test123";
         appDir.deployFile(SIMPLE_FILE_PATH, destination);
-        appDir.executeDeferredOperations();
+        ASSERT_TRUE(appDir.executeDeferredOperations());
 
         assertIsRegularFile(destination);
     }
@@ -149,7 +149,7 @@ namespace AppDirTest {
     TEST_F(AppDirUnitTestsFixture, createSymlink) {
         const auto destination = tmpAppDir / "usr/share/doc/simple_application/test123";
         appDir.deployFile(SIMPLE_FILE_PATH, destination);
-        appDir.executeDeferredOperations();
+        ASSERT_TRUE(appDir.executeDeferredOperations());
 
         assertIsRegularFile(destination);
 
@@ -162,10 +162,20 @@ namespace AppDirTest {
     TEST_F(AppDirUnitTestsFixture, testAddingMinimumPermissionsToRegularFile) {
         const auto destination = tmpAppDir / "usr/share/doc/simple_application/";
         appDir.deployFile(READONLY_FILE_PATH, destination);
-        appDir.executeDeferredOperations();
+        ASSERT_TRUE(appDir.executeDeferredOperations());
 
         const auto targetPath = destination / path(READONLY_FILE_PATH).filename();
         assertIsRegularFile(targetPath);
+    }
+
+    TEST_F(AppDirUnitTestsFixture, testDeployingNonexistingFile) {
+        const auto nonexistingFilePath = "/i/am/sure/this/file/does/not/exist";
+        // it is very unlikely that this file does not exist, but we should probably check that...
+        ASSERT_FALSE(exists(nonexistingFilePath));
+
+        const auto destination = tmpAppDir / "usr/share/doc/simple_application/";
+        appDir.deployFile(nonexistingFilePath, destination);
+        ASSERT_FALSE(appDir.executeDeferredOperations());
     }
 }
 
