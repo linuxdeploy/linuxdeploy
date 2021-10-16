@@ -5,6 +5,23 @@ using namespace linuxdeploy::core::appdir;
 using namespace linuxdeploy::desktopfile;
 using namespace boost::filesystem;
 
+namespace {
+    void assertIsRegularFile(const path& pathToCheck) {
+        ASSERT_TRUE(is_regular_file(pathToCheck));
+        EXPECT_TRUE(status(pathToCheck).permissions() >= 0644);
+    }
+
+    void assertIsExecutableFile(const path& pathToCheck) {
+        assertIsRegularFile(pathToCheck);
+        EXPECT_TRUE(status(pathToCheck).permissions() >= 0755);
+    }
+
+    void assertIsSymlink(const path& targetPath, const path& symlinkPath) {
+        const auto resolvedPath = read_symlink(symlinkPath);
+        EXPECT_TRUE(resolvedPath == targetPath) << resolvedPath << " " << targetPath;
+    }
+}
+
 namespace AppDirTest {
     class AppDirUnitTestsFixture : public ::testing::Test {
     public:
@@ -86,16 +103,21 @@ namespace AppDirTest {
         appDir.deployExecutable(SIMPLE_EXECUTABLE_PATH);
         appDir.executeDeferredOperations();
 
-        ASSERT_TRUE(is_regular_file(tmpAppDir / "usr/bin" / path(SIMPLE_EXECUTABLE_PATH).filename()));
-        ASSERT_TRUE(is_regular_file(tmpAppDir / "usr/lib" / path(SIMPLE_LIBRARY_PATH).filename()));
+        const auto binaryTargetPath = tmpAppDir / "usr/bin" / path(SIMPLE_EXECUTABLE_PATH).filename();
+        const auto libTargetPath = tmpAppDir / "usr/lib" / path(SIMPLE_LIBRARY_PATH).filename();
+
+        assertIsExecutableFile(binaryTargetPath);
+        assertIsRegularFile(libTargetPath);
     }
 
     TEST_F(AppDirUnitTestsFixture, deployDesktopFile) {
-        DesktopFile desktopFile{SIMPLE_DESKTOP_ENTRY_PATH};
+        const DesktopFile desktopFile{SIMPLE_DESKTOP_ENTRY_PATH};
         appDir.deployDesktopFile(desktopFile);
         appDir.executeDeferredOperations();
 
-        ASSERT_TRUE(is_regular_file(tmpAppDir / "usr/share/applications" / path(SIMPLE_DESKTOP_ENTRY_PATH).filename()));
+        const auto targetPath = tmpAppDir / "usr/share/applications" / path(SIMPLE_DESKTOP_ENTRY_PATH).filename();
+
+        assertIsRegularFile(targetPath);
     }
 
 
@@ -103,37 +125,38 @@ namespace AppDirTest {
         appDir.deployIcon(SIMPLE_ICON_PATH);
         appDir.executeDeferredOperations();
 
-        ASSERT_TRUE(is_regular_file(tmpAppDir / "usr/share/icons/hicolor/scalable/apps" / path(SIMPLE_ICON_PATH).filename()));
+        const auto targetPath = tmpAppDir / "usr/share/icons/hicolor/scalable/apps" / path(SIMPLE_ICON_PATH).filename();
+        assertIsRegularFile(targetPath);
     }
 
     TEST_F(AppDirUnitTestsFixture, deployFileToDirectory) {
-        auto destination = tmpAppDir / "usr/share/doc/simple_application/";
+        const auto destination = tmpAppDir / "usr/share/doc/simple_application/";
         appDir.deployFile(SIMPLE_FILE_PATH, destination);
         appDir.executeDeferredOperations();
 
-        ASSERT_TRUE(is_regular_file(destination / path(SIMPLE_FILE_PATH).filename()));
+        const auto targetPath = destination / path(SIMPLE_FILE_PATH).filename();
+        assertIsRegularFile(targetPath);
     }
 
     TEST_F(AppDirUnitTestsFixture, deployFileToAbsoluteFilePath) {
-        auto destination = tmpAppDir / "usr/share/doc/simple_application/test123";
+        const auto destination = tmpAppDir / "usr/share/doc/simple_application/test123";
         appDir.deployFile(SIMPLE_FILE_PATH, destination);
         appDir.executeDeferredOperations();
 
-        ASSERT_TRUE(is_regular_file(destination));
+        assertIsRegularFile(destination);
     }
 
     TEST_F(AppDirUnitTestsFixture, createSymlink) {
-        auto destination = tmpAppDir / "usr/share/doc/simple_application/test123";
+        const auto destination = tmpAppDir / "usr/share/doc/simple_application/test123";
         appDir.deployFile(SIMPLE_FILE_PATH, destination);
         appDir.executeDeferredOperations();
 
-        ASSERT_TRUE(is_regular_file(destination));
+        assertIsRegularFile(destination);
 
-        appDir.createRelativeSymlink(destination, tmpAppDir / "relative_link");
+        const auto symlinkDestination = tmpAppDir / "relative_link";
+        appDir.createRelativeSymlink(destination, symlinkDestination);
 
-        auto res = read_symlink(tmpAppDir / "relative_link");
-        auto expected = relative(destination, tmpAppDir);
-        ASSERT_TRUE(res == expected);
+        assertIsSymlink(relative(destination, tmpAppDir), symlinkDestination);
     }
 }
 

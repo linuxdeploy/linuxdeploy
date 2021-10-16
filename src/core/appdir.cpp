@@ -30,6 +30,68 @@ using namespace linuxdeploy::core::log;
 using namespace cimg_library;
 namespace bf = boost::filesystem;
 
+namespace {
+    // equivalent to 0644
+    constexpr bf::perms DEFAULT_PERMS = bf::owner_write | bf::owner_read | bf::group_read | bf::others_read;
+    // equivalent to 0755
+    constexpr bf::perms EXECUTABLE_PERMS = DEFAULT_PERMS | bf::owner_exe | bf::group_exe | bf::others_exe;
+
+    class CopyOperation {
+    public:
+        bf::path fromPath;
+        bf::path toPath;
+        bf::perms addedPermissions;
+    };
+
+    typedef std::map<bf::path, CopyOperation> CopyOperationsMap;
+
+    /**
+     * Stores copy operations.
+     * This way, the storage logic does not have to be known to the using class.
+     */
+    class CopyOperationsStorage {
+    private:
+        // using a map to make sure every target path is there only once
+        CopyOperationsMap _storedOperations;
+
+    public:
+        CopyOperationsStorage() = default;
+
+        /**
+         * Add copy operation.
+         * @param fromPath path to copy from
+         * @param toPath path to copy to
+         * @param addedPermissions permissions to add to the file's permissions
+         */
+        void addOperation(const bf::path& fromPath, const bf::path& toPath, const bf::perms addedPermissions) {
+             CopyOperation operation{fromPath, toPath, addedPermissions};
+            _storedOperations[fromPath] = operation;
+        }
+
+        /**
+         * Export operations.
+         * @return vector containing all operations (random order).
+         */
+        std::vector<CopyOperation> getOperations() {
+            std::vector<CopyOperation> operations;
+            operations.reserve(_storedOperations.size());
+
+            for (const auto& operationsPair : _storedOperations) {
+                operations.emplace_back(operationsPair.second);
+            }
+
+            return operations;
+        }
+
+        /**
+         * Clear internal storage.
+         */
+        void clear() {
+            _storedOperations.clear();
+        }
+    };
+}
+
 namespace linuxdeploy {
     namespace core {
         namespace appdir {
@@ -39,7 +101,7 @@ namespace linuxdeploy {
 
                     // store deferred operations
                     // these can be executed by calling excuteDeferredOperations
-                    std::map<bf::path, bf::path> copyOperations;
+                    CopyOperationsStorage copyOperationsStorage;
                     std::set<bf::path> stripOperations;
                     std::map<bf::path, std::string> setElfRPathOperations;
 
@@ -59,7 +121,7 @@ namespace linuxdeploy {
                     bool disableCopyrightFilesDeployment = false;
 
                 public:
-                    PrivateData() : copyOperations(), stripOperations(), setElfRPathOperations(), visitedFiles(), appDirPath() {
+                PrivateData() : copyOperationsStorage(), stripOperations(), setElfRPathOperations(), visitedFiles(), appDirPath() {
                         copyrightFilesManager = copyright::ICopyrightFilesManager::getInstance();
                     };
 
@@ -83,7 +145,8 @@ namespace linuxdeploy {
 
                     // actually copy file
                     // mimics cp command behavior
-                    static bool copyFile(const bf::path& from, bf::path to, bool overwrite = false) {
+                    // also adds minimum file permissions (by default adds 0644 to existing permissions)
+                    static bool copyFile(const bf::path& from, bf::path to, bf::perms addedPerms, bool overwrite = false) {
                         ldLog() << "Copying file" << from << "to" << to << std::endl;
 
                         try {
@@ -101,6 +164,7 @@ namespace linuxdeploy {
                             }
 
                             bf::copy_file(from, to, bf::copy_option::overwrite_if_exists);
+                            bf::permissions(to, addedPerms | bf::add_perms);
                         } catch (const bf::filesystem_error& e) {
                             ldLog() << LD_ERROR << "Failed to copy file" << from << "to" << to << LD_NO_SPACE << ":" << e.what() << std::endl;
                             return false;
@@ -159,16 +223,13 @@ namespace linuxdeploy {
                     bool executeDeferredOperations() {
                         bool success = true;
 
-                        while (!copyOperations.empty()) {
-                            const auto& pair = *(copyOperations.begin());
-                            const auto& from = pair.first;
-                            const auto& to = pair.second;
-
-                            if (!copyFile(from, to))
+                        const auto copyOperations = copyOperationsStorage.getOperations();
+                        std::for_each(copyOperations.begin(), copyOperations.end(), [&success](const CopyOperation& operation) {
+                            if (!copyFile(operation.fromPath, operation.toPath, operation.addedPermissions)) {
                                 success = false;
-
-                            copyOperations.erase(copyOperations.begin());
-                        }
+                            }
+                        });
+                        copyOperationsStorage.clear();
 
                         if (!success)
                             return false;
@@ -257,7 +318,7 @@ namespace linuxdeploy {
                         for (const auto& file : copyrightFiles) {
                             std::string targetDir = file.string();
                             targetDir.erase(0, 1);
-                            deployFile(file, appDirPath / targetDir);
+                            deployFile(file, appDirPath / targetDir, DEFAULT_PERMS);
                         }
 
                         return true;
@@ -267,7 +328,7 @@ namespace linuxdeploy {
                     // by compiling a list of files to copy instead of just copying everything, one can ensure that
                     // the files are touched once only
                     // returns the full path of the deployment destination (useful if to is a directory
-                    bf::path deployFile(const bf::path& from, bf::path to, bool verbose = false) {
+                    bf::path deployFile(const bf::path& from, bf::path to, bf::perms addedPerms, bool verbose = false) {
                         // not sure whether this is 100% bullet proof, but it simulates the cp command behavior
                         if (to.string().back() == '/' || bf::is_directory(to)) {
                             to /= from.filename();
@@ -276,7 +337,7 @@ namespace linuxdeploy {
                         if (verbose)
                             ldLog() << "Deploying file" << from << "to" << to << std::endl;
 
-                        copyOperations[from] = to;
+                        copyOperationsStorage.addOperation(from, to, addedPerms);
 
                         // mark file as visited
                         visitedFiles.insert(from);
@@ -378,7 +439,7 @@ namespace linuxdeploy {
                         }
 
                         // in case destinationPath is a directory, deployFile will give us the deployed file's path
-                        actualDestination = deployFile(path, actualDestination);
+                        actualDestination = deployFile(path, actualDestination, DEFAULT_PERMS);
                         deployCopyrightFiles(path);
 
                         std::string rpath = "$ORIGIN";
@@ -426,7 +487,7 @@ namespace linuxdeploy {
 
                         auto destinationPath = destination.empty() ? appDirPath / "usr/bin/" : destination;
 
-                        deployFile(path, destinationPath);
+                        deployFile(path, destinationPath, EXECUTABLE_PERMS);
                         deployCopyrightFiles(path);
 
                         std::string rpath = "$ORIGIN/../" + getLibraryDirName(path);
@@ -468,7 +529,7 @@ namespace linuxdeploy {
 
                         ldLog() << "Deploying desktop file" << desktopFile.path() << std::endl;
 
-                        deployFile(desktopFile.path(), appDirPath / "usr/share/applications/");
+                        deployFile(desktopFile.path(), appDirPath / "usr/share/applications/", DEFAULT_PERMS);
 
                         return true;
                     }
@@ -553,7 +614,7 @@ namespace linuxdeploy {
                             }
                         }
 
-                        deployFile(path, appDirPath / "usr/share/icons/hicolor" / resolution / "apps" / filename);
+                        deployFile(path, appDirPath / "usr/share/icons/hicolor" / resolution / "apps" / filename, DEFAULT_PERMS);
                         deployCopyrightFiles(path);
 
                         return true;
@@ -702,11 +763,11 @@ namespace linuxdeploy {
             }
 
             bf::path AppDir::deployFile(const boost::filesystem::path& from, const boost::filesystem::path& to) {
-                return d->deployFile(from, to, true);
+                return d->deployFile(from, to, DEFAULT_PERMS, true);
             }
 
             bool AppDir::copyFile(const bf::path& from, const bf::path& to, bool overwrite) const {
-                return d->copyFile(from, to, overwrite);
+                return d->copyFile(from, to, DEFAULT_PERMS, overwrite);
             }
 
             bool AppDir::createRelativeSymlink(const bf::path& target, const bf::path& symlink) const {
