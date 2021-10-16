@@ -158,6 +158,15 @@ namespace AppDirTest {
 
         assertIsSymlink(relative(destination, tmpAppDir), symlinkDestination);
     }
+
+    TEST_F(AppDirUnitTestsFixture, testAddingMinimumPermissionsToRegularFile) {
+        const auto destination = tmpAppDir / "usr/share/doc/simple_application/";
+        appDir.deployFile(READONLY_FILE_PATH, destination);
+        appDir.executeDeferredOperations();
+
+        const auto targetPath = destination / path(READONLY_FILE_PATH).filename();
+        assertIsRegularFile(targetPath);
+    }
 }
 
 int main(int argc, char **argv) {
