@@ -35,8 +35,13 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libmagic-dev:i386 libjpeg-dev:i386 libpng-dev:i386 cimg-dev gcc-multilib g++-multilib libfuse2:i386
 
-      - name: Build and test
+      - name: Test coverage
+        run: bash -ex ci/test-coverage.sh
+        if: matrix.BUILD_TYPE == 'coverage'
+
+      - name: Build, test and build AppImage
         run: bash -ex ci/build.sh
+        if: matrix.BUILD_TYPE != 'coverage'
 
       - name: Archive artifacts
         uses: actions/upload-artifact@v2
