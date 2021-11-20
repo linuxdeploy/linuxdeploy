@@ -7,7 +7,9 @@ if(NOT COMMAND ld_add_test)
         get_target_property(${TARGET_NAME}_EXCLUDE_FROM_ALL ${TARGET_NAME} EXCLUDE_FROM_ALL)
         if(NOT ${${TARGET_NAME}_EXCLUDE_FROM_ALL})
             message(STATUS "[${PROJECT_NAME}] Adding test ${TARGET_NAME}")
-            add_test(${TARGET_NAME} ${TARGET_NAME})
+
+            # https://stackoverflow.com/a/35697020
+            add_test(NAME ${TARGET_NAME} COMMAND $<TARGET_FILE:${TARGET_NAME}>)
         else()
             message(STATUS "[${PROJECT_NAME}] Test ${TARGET_NAME} is excluded from ALL, not adding as test")
         endif()
