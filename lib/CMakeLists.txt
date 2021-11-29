@@ -51,7 +51,3 @@ if(NOT USE_SYSTEM_BOOST)
         boost_type_traits boost_static_assert boost_integer boost_preprocessor boost_functional boost_detail
     )
 endif()
-
-if(BUILD_TESTING AND NOT TARGET gtest)
-    add_subdirectory(googletest)
-endif()

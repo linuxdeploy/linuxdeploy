@@ -70,12 +70,12 @@
 [submodule "lib/CImg"]
 	path = lib/CImg
 	url = https://github.com/dtschump/CImg.git
-[submodule "lib/googletest"]
-	path = lib/googletest
-	url = https://github.com/google/googletest
 [submodule "lib/boost-container"]
 	path = lib/boost-container
 	url = https://github.com/boostorg/container
 [submodule "lib/linuxdeploy-desktopfile"]
 	path = lib/linuxdeploy-desktopfile
 	url = https://github.com/linuxdeploy/linuxdeploy-desktopfile
+[submodule "lib/cmake-scripts"]
+	path = lib/cmake-scripts
+	url = https://github.com/linuxdeploy/cmake-scripts.git

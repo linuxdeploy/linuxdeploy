@@ -43,11 +43,17 @@ if(ENABLE_COVERAGE)
     setup_target_for_coverage_gcovr_text(NAME coverage_text EXECUTABLE "${command}")
 endif()
 
+include(CTest)
+
+if(BUILD_TESTING)
+    # including this before including lib/ makes sure that the top level project's gtest is used everywhere
+    include(${PROJECT_SOURCE_DIR}/lib/cmake-scripts/include-or-build-gtest.cmake)
+endif()
+
 add_subdirectory(lib)
 
 add_subdirectory(src)
 
-include(CTest)
 if(BUILD_TESTING)
     enable_testing()
     add_subdirectory(tests)
