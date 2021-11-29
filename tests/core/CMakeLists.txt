@@ -40,7 +40,7 @@ target_include_directories(test_linuxdeploy PRIVATE ${PROJECT_SOURCE_DIR}/src)
 ld_add_test(test_linuxdeploy)
 
 ld_core_add_test_executable(test_elf_file test_elf_file.cpp ../../src/core.cpp)
-target_link_libraries(test_elf_file PRIVATE gtest_main)
+target_link_libraries(test_elf_file PRIVATE gtest_main gmock)
 target_include_directories(test_elf_file PRIVATE ${PROJECT_SOURCE_DIR}/src)
 # register in CTest
 ld_add_test(test_elf_file)
