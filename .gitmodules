@@ -4,9 +4,6 @@
 [submodule "lib/boost-exception"]
 	path = lib/boost-exception
 	url = https://github.com/boostorg/exception.git
-[submodule "lib/CImg"]
-	path = lib/CImg
-	url = https://github.com/dtschump/CImg.git
 [submodule "lib/linuxdeploy-desktopfile"]
 	path = lib/linuxdeploy-desktopfile
 	url = https://github.com/linuxdeploy/linuxdeploy-desktopfile
