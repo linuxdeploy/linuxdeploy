@@ -4,7 +4,10 @@ cmake_minimum_required(VERSION 3.5)
 # globally include own includes
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
-set(Boost_USE_STATIC_LIBS ON)
+if(STATIC_BUILD)
+    set(Boost_USE_STATIC_LIBS ON)
+endif()
+
 find_package(Boost REQUIRED COMPONENTS filesystem regex)
 set(BOOST_LIBS Boost::filesystem Boost::regex)
 
