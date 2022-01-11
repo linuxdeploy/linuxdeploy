@@ -836,8 +836,7 @@ namespace linuxdeploy {
 
                     const auto rpath = elf_file::ElfFile(sharedLibrary).getRPath();
                     auto rpathList = util::split(rpath, ':');
-                    if (std::find(rpathList.begin(), rpathList.end(), "$ORIGIN") == rpathList.end())
-                    {
+                    if (std::find(rpathList.begin(), rpathList.end(), "$ORIGIN") == rpathList.end()) {
                         rpathList.push_back("$ORIGIN");
                         d->setElfRPathOperations[sharedLibrary] = util::join(rpathList, ":");
                     } else {
