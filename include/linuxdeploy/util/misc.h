@@ -56,6 +56,17 @@ namespace linuxdeploy {
                 return split(s, '\n');
             }
 
+            static std::string join(const std::vector<std::string> &strings, const std::string &delimiter)
+            {
+                std::string result;
+                for (size_t i = 0; i < strings.size(); i++) {
+                    result += strings[i];
+                    if (i != strings.size() - 1)
+                        result += delimiter;
+                }
+                return result;
+            }
+
             static inline std::string strLower(std::string s) {
                 std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c) { return std::tolower(c); });
                 return s;

@@ -835,10 +835,14 @@ namespace linuxdeploy {
                         return false;
 
                     auto rpath = elf_file::ElfFile(sharedLibrary).getRPath();
-                    if(util::stringStartsWith(rpath, "$"))
+                    auto rpathList = util::split(rpath, ':');
+                    if (std::find(rpathList.begin(), rpathList.end(), "$ORIGIN") == rpathList.end())
+                    {
+                        rpathList.push_back("$ORIGIN");
+                        d->setElfRPathOperations[sharedLibrary] = util::join(rpathList, ":");
+                    } else {
                         d->setElfRPathOperations[sharedLibrary] = rpath;
-                    else
-                        d->setElfRPathOperations[sharedLibrary] = "$ORIGIN";
+                    }
                 }
 
                 // used to bundle dependencies of executables or libraries in the AppDir without moving them
