@@ -18,10 +18,6 @@ case "$ARCH" in
         export CFLAGS="-m32"
         export CXXFLAGS="-m32"
         ;;
-    *)
-        echo "Error: unsupported architecture: $ARCH"
-        exit 1
-        ;;
 esac
 
 # use RAM disk if possible

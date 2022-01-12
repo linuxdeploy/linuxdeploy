@@ -1,6 +1,7 @@
 # 3.5 is required for imported boost targets
 cmake_minimum_required(VERSION 3.5)
 
+find_package(Threads)
 # globally include own includes
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
@@ -36,7 +37,7 @@ add_subdirectory(subprocess)
 add_subdirectory(core)
 
 add_executable(linuxdeploy main.cpp core.cpp)
-target_link_libraries(linuxdeploy linuxdeploy_core args)
+target_link_libraries(linuxdeploy linuxdeploy_core args Threads::Threads)
 set_target_properties(linuxdeploy PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin")
 
 target_compile_definitions(linuxdeploy PRIVATE -DLD_GIT_COMMIT="${GIT_COMMIT}")

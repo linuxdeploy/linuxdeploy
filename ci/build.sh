@@ -30,16 +30,15 @@ if [ "$ARCH" == "x86_64" ]; then
     EXTRA_CMAKE_ARGS=()
 elif [ "$ARCH" == "i386" ]; then
     EXTRA_CMAKE_ARGS=("-DCMAKE_TOOLCHAIN_FILE=$REPO_ROOT/cmake/toolchains/i386-linux-gnu.cmake" "-DUSE_SYSTEM_CIMG=OFF")
+elif [ "$ARCH" == "aarch64" ]; then
+    EXTRA_CMAKE_ARGS=("-DCMAKE_TOOLCHAIN_FILE=$REPO_ROOT/cmake/toolchains/aarch64-linux-gnu.cmake" "-DUSE_SYSTEM_CIMG=OFF")
+elif [ "$ARCH" == "armhf" ]; then
+    EXTRA_CMAKE_ARGS=("-DCMAKE_TOOLCHAIN_FILE=$REPO_ROOT/cmake/toolchains/armhf-linux-gnu.cmake" "-DUSE_SYSTEM_CIMG=OFF")
 else
     echo "Architecture not supported: $ARCH" 1>&2
     exit 1
+    EXTRA_CMAKE_ARGS=()
 fi
-
-# fetch up-to-date CMake
-mkdir cmake-prefix
-wget -O- https://github.com/Kitware/CMake/releases/download/v3.18.1/cmake-3.18.1-Linux-x86_64.tar.gz | tar -xz -C cmake-prefix --strip-components=1
-export PATH="$(readlink -f cmake-prefix/bin):$PATH"
-cmake --version
 
 # configure build for AppImage release
 cmake "$REPO_ROOT" -DSTATIC_BUILD=On -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=RelWithDebInfo "${EXTRA_CMAKE_ARGS[@]}"

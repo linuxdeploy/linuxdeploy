@@ -56,10 +56,64 @@ jobs:
           name: AppImage
           path: linuxdeploy*.AppImage*
 
+  container_build:
+    # The host should always be linux
+    runs-on: ubuntu-latest
+    name: ${{ matrix.BUILD_TYPE }} ${{ matrix.arch }}
+    strategy:
+      fail-fast: false
+      matrix:
+        BUILD_TYPE: [appimage, coverage]
+        distro:
+         - bullseye
+        arch:
+          - aarch64
+          - armv7
+    env:
+      ARCH: ${{ matrix.ARCH }}
+      BUILD_TYPE: ${{ matrix.BUILD_TYPE }}
+    steps:
+      - uses: actions/checkout@v2.1.0
+        with:
+          submodules: recursive
+      - uses: uraimo/run-on-arch-action@v2.1.1
+        name: Build
+        id: build
+        with:
+          arch: ${{ matrix.arch }}
+          distro: ${{ matrix.distro }}
+          githubToken: ${{ github.token }}
+          setup: mkdir -p "${PWD}/artifacts"
+          dockerRunArgs: --volume "${PWD}/artifacts:/artifacts"
+          shell: /bin/sh
+          install: |
+            apt-get update -y
+            apt-get install -y gcovr libmagic-dev libjpeg-dev libpng-dev libboost-filesystem-dev libboost-regex-dev cimg-dev cmake build-essential git wget libboost-dev patchelf autoconf libc-bin
+
+          run: |
+            if [ "${{matrix.arch}}" == "armv7" ]; then
+                export ARCH=armhf
+            else
+                export ARCH=aarch64
+            fi
+            echo $ARCH
+            if [ ${{matrix.BUILD_TYPE}} == 'coverage' ]; then
+                bash -ex ci/test-coverage.sh
+            else
+                bash -ex ci/build.sh
+                mv linuxdeploy*.AppImage* /artifacts
+            fi
+
+      - name: Upload
+        if: matrix.BUILD_TYPE != 'coverage'
+        uses: actions/upload-artifact@v2
+        with:
+          name: container_artifacts
+          path: artifacts/linuxdeploy*.AppImage*
+
   upload:
     name: Create release and upload artifacts
-    needs:
-      - build-and-test
+    needs: [build-and-test, container_build]
     runs-on: ubuntu-20.04
     steps:
       - name: Download artifacts
@@ -68,7 +122,7 @@ jobs:
         run: ls -alFR
       - name: Create release and upload artifacts
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.DEPLOYTOKEN }}
         run: |
             wget -q https://github.com/TheAssassin/pyuploadtool/releases/download/continuous/pyuploadtool-x86_64.AppImage
             chmod +x pyuploadtool-x86_64.AppImage
