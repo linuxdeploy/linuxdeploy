@@ -162,8 +162,8 @@ namespace linuxdeploy {
 
             ElfFile::ElfFile(const boost::filesystem::path& path) {
                 // check if file exists
-                if (!bf::exists(path))
-                    throw ElfFileParseError("No such file or directory: " + path.string());
+                if (!bf::exists(path) || !bf::is_regular_file(path))
+                    throw ElfFileParseError("No such file: " + path.string());
 
                 // check magic bytes
                 std::ifstream ifs(path.string());
@@ -174,7 +174,7 @@ namespace linuxdeploy {
                 ifs.read(magicBytes.data(), 4);
 
                 if (strncmp(magicBytes.data(), "\177ELF", 4) != 0)
-                    throw ElfFileParseError("Invalid magic bytes in file header");
+                    throw ElfFileParseError("Invalid magic bytes in header of file: " + path.string());
 
                 d = new PrivateData(path);
                 d->readDataUsingElfAPI();
