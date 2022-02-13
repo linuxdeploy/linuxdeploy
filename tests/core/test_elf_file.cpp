@@ -23,11 +23,11 @@ namespace {
     }
 
     void expectThrowsElfFileErrorInvalidElfHeader(const char* path) {
-        expectElfFileConstructorThrowMessage(path, "Invalid magic bytes in file header");
+        expectElfFileConstructorThrowMessage(path, "Invalid magic bytes in header of file: ");
     }
 
     void expectThrowsElfFileErrorFileNotFound(const char* path) {
-        expectElfFileConstructorThrowMessage(path, "No such file or directory: ");
+        expectElfFileConstructorThrowMessage(path, "No such file: ");
     }
 }
 
@@ -51,7 +51,7 @@ namespace LinuxDeployTest {
     }
 
     TEST_F(ElfFileTest, checkInvalidElfHeaderOnEmptyFile) {
-        expectThrowsElfFileErrorInvalidElfHeader("/dev/null");
+        expectThrowsElfFileErrorInvalidElfHeader(EMPTY_FILE_PATH);
     }
 
     TEST_F(ElfFileTest, checkInvalidElfHeaderOnRandomFiles) {

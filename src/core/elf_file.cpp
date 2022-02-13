@@ -162,7 +162,7 @@ namespace linuxdeploy {
 
             ElfFile::ElfFile(const boost::filesystem::path& path) {
                 // check if file exists
-                if (!bf::exists(path) || !bf::is_regular_file(path))
+                if (!bf::is_regular_file(path))
                     throw ElfFileParseError("No such file: " + path.string());
 
                 // check magic bytes
