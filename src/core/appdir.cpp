@@ -98,6 +98,7 @@ namespace linuxdeploy {
             class AppDir::PrivateData {
                 public:
                     bf::path appDirPath;
+                    std::vector<std::string> excludeLibraryPatterns;
 
                     // store deferred operations
                     // these can be executed by calling excuteDeferredOperations
@@ -121,7 +122,7 @@ namespace linuxdeploy {
                     bool disableCopyrightFilesDeployment = false;
 
                 public:
-                PrivateData() : copyOperationsStorage(), stripOperations(), setElfRPathOperations(), visitedFiles(), appDirPath() {
+                PrivateData() : copyOperationsStorage(), stripOperations(), setElfRPathOperations(), visitedFiles(), appDirPath(), excludeLibraryPatterns() {
                         copyrightFilesManager = copyright::ICopyrightFilesManager::getInstance();
                     };
 
@@ -392,8 +393,8 @@ namespace linuxdeploy {
                             return false;
                         }
 
-                        static auto isInExcludelist = [](const bf::path& fileName) {
-                            for (const auto& excludePattern : generatedExcludelist) {
+                        static auto isInExcludelist = [](const bf::path& fileName, const std::vector<std::string> &excludeList) {
+                            for (const auto& excludePattern : excludeList) {
                                 // simple string match is faster than using fnmatch
                                 if (excludePattern == fileName)
                                     return true;
@@ -413,7 +414,7 @@ namespace linuxdeploy {
                             return false;
                         };
 
-                        if (!forceDeploy && isInExcludelist(path.filename())) {
+                        if (!forceDeploy && (isInExcludelist(path.filename(), generatedExcludelist) || isInExcludelist(path.filename(), excludeLibraryPatterns))) {
                             ldLog() << "Skipping deployment of blacklisted library" << path << std::endl;
 
                             // mark file as visited
@@ -638,6 +639,10 @@ namespace linuxdeploy {
             }
 
             AppDir::AppDir(const std::string& path) : AppDir(bf::path(path)) {}
+
+            void AppDir::setExcludeLibraryPatterns(const std::vector<std::string> &excludeLibraryPatterns) {
+                d->excludeLibraryPatterns = excludeLibraryPatterns;
+            }
 
             bool AppDir::createBasicStructure() const {
                 std::vector<std::string> dirPaths = {
