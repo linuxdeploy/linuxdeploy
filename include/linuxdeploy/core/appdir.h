@@ -38,6 +38,9 @@ namespace linuxdeploy {
                     // shortcut for using a normal string instead of a path
                     explicit AppDir(const std::string& path);
 
+                    // Set additional shared library name patterns to be excluded from deployment.
+                    void setExcludeLibraryPatterns(const std::vector<std::string> &excludeLibraryPatterns);
+
                     // creates basic directory structure of an AppDir in "FHS" mode
                     bool createBasicStructure() const;
 

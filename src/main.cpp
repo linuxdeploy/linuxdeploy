@@ -33,6 +33,7 @@ int main(int argc, char** argv) {
     args::ValueFlag<std::string> appDirPath(parser, "appdir", "Path to target AppDir", {"appdir"});
 
     args::ValueFlagList<std::string> sharedLibraryPaths(parser, "library", "Shared library to deploy", {'l', "library"});
+    args::ValueFlagList<std::string> excludeLibraryPatterns(parser, "pattern", "Shared library to exclude from deployment (glob pattern)", {"exclude-library"});
 
     args::ValueFlagList<std::string> executablePaths(parser, "executable", "Executable to deploy", {'e', "executable"});
 
@@ -110,6 +111,7 @@ int main(int argc, char** argv) {
     }
 
     appdir::AppDir appDir(appDirPath.Get());
+    appDir.setExcludeLibraryPatterns(excludeLibraryPatterns.Get());
 
     // allow disabling copyright files deployment via environment variable
     if (getenv("DISABLE_COPYRIGHT_FILES_DEPLOYMENT") != nullptr) {
