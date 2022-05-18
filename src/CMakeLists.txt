@@ -11,6 +11,8 @@ endif()
 find_package(Boost REQUIRED COMPONENTS filesystem regex)
 set(BOOST_LIBS Boost::filesystem Boost::regex)
 
+message(STATUS "Found boost: ${Boost_VERSION_STRING}")
+
 # read Git revision ID
 # WARNING: this value will be stored in the CMake cache
 # to update it, you will have to reset the CMake cache
