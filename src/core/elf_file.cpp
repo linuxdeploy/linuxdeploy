@@ -273,8 +273,14 @@ namespace linuxdeploy {
                 // don't try to fetch patchelf path in a catchall to make sure the process exists when the tool cannot be found
                 const auto patchelfPath = PrivateData::getPatchelfPath();
 
+                // calling (older versions of) patchelf on symlinks can lead to weird behavior, e.g., patchelf copying the
+                // original file and patching the copy instead of patching the symlink target
+                const auto canonicalPath = bf::canonical(d->path);
+
+                ldLog() << LD_DEBUG << "Calling patchelf on canonical path" << canonicalPath << "instead of original path" << d->path << std::endl;
+
                 try {
-                    subprocess::subprocess patchelfProc({patchelfPath.c_str(), "--set-rpath", value.c_str(), d->path.c_str()});
+                    subprocess::subprocess patchelfProc({patchelfPath.c_str(), "--set-rpath", value.c_str(), canonicalPath.c_str()});
 
                     const auto result = patchelfProc.run();
 
