@@ -47,7 +47,7 @@ pushd "$BUILD_DIR"
 git clone https://github.com/NixOS/patchelf.git .
 
 # cannot use -b since it's not supported in really old versions of git
-git checkout 0.8
+git checkout 0.14.5
 
 # prepare configure script
 ./bootstrap.sh
