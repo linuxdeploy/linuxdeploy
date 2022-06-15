@@ -46,9 +46,6 @@ cmake "$REPO_ROOT" -DSTATIC_BUILD=On -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_T
 
 make -j"$(nproc)"
 
-## Run Unit Tests
-ctest -V
-
 # build patchelf
 "$REPO_ROOT"/ci/build-static-patchelf.sh "$(readlink -f out/)"
 patchelf_path="$(readlink -f out/usr/bin/patchelf)"
@@ -57,8 +54,11 @@ patchelf_path="$(readlink -f out/usr/bin/patchelf)"
 "$REPO_ROOT"/ci/build-static-binutils.sh "$(readlink -f out/)"
 strip_path="$(readlink -f out/usr/bin/strip)"
 
-# use tools we just built for linuxdeploy run
+# use tools we just built for linuxdeploy test run
 export PATH="$(readlink -f out/usr/bin):$PATH"
+
+## Run Unit Tests
+ctest -V
 
 # args are used more than once
 LINUXDEPLOY_ARGS=("--appdir" "AppDir" "-e" "bin/linuxdeploy" "-i" "$REPO_ROOT/resources/linuxdeploy.png" "-d" "$REPO_ROOT/resources/linuxdeploy.desktop" "-e" "$patchelf_path" "-e" "$strip_path")
