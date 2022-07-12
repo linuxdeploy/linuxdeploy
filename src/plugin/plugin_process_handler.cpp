@@ -43,6 +43,7 @@ namespace linuxdeploy {
                 std::string stream_name_;
                 ldLog log_;
                 bool print_prefix_in_next_iteration_;
+                bool eof = false;
 
                 pipe_to_be_logged(int pipe_fd, std::string stream_name) : reader_(pipe_fd),
                                                                           stream_name_(std::move(stream_name)),
@@ -62,12 +63,17 @@ namespace linuxdeploy {
                     // since we have our own ldLog instance for every pipe, we can get away with this rather small read buffer
                     subprocess::subprocess_result_buffer_t intermediate_buffer(4096);
 
+                    if (pipe_to_be_logged.eof) {
+                        break;
+                    }
+
                     // (try to) read from pipe
                     const auto bytes_read = pipe_to_be_logged.reader_.read(intermediate_buffer);
 
-                    // no action required in case we have not read anything from the pipe
-                    if (bytes_read <= 0) {
-                        continue;
+                    // 0 means EOF
+                    if (bytes_read == 0) {
+                        pipe_to_be_logged.eof = true;
+                        break;
                     }
 
                     // we just trim the buffer to the bytes we read (makes the code below easier)
@@ -119,7 +125,12 @@ namespace linuxdeploy {
                 if (proc.is_running()) {
                     // reduce load on CPU
                     std::this_thread::sleep_for(std::chrono::milliseconds(50));
-                } else {
+                }
+
+                // once all buffers are EOF, we can stop reading
+                if (std::all_of(pipes_to_be_logged.begin(), pipes_to_be_logged.end(), [](const pipe_to_be_logged& pipe_state) {
+                    return pipe_state.eof;
+                })) {
                     break;
                 }
             }
