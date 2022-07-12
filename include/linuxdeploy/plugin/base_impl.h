@@ -59,9 +59,13 @@ namespace linuxdeploy {
                             return -1;
                         }
 
+                        if (getenv("DEBUG_PLUGIN_DETECTION")) {
+                            ldLog() << LD_DEBUG << "output from plugin:" << stdoutOutput << std::endl;
+                        }
+
                         try {
-                            auto apiLevel = std::stoi(stdoutOutput);
-                            return apiLevel;
+                            const int parsedApiLevel = std::stoi(stdoutOutput);
+                            return parsedApiLevel;
                         } catch (const std::exception&) {
                             return -1;
                         }
