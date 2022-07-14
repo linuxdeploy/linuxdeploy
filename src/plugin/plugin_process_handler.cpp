@@ -58,14 +58,14 @@ namespace linuxdeploy {
 
             for (;;) {
                 for (auto& pipe_to_be_logged : pipes_to_be_logged) {
+                    if (pipe_to_be_logged.eof) {
+                        continue;
+                    }
+
                     const auto log_prefix = "[" + name_ + "/" + pipe_to_be_logged.stream_name_ + "] ";
 
                     // since we have our own ldLog instance for every pipe, we can get away with this rather small read buffer
                     subprocess::subprocess_result_buffer_t intermediate_buffer(4096);
-
-                    if (pipe_to_be_logged.eof) {
-                        break;
-                    }
 
                     // (try to) read from pipe
                     const auto bytes_read = pipe_to_be_logged.reader_.read(intermediate_buffer);

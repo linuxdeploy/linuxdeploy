@@ -25,14 +25,6 @@ namespace linuxdeploy {
             // these constants help make the pipe code more readable
             static constexpr int READ_END_ = 0, WRITE_END_ = 1;
 
-            static std::vector<char*> make_args_vector_(const std::vector<std::string>& args);
-
-            static std::vector<char*> make_env_vector_(const subprocess_env_map_t& env);
-
-            static int check_waitpid_status_(int status);
-
-            static void close_pipe_fd_(int fd);
-
         public:
             /**
              * Create a child process.
