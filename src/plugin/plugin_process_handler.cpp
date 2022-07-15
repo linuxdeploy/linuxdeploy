@@ -68,63 +68,57 @@ namespace linuxdeploy {
                     subprocess::subprocess_result_buffer_t intermediate_buffer(4096);
 
                     // (try to) read from pipe
-                    const auto bytes_read = pipe_to_be_logged.reader_.read(intermediate_buffer);
+                    switch (pipe_to_be_logged.reader_.read(intermediate_buffer)) {
+                        case pipe_reader::result::SUCCESS: {
+                            // all we have to do now is to look for CR or LF, send everything up to that location into the ldLog instance,
+                            // write our prefix and then repeat
+                            for (auto it = intermediate_buffer.begin(); it != intermediate_buffer.end(); ++it) {
+                                if (pipe_to_be_logged.print_prefix_in_next_iteration_) {
+                                    pipe_to_be_logged.log_ << log_prefix;
+                                }
 
-                    // 0 means EOF
-                    if (bytes_read == 0) {
-                        pipe_to_be_logged.eof = true;
-                        break;
-                    }
+                                const auto next_lf = std::find(it, intermediate_buffer.end(), '\n');
+                                const auto next_cr = std::find(it, intermediate_buffer.end(), '\r');
 
-                    // we just trim the buffer to the bytes we read (makes the code below easier)
-                    intermediate_buffer.resize(bytes_read);
+                                // we don't care which one goes first -- we pick the closest one, write everything up to it into our ldLog,
+                                // then print our prefix and repeat that until there's nothing left in our buffer
+                                auto next_control_char = std::min({next_lf, next_cr});
 
-                    // all we have to do now is to look for CR or LF, send everything up to that location into the ldLog instance,
-                    // write our prefix and then repeat
-                    for (auto it = intermediate_buffer.begin(); it != intermediate_buffer.end(); ++it) {
-                        if (pipe_to_be_logged.print_prefix_in_next_iteration_) {
-                            pipe_to_be_logged.log_ << log_prefix;
-                        }
+                                // if there is a control char, we remember this for the next iteration, where we print our
+                                // log prefix
+                                // in any case, we can write the remaining buffer contents into the ldLog object
+                                pipe_to_be_logged.print_prefix_in_next_iteration_ = (next_control_char !=
+                                                                                     intermediate_buffer.end());
 
-                        const auto next_lf = std::find(it, intermediate_buffer.end(), '\n');
-                        const auto next_cr = std::find(it, intermediate_buffer.end(), '\r');
+                                const auto distance_from_begin_to_it = std::distance(intermediate_buffer.begin(), it);
+                                auto distance_from_it_to_next_cc = std::distance(it, next_control_char);
 
-                        // we don't care which one goes first -- we pick the closest one, write everything up to it into our ldLog,
-                        // then print our prefix and repeat that until there's nothing left in our buffer
-                        auto next_control_char = std::min({next_lf, next_cr});
+                                if (pipe_to_be_logged.print_prefix_in_next_iteration_) {
+                                    distance_from_it_to_next_cc++;
+                                }
 
-                        // if there is a control char, we remember this for the next iteration, where we print our
-                        // log prefix
-                        // in any case, we can write the remaining buffer contents into the ldLog object
-                        pipe_to_be_logged.print_prefix_in_next_iteration_ = (next_control_char !=
-                                                                             intermediate_buffer.end());
+                                // need to make sure we include the control char in the write
+                                pipe_to_be_logged.log_.write(
+                                    intermediate_buffer.data() + distance_from_begin_to_it,
+                                    distance_from_it_to_next_cc
+                                );
 
-                        const auto distance_from_begin_to_it = std::distance(intermediate_buffer.begin(), it);
-                        auto distance_from_it_to_next_cc = std::distance(it, next_control_char);
+                                it = next_control_char;
 
-                        if (pipe_to_be_logged.print_prefix_in_next_iteration_) {
-                            distance_from_it_to_next_cc++;
-                        }
-
-                        // need to make sure we include the control char in the write
-                        pipe_to_be_logged.log_.write(
-                        intermediate_buffer.data() + distance_from_begin_to_it,
-                            distance_from_it_to_next_cc
-                        );
-
-                        it = next_control_char;
-
-                        // TODO: should not be necessary, should be fixed in for loop
-                        if (!pipe_to_be_logged.print_prefix_in_next_iteration_) {
+                                // TODO: should not be necessary, should be fixed in for loop
+                                if (!pipe_to_be_logged.print_prefix_in_next_iteration_) {
+                                    break;
+                                }
+                            }
                             break;
                         }
+                        case pipe_reader::result::END_OF_FILE: {
+                            pipe_to_be_logged.eof = true;
+                            break;
+                        }
+                        case pipe_reader::result::TIMEOUT:
+                            break;
                     }
-                }
-
-                // do-while might be a little more elegant, but we can save this one unnecessary sleep, so...
-                if (proc.is_running()) {
-                    // reduce load on CPU
-                    std::this_thread::sleep_for(std::chrono::milliseconds(50));
                 }
 
                 // once all buffers are EOF, we can stop reading

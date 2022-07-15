@@ -51,23 +51,19 @@ namespace linuxdeploy {
                     subprocess_result_buffer_t intermediate_buffer(4096);
 
                     // (try to) read all available data from pipe
-                    for (;;) {
-                        if (pipe_state.eof) {
-                            break;
+                    for (; !pipe_state.eof; ) {
+                        switch (pipe_state.reader.read(intermediate_buffer)) {
+                            case pipe_reader::result::SUCCESS: {
+                                // append to main buffer
+                                pipe_state.buffer.reserve(pipe_state.buffer.size() + intermediate_buffer.size());
+                                std::copy(intermediate_buffer.begin(), intermediate_buffer.end(), std::back_inserter(pipe_state.buffer));
+                            }
+                            case pipe_reader::result::END_OF_FILE: {
+                                pipe_state.eof = true;
+                            }
+                            default:
+                                break;
                         }
-
-                        const auto bytes_read = pipe_state.reader.read(intermediate_buffer);
-
-                        // 0 means EOF
-                        if (bytes_read == 0) {
-                            pipe_state.eof = true;
-                            break;
-                        }
-
-                        // append to main buffer
-                        pipe_state.buffer.reserve(pipe_state.buffer.size() + bytes_read);
-                        std::copy(intermediate_buffer.begin(), (intermediate_buffer.begin() + bytes_read),
-                                  std::back_inserter(pipe_state.buffer));
                     }
                 }
 
