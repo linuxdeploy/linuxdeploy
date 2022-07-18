@@ -57,9 +57,11 @@ namespace linuxdeploy {
                                 // append to main buffer
                                 pipe_state.buffer.reserve(pipe_state.buffer.size() + intermediate_buffer.size());
                                 std::copy(intermediate_buffer.begin(), intermediate_buffer.end(), std::back_inserter(pipe_state.buffer));
+                                break;
                             }
                             case pipe_reader::result::END_OF_FILE: {
                                 pipe_state.eof = true;
+                                break;
                             }
                             default:
                                 break;
