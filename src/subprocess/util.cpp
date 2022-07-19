@@ -16,7 +16,7 @@ namespace linuxdeploy::subprocess {
                 std::string current_env_var_str(*current_env_var);
                 const auto first_eq = current_env_var_str.find_first_of('=');
                 const auto env_var_name = current_env_var_str.substr(0, first_eq);
-                const auto env_var_value = current_env_var_str.substr(first_eq);
+                const auto env_var_value = current_env_var_str.substr(first_eq + 1);
                 result[env_var_name] = env_var_value;
             }
         }
