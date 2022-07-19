@@ -23,7 +23,7 @@ namespace linuxdeploy {
             // prepare arguments and environment variables
             const std::initializer_list<std::string> args = {path_.string(), "--appdir", appDir.string()};
 
-            subprocess::subprocess_env_map_t environmentVariables{};
+            auto environmentVariables = subprocess::get_environment();
 
             // add $LINUXDEPLOY, which points to the current binary
             // we do not need to pass $APPIMAGE or alike, since while linuxdeploy is running, the path in the
