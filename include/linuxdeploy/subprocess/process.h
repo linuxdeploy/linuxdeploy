@@ -28,10 +28,24 @@ namespace linuxdeploy {
         public:
             /**
              * Create a child process.
+             * This constructor passes the system environment to the child process.
              * @param args parameters for process
-             * @param env additional environment variables (current environment will be copied)
+             */
+            process(std::initializer_list<std::string> args);
+
+            /**
+             * Create a child process.
+             * @param args parameters for process
+             * @param env map of all environment variables (caller must include the existing vars if they want to)
              */
             process(std::initializer_list<std::string> args, const subprocess_env_map_t& env);
+
+            /**
+             * Create a child process.
+             * This constructor passes the system environment to the child process.
+             * @param args parameters for process
+             */
+            process(const std::vector<std::string>& args);
 
             /**
              * Create a child process.

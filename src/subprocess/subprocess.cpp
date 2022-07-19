@@ -15,8 +15,15 @@
 
 namespace linuxdeploy {
     namespace subprocess {
+
+        subprocess::subprocess(std::initializer_list<std::string> args)
+            : subprocess(std::vector<std::string>(args), get_environment()) {}
+
         subprocess::subprocess(std::initializer_list<std::string> args, subprocess_env_map_t env)
             : subprocess(std::vector<std::string>(args), std::move(env)) {}
+
+        subprocess::subprocess(std::vector<std::string> args)
+            : args_(std::move(args)), env_(get_environment()) {}
 
         subprocess::subprocess(std::vector<std::string> args, subprocess_env_map_t env)
             : args_(std::move(args)), env_(std::move(env)) {

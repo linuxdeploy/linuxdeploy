@@ -1,17 +1,15 @@
 // system headers
 #include <algorithm>
-#include <iostream>
-#include <memory>
-#include <sstream>
 #include <stdexcept>
 #include <utility>
 #include <unistd.h>
 #include <memory.h>
 #include <wait.h>
+#include <sstream>
 
 // local headers
 #include "linuxdeploy/subprocess/process.h"
-#include "linuxdeploy/subprocess/subprocess.h"
+#include "linuxdeploy/subprocess/util.h"
 #include "linuxdeploy/util/assert.h"
 
 // shorter than using namespace ...
@@ -27,50 +25,6 @@ namespace {
         }
 
         // execv* want a nullptr-terminated array
-        rv.emplace_back(nullptr);
-
-        return rv;
-    }
-
-    std::vector<char*> make_env_vector(const subprocess_env_map_t& env) {
-        std::vector<char*> rv;
-
-        // first, copy existing environment
-        // we cannot reserve space in the vector unfortunately, as we don't know the size of environ before the iteration
-        if (environ != nullptr) {
-            for (auto** current_env_var = environ; *current_env_var != nullptr; ++current_env_var) {
-                rv.emplace_back(strdup(*current_env_var));
-            }
-        }
-
-        // add own environment variables, overwriting existing ones if necessary
-        for (const auto& env_var : env) {
-            const auto& key = env_var.first;
-            const auto& value = env_var.second;
-
-            auto predicate = [&key](char* existing_env_var) {
-                char* equal_sign = strstr(existing_env_var, "=");
-
-                if (equal_sign == nullptr) {
-                    throw std::runtime_error{"no equal sign in environment variable"};
-                }
-
-                return strncmp(existing_env_var, key.c_str(), std::distance(equal_sign, existing_env_var)) == 0;
-            };
-
-            // delete existing env var, if any
-            rv.erase(std::remove_if(rv.begin(), rv.end(), predicate), rv.end());
-
-            // insert new value
-            std::ostringstream oss;
-            oss << key;
-            oss << "=";
-            oss << value;
-
-            rv.emplace_back(strdup(oss.str().c_str()));
-        }
-
-        // exec*e want a nullptr-terminated array
         rv.emplace_back(nullptr);
 
         return rv;
@@ -100,6 +54,27 @@ namespace {
         }
     }
 
+    using env_vector_t = std::vector<char*>;
+
+    /**
+     * Convert a map of environment variables to a vector usable within
+     * @param map
+     * @return
+     */
+    env_vector_t env_map_to_vector(const subprocess_env_map_t& map) {
+        env_vector_t out;
+
+        for (const auto& [name, value] : map) {
+            std::ostringstream oss;
+            oss << name << '=' << value;
+            out.emplace_back(strdup(oss.str().c_str()));
+        }
+
+        // must be null terminated, of course
+        out.emplace_back(nullptr);
+
+        return out;
+    }
 }
 
 int process::pid() const {
@@ -114,8 +89,14 @@ int process::stderr_fd() const {
     return stderr_fd_;
 }
 
+process::process(std::initializer_list<std::string> args)
+    : process(std::vector<std::string>(args), get_environment()) {}
+
 process::process(std::initializer_list<std::string> args, const subprocess_env_map_t& env)
     : process(std::vector<std::string>(args), env) {}
+
+process::process(const std::vector<std::string>& args)
+    : process(args, get_environment()) {}
 
 process::process(const std::vector<std::string>& args, const subprocess_env_map_t& env) {
     // preconditions
@@ -177,7 +158,7 @@ process::process(const std::vector<std::string>& args, const subprocess_env_map_
 
         // prepare arguments for exec*
         auto exec_args = make_args_vector(args);
-        auto exec_env = make_env_vector(env);
+        auto exec_env = env_map_to_vector(env);
 
         // call subprocess
         execvpe(args.front().c_str(), exec_args.data(), exec_env.data());

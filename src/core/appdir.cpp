@@ -250,8 +250,8 @@ namespace linuxdeploy {
                                 } else {
                                     ldLog() << "Calling strip on library" << filePath << std::endl;
 
-                                    subprocess::subprocess_env_map_t env;
-                                    env.insert(std::make_pair(std::string("LC_ALL"), std::string("C")));
+                                    auto env = subprocess::get_environment();
+                                    env["LC_ALL"] = "C";
 
                                     subprocess::subprocess proc({stripPath, filePath.string()}, env);
 

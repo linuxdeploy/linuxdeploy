@@ -192,7 +192,7 @@ namespace linuxdeploy {
 
                 std::vector<bf::path> paths;
 
-                subprocess::subprocess_env_map_t env;
+                auto env = subprocess::get_environment();
                 env["LC_ALL"] = "C";
 
                 // workaround for https://sourceware.org/bugzilla/show_bug.cgi?id=25263
