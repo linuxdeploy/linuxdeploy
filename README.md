@@ -64,7 +64,7 @@ linuxdeploy does not change any environment variables such as `$PATH`. Your appl
 
 ## Contact
 
-The easiest way to get in touch with the developers is to join the IRC chatroom [#AppImage](https://webchat.freenode.net/?channels=appimage) on FreeNode. This is the preferred way for general feedback or questions how to use this application.
+The easiest way to get in touch with the developers is to join the IRC chatroom [#AppImage](https://web.libera.chat/#appimage) on [https://libera.chat](Libera.Chat). This is the preferred way for general feedback or questions how to use this application.
 
 To report problems, please [create an issue](https://github.com/TheAssassin/linuxdeploy/issues/new) on GitHub.
 
