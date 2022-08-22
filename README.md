@@ -66,6 +66,6 @@ linuxdeploy does not change any environment variables such as `$PATH`. Your appl
 
 The easiest way to get in touch with the developers is to join the IRC chatroom [#AppImage](https://web.libera.chat/#appimage) on [https://libera.chat](Libera.Chat). This is the preferred way for general feedback or questions how to use this application.
 
-To report problems, please [create an issue](https://github.com/TheAssassin/linuxdeploy/issues/new) on GitHub.
+To report problems, please [create an issue](https://github.com/linuxdeploy/linuxdeploy/issues/new) on GitHub.
 
 Contributions welcome! Please feel free to fork this repository and send us a pull request. Even small changes, e.g., in this README, are highly appreciated!
