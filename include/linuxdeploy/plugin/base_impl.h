@@ -48,10 +48,19 @@ namespace linuxdeploy {
                     };
 
                 private:
+                    subprocess::subprocess_env_map_t getFixedEnvironment() {
+                        auto rv = subprocess::get_environment();
+                        rv.erase("VERBOSE");
+                        return rv;
+                    }
+
                     int getApiLevelFromExecutable() {
                         const auto arg =  "--plugin-api-version";
 
-                        const subprocess::subprocess proc({pluginPath.string(), arg});
+                        // during plugin detection, we must make sure $VERBOSE is not passed to the AppImage runtime
+                        // otherwise, in combination with $APPIMAGE_EXTRACT_AND_RUN, the runtime will spam the file
+                        // extraction messages, which makes parsing the output very hard
+                        const subprocess::subprocess proc({pluginPath.string(), arg}, getFixedEnvironment());
                         const auto stdoutOutput = proc.check_output();
 
                         if (stdoutOutput.empty()) {
@@ -59,9 +68,13 @@ namespace linuxdeploy {
                             return -1;
                         }
 
+                        if (getenv("DEBUG_PLUGIN_DETECTION")) {
+                            ldLog() << LD_DEBUG << "output from plugin:" << stdoutOutput << std::endl;
+                        }
+
                         try {
-                            auto apiLevel = std::stoi(stdoutOutput);
-                            return apiLevel;
+                            const int parsedApiLevel = std::stoi(stdoutOutput);
+                            return parsedApiLevel;
                         } catch (const std::exception&) {
                             return -1;
                         }
@@ -73,7 +86,10 @@ namespace linuxdeploy {
 
                         // check whether plugin implements --plugin-type
                         try {
-                            const subprocess::subprocess proc({pluginPath.c_str(), "--plugin-type"});
+                            // during plugin detection, we must make sure $VERBOSE is not passed to the AppImage runtime
+                            // otherwise, in combination with $APPIMAGE_EXTRACT_AND_RUN, the runtime will spam the file
+                            // extraction messages, which makes parsing the output very hard
+                            const subprocess::subprocess proc({pluginPath.c_str(), "--plugin-type"}, getFixedEnvironment());
                             const auto stdoutOutput = proc.check_output();
 
                             // the specification requires a single line, but we'll silently accept more than that, too

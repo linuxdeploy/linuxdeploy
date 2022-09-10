@@ -192,7 +192,7 @@ namespace linuxdeploy {
 
                 std::vector<bf::path> paths;
 
-                subprocess::subprocess_env_map_t env;
+                auto env = subprocess::get_environment();
                 env["LC_ALL"] = "C";
 
                 // workaround for https://sourceware.org/bugzilla/show_bug.cgi?id=25263
@@ -217,7 +217,23 @@ namespace linuxdeploy {
                 const boost::regex expr(R"(\s*(.+)\s+\=>\s+(.+)\s+\((.+)\)\s*)");
                 boost::smatch what;
 
-                for (const auto& line : util::splitLines(result.stdout_string())) {
+                auto lddLines = util::splitLines(result.stdout_string());
+
+                // filter known-problematic, known-unneeded lines
+                // see https://github.com/linuxdeploy/linuxdeploy/issues/210
+                lddLines.erase(
+                    std::remove_if(lddLines.begin(), lddLines.end(), [&lddLines](auto line) {
+                        if (util::stringContains(line, "linux-vdso.so") || util::stringContains(line, "ld-linux-")) {
+                            ldLog() << LD_DEBUG << "skipping linker related object" << line << std::endl;
+                            return true;
+                        }
+
+                        return false;
+                    }),
+                    lddLines.end()
+                );
+
+                for (const auto& line : lddLines) {
                     if (boost::regex_search(line, what, expr)) {
                         auto libraryPath = what[2].str();
                         util::trim(libraryPath);
