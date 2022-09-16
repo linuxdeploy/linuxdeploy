@@ -171,18 +171,23 @@ namespace linuxdeploy {
                     return true;
                 }
 
+                std::vector<bf::path> fileList;
+
+                std::copy_if(
+                    bf::directory_iterator(appRunHooksPath), bf::directory_iterator {}, 
+                    std::back_inserter(fileList), 
+                    [](const bf::path& path) {
+                        return bf::is_regular_file(path);
+                    });
+
                 // if there's no files in there we don't have to do anything
-                bf::directory_iterator firstRegularFile = std::find_if(
-                    bf::directory_iterator(appRunHooksPath),
-                    bf::directory_iterator{},
-                    [](const bf::path& p) {
-                        return bf::is_regular_file(p);
-                    }
-                );
-                if (firstRegularFile == bf::directory_iterator{}) {
+                if (fileList.empty()) {
                     ldLog() << LD_WARNING << "Found an empty apprun-hooks directory, assuming there is no need to deploy the AppRun wrapper" << std::endl;
                     return true;
                 }
+
+                // sort the file list so that the order of execution is deterministic
+                std::sort(fileList.begin(), fileList.end());
 
                 // any file within that directory is considered to be a script
                 // we can't perform any validity checks, that would be way too much complexity and even tools which
@@ -202,10 +207,7 @@ namespace linuxdeploy {
                     << "this_dir=\"$(readlink -f \"$(dirname \"$0\")\")\"" << std::endl
                     << std::endl;
 
-                std::for_each(bf::directory_iterator(appRunHooksPath), bf::directory_iterator{}, [&oss](const bf::path& p) {
-                    if (!bf::is_regular_file(p))
-                        return;
-
+                std::for_each(fileList.begin(), fileList.end(), [&oss](const bf::path& p) {
                     oss << "source \"$this_dir\"/" << APPRUN_HOOKS_DIRNAME << "/" << p.filename() << std::endl;
                 });
 
