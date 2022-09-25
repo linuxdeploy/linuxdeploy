@@ -105,9 +105,11 @@ namespace linuxdeploy {
             }
 
             bool deployStandardAppRunFromDesktopFile(const DesktopFile& desktopFile, const bf::path& customAppRunPath) const {
+                const bf::path appRunPath(appDir.path() / "AppRun");
+
                 // check if there is a custom AppRun already
                 // in that case, skip deployment of symlink
-                if (bf::exists(appDir.path() / "AppRun")) {
+                if (bf::exists(appRunPath)) {
                     ldLog() << LD_WARNING << "Existing AppRun detected, skipping deployment of symlink" << std::endl;
                 } else {
                     // look for suitable binary to create AppRun symlink
@@ -138,7 +140,7 @@ namespace linuxdeploy {
                             ldLog() << "Deploying AppRun symlink for executable in AppDir root:" << executablePath
                                     << std::endl;
 
-                            if (!appDir.createRelativeSymlink(executablePath, appDir.path() / "AppRun")) {
+                            if (!appDir.createRelativeSymlink(executablePath, appRunPath)) {
                                 ldLog() << LD_ERROR
                                         << "Failed to create AppRun symlink for executable in AppDir root:"
                                         << executablePath << std::endl;
@@ -154,6 +156,21 @@ namespace linuxdeploy {
                         ldLog() << LD_ERROR << "Could not deploy symlink for executable: could not find suitable executable for Exec entry:" << executableName << std::endl;
                         return false;
                     }
+                }
+
+                if (!bf::exists(appRunPath)) {
+                    ldLog() << LD_ERROR << "AppRun deployment failed unexpectedly" << std::endl;
+                    return false;
+                }
+
+                // as a convenience feature, we just make the deployed AppRun file executable, so the user won't be
+                // surprised during runtime when they forgot to do so
+                // this is done for custom AppRun files, too
+                if (bf::is_symlink(appRunPath)) {
+                    ldLog() << LD_DEBUG << "Deployed AppRun is a symlink, not making executable" << std::endl;
+                } else {
+                    ldLog() << LD_DEBUG << "Deployed AppRun is not a symlink, making executable" << std::endl;
+                    makeFileExecutable(appRunPath);
                 }
 
                 return true;
