@@ -1,6 +1,7 @@
 // system headers
-#include <set>
+#include <iomanip>
 #include <map>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -164,7 +165,14 @@ namespace linuxdeploy {
                                 return true;
                             }
 
+                            ldLog() << LD_DEBUG << "Copying file" << from << "to" << to << std::endl;
                             bf::copy_file(from, to, bf::copy_option::overwrite_if_exists);
+
+                            {
+                                std::stringstream addedPermsStr;
+                                addedPermsStr << std::oct << std::setfill('0') << std::setw(2) << addedPerms;
+                                ldLog() << LD_DEBUG << "Adding permissions 0o" << LD_NO_SPACE << addedPermsStr.str() << "to" << to << std::endl;
+                            }
                             bf::permissions(to, addedPerms | bf::add_perms);
                         } catch (const bf::filesystem_error& e) {
                             ldLog() << LD_ERROR << "Failed to copy file" << from << "to" << to << LD_NO_SPACE << ":" << e.what() << std::endl;
