@@ -14,7 +14,7 @@ add_library(linuxdeploy_plugin STATIC
     plugin_process_handler.cpp
     ${headers}
 )
-target_link_libraries(linuxdeploy_plugin PUBLIC linuxdeploy_core ${BOOST_LIBS} linuxdeploy_subprocess)
+target_link_libraries(linuxdeploy_plugin PUBLIC linuxdeploy_core linuxdeploy_subprocess)
 
 unset(headers)
 unset(headers_dir)

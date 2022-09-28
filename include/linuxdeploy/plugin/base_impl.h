@@ -1,12 +1,12 @@
 // system headers
+#include <fcntl.h>
+#include <filesystem>
+#include <poll.h>
 #include <set>
 #include <string>
 #include <vector>
-#include <fcntl.h>
-#include <poll.h>
 
 // library headers
-#include <boost/filesystem.hpp>
 #include <fnmatch.h>
 #include <thread>
 
@@ -28,22 +28,22 @@ namespace linuxdeploy {
             template<int API_LEVEL>
             class PluginBase<API_LEVEL>::PrivateData {
                 public:
-                    const boost::filesystem::path pluginPath;
+                    const std::filesystem::path pluginPath;
                     std::string name;
                     int apiLevel;
                     PLUGIN_TYPE pluginType;
 
                 public:
-                    explicit PrivateData(const boost::filesystem::path& path) : pluginPath(path) {
-                        if (!boost::filesystem::exists(path)) {
+                    explicit PrivateData(const std::filesystem::path& path) : pluginPath(path) {
+                        if (!std::filesystem::exists(path)) {
                             throw PluginError("No such file or directory: " + path.string());
                         }
 
                         apiLevel = getApiLevelFromExecutable();
                         pluginType = getPluginTypeFromExecutable();
 
-                        boost::cmatch res;
-                        boost::regex_match(path.filename().c_str(), res, PLUGIN_EXPR);
+                        std::cmatch res;
+                        std::regex_match(path.filename().c_str(), res, PLUGIN_EXPR);
                         name = res[1].str();
                     };
 
@@ -108,7 +108,7 @@ namespace linuxdeploy {
             };
 
             template<int API_LEVEL>
-            PluginBase<API_LEVEL>::PluginBase(const boost::filesystem::path& path) : IPlugin(path) {
+            PluginBase<API_LEVEL>::PluginBase(const std::filesystem::path& path) : IPlugin(path) {
                 d = new PrivateData(path);
 
                 if (d->apiLevel != API_LEVEL) {
@@ -124,7 +124,7 @@ namespace linuxdeploy {
             }
 
             template<int API_LEVEL>
-            boost::filesystem::path PluginBase<API_LEVEL>::path() const {
+            std::filesystem::path PluginBase<API_LEVEL>::path() const {
                 return d->pluginPath;
             }
 
@@ -151,7 +151,7 @@ namespace linuxdeploy {
             }
 
             template<int API_LEVEL>
-            int PluginBase<API_LEVEL>::run(const boost::filesystem::path& appDirPath) {
+            int PluginBase<API_LEVEL>::run(const std::filesystem::path& appDirPath) {
                 plugin_process_handler handler(d->name, path());
                 return handler.run(appDirPath);
             }

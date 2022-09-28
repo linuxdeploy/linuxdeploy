@@ -1,12 +1,11 @@
-// system includes
+// system headers
+#include <assert.h>
+#include <fcntl.h>
 #include <fstream>
 #include <memory>
-#include <utility>
-#include <fcntl.h>
-
-// library includes
-#include <boost/regex.hpp>
+#include <regex>
 #include <sys/mman.h>
+#include <utility>
 
 // local headers
 #include "linuxdeploy/core/elf_file.h"
@@ -16,21 +15,21 @@
 
 using namespace linuxdeploy::core::log;
 
-namespace bf = boost::filesystem;
+namespace fs = std::filesystem;
 
 namespace linuxdeploy {
     namespace core {
         namespace elf_file {
             class ElfFile::PrivateData {
                 public:
-                    const bf::path path;
+                    const fs::path path;
                     uint8_t elfClass = ELFCLASSNONE;
                     uint8_t elfABI = 0;
                     bool isDebugSymbolsFile = false;
                     bool isDynamicallyLinked = false;
 
                 public:
-                    explicit PrivateData(bf::path path) : path(std::move(path)) {}
+                    explicit PrivateData(fs::path path) : path(std::move(path)) {}
 
                 public:
                     static std::string getPatchelfPath() {
@@ -45,19 +44,19 @@ namespace linuxdeploy {
                             ldLog() << LD_DEBUG << "Using patchelf specified in $PATCHELF:" << envPatchelf << std::endl;
                             patchelfPath = envPatchelf;
                         } else {
-                            auto binDirPath = bf::path(util::getOwnExecutablePath());
+                            auto binDirPath = fs::path(util::getOwnExecutablePath());
                             auto localPatchelfPath = binDirPath.parent_path() / "patchelf";
 
-                            if (bf::exists(localPatchelfPath)) {
+                            if (fs::exists(localPatchelfPath)) {
                                 patchelfPath = localPatchelfPath.string();
                             } else {
-                                for (const bf::path directory : util::split(getenv("PATH"), ':')) {
-                                    if (!bf::is_directory(directory))
+                                for (const fs::path directory : util::split(getenv("PATH"), ':')) {
+                                    if (!fs::is_directory(directory))
                                         continue;
 
                                     auto path = directory / "patchelf";
 
-                                    if (bf::is_regular_file(path)) {
+                                    if (fs::is_regular_file(path)) {
                                         patchelfPath = path.string();
                                         break;
                                     }
@@ -65,7 +64,7 @@ namespace linuxdeploy {
                             }
                         }
 
-                        if (!bf::is_regular_file(patchelfPath)) {
+                        if (!fs::is_regular_file(patchelfPath)) {
                             ldLog() << LD_ERROR << "Could not find patchelf: no such file:" << patchelfPath << std::endl;
                             throw std::runtime_error("Could not find patchelf");
                         }
@@ -160,9 +159,9 @@ namespace linuxdeploy {
                     }
             };
 
-            ElfFile::ElfFile(const boost::filesystem::path& path) {
+            ElfFile::ElfFile(const std::filesystem::path& path) {
                 // check if file exists
-                if (!bf::exists(path))
+                if (!fs::exists(path))
                     throw ElfFileParseError("No such file or directory: " + path.string());
 
                 // check magic bytes
@@ -184,13 +183,13 @@ namespace linuxdeploy {
                 delete d;
             }
 
-            std::vector<bf::path> ElfFile::traceDynamicDependencies() {
+            std::vector<fs::path> ElfFile::traceDynamicDependencies() {
                 // this method's purpose is to abstract this process
                 // the caller doesn't care _how_ it's done, after all
 
                 // for now, we use the same ldd based method linuxdeployqt uses
 
-                std::vector<bf::path> paths;
+                std::vector<fs::path> paths;
 
                 auto env = subprocess::get_environment();
                 env["LC_ALL"] = "C";
@@ -199,7 +198,7 @@ namespace linuxdeploy {
                 // when you pass an absolute path to ldd, it can find libraries referenced in the rpath properly
                 // this bug was first found when trying to find a library next to the binary which contained $ORIGIN
                 // note that this is just a bug in ldd, the linker has always worked as intended
-                const auto resolvedPath = bf::canonical(d->path);
+                const auto resolvedPath = fs::canonical(d->path);
 
                 subprocess::subprocess lddProc({"ldd", resolvedPath.string()}, env);
 
@@ -214,8 +213,8 @@ namespace linuxdeploy {
                     throw std::runtime_error{"Failed to run ldd: exited with code " + std::to_string(result.exit_code())};
                 }
 
-                const boost::regex expr(R"(\s*(.+)\s+\=>\s+(.+)\s+\((.+)\)\s*)");
-                boost::smatch what;
+                const std::regex expr(R"(\s*(.+)\s+\=>\s+(.+)\s+\((.+)\)\s*)");
+                std::smatch what;
 
                 auto lddLines = util::splitLines(result.stdout_string());
 
@@ -234,10 +233,10 @@ namespace linuxdeploy {
                 );
 
                 for (const auto& line : lddLines) {
-                    if (boost::regex_search(line, what, expr)) {
+                    if (std::regex_search(line, what, expr)) {
                         auto libraryPath = what[2].str();
                         util::trim(libraryPath);
-                        paths.push_back(bf::absolute(libraryPath));
+                        paths.push_back(fs::absolute(libraryPath));
                     } else {
                         if (util::stringContains(line, "=> not found")) {
                             auto missingLib = line;
@@ -291,7 +290,7 @@ namespace linuxdeploy {
 
                 // calling (older versions of) patchelf on symlinks can lead to weird behavior, e.g., patchelf copying the
                 // original file and patching the copy instead of patching the symlink target
-                const auto canonicalPath = bf::canonical(d->path);
+                const auto canonicalPath = fs::canonical(d->path);
 
                 ldLog() << LD_DEBUG << "Calling patchelf on canonical path" << canonicalPath << "instead of original path" << d->path << std::endl;
 

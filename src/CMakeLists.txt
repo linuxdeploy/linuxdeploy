@@ -4,15 +4,6 @@ cmake_minimum_required(VERSION 3.5)
 # globally include own includes
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
-if(STATIC_BUILD)
-    set(Boost_USE_STATIC_LIBS ON)
-endif()
-
-find_package(Boost REQUIRED COMPONENTS filesystem regex)
-set(BOOST_LIBS Boost::filesystem Boost::regex)
-
-message(STATUS "Found boost: ${Boost_VERSION_STRING}")
-
 # read Git revision ID
 # WARNING: this value will be stored in the CMake cache
 # to update it, you will have to reset the CMake cache

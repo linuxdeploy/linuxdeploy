@@ -1,7 +1,6 @@
 #pragma once
 
 #include <iostream>
-#include <boost/filesystem/path.hpp>
 
 #include "linuxdeploy/core/appdir.h"
 

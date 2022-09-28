@@ -1,6 +1,7 @@
 // system headers
-#include <tuple>
+#include <filesystem>
 #include <thread>
+#include <tuple>
 #include <utility>
 
 // local headers
@@ -10,16 +11,16 @@
 #include <linuxdeploy/core/log.h>
 #include <linuxdeploy/subprocess/pipe_reader.h>
 
-namespace bf = boost::filesystem;
+namespace fs = std::filesystem;
 
 namespace linuxdeploy {
     namespace plugin {
         using namespace core::log;
 
-        plugin_process_handler::plugin_process_handler(std::string name, bf::path path) : name_(std::move(name)),
+        plugin_process_handler::plugin_process_handler(std::string name, fs::path path) : name_(std::move(name)),
                                                                                           path_(std::move(path)) {}
 
-        int plugin_process_handler::run(const bf::path& appDir) const {
+        int plugin_process_handler::run(const fs::path& appDir) const {
             // prepare arguments and environment variables
             const std::initializer_list<std::string> args = {path_.string(), "--appdir", appDir.string()};
 

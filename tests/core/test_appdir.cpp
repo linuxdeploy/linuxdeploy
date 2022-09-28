@@ -1,19 +1,23 @@
+// library headers
 #include "gtest/gtest.h"
+
+// local headers
 #include  "linuxdeploy/core/appdir.h"
+#include  "test_util.h"
 
 using namespace linuxdeploy::core::appdir;
 using namespace linuxdeploy::desktopfile;
-using namespace boost::filesystem;
+using namespace std::filesystem;
 
 namespace {
     void assertIsRegularFile(const path& pathToCheck) {
         ASSERT_TRUE(is_regular_file(pathToCheck));
-        EXPECT_TRUE(status(pathToCheck).permissions() >= 0644);
+        EXPECT_TRUE(static_cast<unsigned int>(status(pathToCheck).permissions()) >= 0644);
     }
 
     void assertIsExecutableFile(const path& pathToCheck) {
         assertIsRegularFile(pathToCheck);
-        EXPECT_TRUE(status(pathToCheck).permissions() >= 0755);
+        EXPECT_TRUE(static_cast<unsigned int>(status(pathToCheck).permissions()) >= 0755);
     }
 
     void assertIsSymlink(const path& targetPath, const path& symlinkPath) {
@@ -30,7 +34,7 @@ namespace AppDirTest {
 
     public:
         AppDirUnitTestsFixture() :
-            tmpAppDir(temp_directory_path() / unique_path("linuxdeploy-tests-%%%%-%%%%-%%%%")),
+            tmpAppDir(make_temporary_directory()),
             appDir(tmpAppDir) {
         }
 

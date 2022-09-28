@@ -15,4 +15,4 @@ add_library(linuxdeploy_subprocess STATIC
 target_include_directories(linuxdeploy_subprocess PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
 add_executable(subprocess_demo subprocess_demo.cpp)
-target_link_libraries(subprocess_demo PUBLIC linuxdeploy_subprocess ${BOOST_LIBS})
+target_link_libraries(subprocess_demo PUBLIC linuxdeploy_subprocess)
