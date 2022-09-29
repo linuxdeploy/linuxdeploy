@@ -4,13 +4,6 @@ cmake_minimum_required(VERSION 3.5)
 # globally include own includes
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
-if(STATIC_BUILD)
-    set(Boost_USE_STATIC_LIBS ON)
-endif()
-
-find_package(Boost REQUIRED COMPONENTS filesystem regex)
-set(BOOST_LIBS Boost::filesystem Boost::regex)
-
 # read Git revision ID
 # WARNING: this value will be stored in the CMake cache
 # to update it, you will have to reset the CMake cache
@@ -24,9 +17,7 @@ execute_process(
 
 # set version and build number
 set(VERSION 1-alpha)
-if(DEFINED ENV{TRAVIS_BUILD_NUMBER})
-    set(BUILD_NUMBER "Travis build $ENV{TRAVIS_BUILD_NUMBER}")
-elseif(DEFINED ENV{GITHUB_RUN_NUMBER})
+if(DEFINED ENV{GITHUB_RUN_NUMBER})
     set(BUILD_NUMBER "GitHub actions build $ENV{GITHUB_RUN_NUMBER}")
 else()
     set(BUILD_NUMBER "<local dev build>")

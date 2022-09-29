@@ -5,7 +5,8 @@
 
 using namespace std;
 using namespace linuxdeploy::core;
-namespace bf = boost::filesystem;
+
+namespace fs = std::filesystem;
 
 using namespace std;
 using namespace linuxdeploy::core::elf_file;

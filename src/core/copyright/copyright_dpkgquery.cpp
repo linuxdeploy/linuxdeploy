@@ -9,7 +9,7 @@ namespace linuxdeploy {
         namespace copyright {
             using namespace log;
 
-            std::vector<bf::path> DpkgQueryCopyrightFilesManager::getCopyrightFilesForPath(const bf::path& path) {
+            std::vector<fs::path> DpkgQueryCopyrightFilesManager::getCopyrightFilesForPath(const fs::path& path) {
                 subprocess::subprocess proc{{"dpkg-query", "-S", path.c_str()}};
 
                 auto result = proc.run();
@@ -22,9 +22,9 @@ namespace linuxdeploy {
                 auto packageName = util::split(util::splitLines(result.stdout_string())[0], ':')[0];
 
                 if (!packageName.empty()) {
-                    auto copyrightFilePath = bf::path("/usr/share/doc") / packageName / "copyright";
+                    auto copyrightFilePath = fs::path("/usr/share/doc") / packageName / "copyright";
 
-                    if (bf::is_regular_file(copyrightFilePath)) {
+                    if (fs::is_regular_file(copyrightFilePath)) {
                         return {copyrightFilePath};
                     }
                 } else {

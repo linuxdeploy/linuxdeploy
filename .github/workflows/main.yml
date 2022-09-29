@@ -32,14 +32,14 @@ jobs:
         if: matrix.ARCH == 'x86_64'
         run: |
           sudo apt-get update
-          sudo apt-get install -y gcovr libmagic-dev libjpeg-dev libpng-dev libboost-filesystem-dev libboost-regex-dev cimg-dev
+          sudo apt-get install -y gcovr libmagic-dev libjpeg-dev libpng-dev cimg-dev
 
       - name: Install dependencies (i386)
         if: matrix.ARCH == 'i386'
         run: |
           sudo dpkg --add-architecture i386
           sudo apt-get update
-          sudo apt-get install -y gcovr libmagic-dev:i386 libjpeg-dev:i386 libpng-dev:i386 libboost-filesystem-dev:i386 libboost-regex-dev:i386 cimg-dev gcc-multilib g++-multilib libfuse2:i386
+          sudo apt-get install -y gcovr libmagic-dev:i386 libjpeg-dev:i386 libpng-dev:i386 cimg-dev gcc-multilib g++-multilib libfuse2:i386
 
       - name: Test coverage
         run: bash -ex ci/test-coverage.sh

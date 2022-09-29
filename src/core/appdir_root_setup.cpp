@@ -1,10 +1,12 @@
+// system headers
+#include <fstream>
+
 // local headers
 #include <linuxdeploy/util/util.h>
 #include <linuxdeploy/core/log.h>
 #include "appdir_root_setup.h"
 
-
-namespace bf = boost::filesystem;
+namespace fs = std::filesystem;
 
 namespace linuxdeploy {
     using namespace desktopfile;
@@ -25,10 +27,10 @@ namespace linuxdeploy {
             explicit Private(const AppDir& appDir) : appDir(appDir) {}
 
         public:
-            static void makeFileExecutable(const bf::path& path) {
-                bf::permissions(path,
-                    bf::perms::owner_all | bf::perms::group_read | bf::perms::others_read |
-                    bf::perms::group_exe | bf::perms::others_exe
+            static void makeFileExecutable(const fs::path& path) {
+                fs::permissions(path,
+                    fs::perms::owner_all | fs::perms::group_read | fs::perms::others_read |
+                    fs::perms::group_exec | fs::perms::others_exec
                 );
             }
 
@@ -89,7 +91,7 @@ namespace linuxdeploy {
                 return true;
             }
 
-            bool deployCustomAppRunFile(const bf::path& customAppRunPath) const {
+            bool deployCustomAppRunFile(const fs::path& customAppRunPath) const {
                 // copy custom AppRun executable
                 ldLog() << "Deploying custom AppRun:" << customAppRunPath << std::endl;
 
@@ -104,10 +106,12 @@ namespace linuxdeploy {
                 return true;
             }
 
-            bool deployStandardAppRunFromDesktopFile(const DesktopFile& desktopFile, const bf::path& customAppRunPath) const {
+            bool deployStandardAppRunFromDesktopFile(const DesktopFile& desktopFile, const fs::path& customAppRunPath) const {
+                const fs::path appRunPath(appDir.path() / "AppRun");
+
                 // check if there is a custom AppRun already
                 // in that case, skip deployment of symlink
-                if (bf::exists(appDir.path() / "AppRun")) {
+                if (fs::exists(appRunPath)) {
                     ldLog() << LD_WARNING << "Existing AppRun detected, skipping deployment of symlink" << std::endl;
                 } else {
                     // look for suitable binary to create AppRun symlink
@@ -138,7 +142,7 @@ namespace linuxdeploy {
                             ldLog() << "Deploying AppRun symlink for executable in AppDir root:" << executablePath
                                     << std::endl;
 
-                            if (!appDir.createRelativeSymlink(executablePath, appDir.path() / "AppRun")) {
+                            if (!appDir.createRelativeSymlink(executablePath, appRunPath)) {
                                 ldLog() << LD_ERROR
                                         << "Failed to create AppRun symlink for executable in AppDir root:"
                                         << executablePath << std::endl;
@@ -156,33 +160,53 @@ namespace linuxdeploy {
                     }
                 }
 
+                if (!fs::exists(appRunPath)) {
+                    ldLog() << LD_ERROR << "AppRun deployment failed unexpectedly" << std::endl;
+                    return false;
+                }
+
+                // as a convenience feature, we just make the deployed AppRun file executable, so the user won't be
+                // surprised during runtime when they forgot to do so
+                // this is done for custom AppRun files, too
+                if (fs::is_symlink(appRunPath)) {
+                    ldLog() << LD_DEBUG << "Deployed AppRun is a symlink, not making executable" << std::endl;
+                } else {
+                    ldLog() << LD_DEBUG << "Deployed AppRun is not a symlink, making executable" << std::endl;
+                    makeFileExecutable(appRunPath);
+                }
+
                 return true;
             }
 
             bool deployAppRunWrapperIfNecessary() const {
-                const bf::path appRunPath(appDir.path() / "AppRun");
-                const bf::path wrappedAppRunPath(appRunPath.string() + ".wrapped");
+                const fs::path appRunPath(appDir.path() / "AppRun");
+                const fs::path wrappedAppRunPath(appRunPath.string() + ".wrapped");
 
-                const bf::path appRunHooksPath(appDir.path() / APPRUN_HOOKS_DIRNAME);
+                const fs::path appRunHooksPath(appDir.path() / APPRUN_HOOKS_DIRNAME);
 
                 // first, we check whether there's that special directory containing hooks
-                if (!bf::is_directory(appRunHooksPath)) {
+                if (!fs::is_directory(appRunHooksPath)) {
                     ldLog() << LD_DEBUG << "Could not find apprun-hooks dir, no need to deploy the AppRun wrapper" << std::endl;
                     return true;
                 }
 
+                std::vector<fs::path> fileList;
+
+                std::copy_if(
+                    fs::directory_iterator(appRunHooksPath), fs::directory_iterator {},
+                    std::back_inserter(fileList), 
+                    [](const fs::path& path) {
+                        return fs::is_regular_file(path);
+                    });
+
                 // if there's no files in there we don't have to do anything
-                bf::directory_iterator firstRegularFile = std::find_if(
-                    bf::directory_iterator(appRunHooksPath),
-                    bf::directory_iterator{},
-                    [](const bf::path& p) {
-                        return bf::is_regular_file(p);
-                    }
-                );
-                if (firstRegularFile == bf::directory_iterator{}) {
+                if (fileList.empty()) {
                     ldLog() << LD_WARNING << "Found an empty apprun-hooks directory, assuming there is no need to deploy the AppRun wrapper" << std::endl;
                     return true;
                 }
+
+                // sort the file list so that the order of execution is deterministic
+                std::sort(fileList.begin(), fileList.end());
 
                 // any file within that directory is considered to be a script
                 // we can't perform any validity checks, that would be way too much complexity and even tools which
@@ -202,10 +226,7 @@ namespace linuxdeploy {
                     << "this_dir=\"$(readlink -f \"$(dirname \"$0\")\")\"" << std::endl
                     << std::endl;
 
-                std::for_each(bf::directory_iterator(appRunHooksPath), bf::directory_iterator{}, [&oss](const bf::path& p) {
-                    if (!bf::is_regular_file(p))
-                        return;
-
+                std::for_each(fileList.begin(), fileList.end(), [&oss](const fs::path& p) {
                     oss << "source \"$this_dir\"/" << APPRUN_HOOKS_DIRNAME << "/" << p.filename() << std::endl;
                 });
 
@@ -216,19 +237,19 @@ namespace linuxdeploy {
                 // this might cause more harm than good
                 // we require the user to clean up the mess at first
                 // FIXME: try to find a way how to rewrap AppRun on subsequent runs or, even better, become idempotent
-                if (bf::exists(wrappedAppRunPath)) {
+                if (fs::exists(wrappedAppRunPath)) {
                     ldLog() << LD_WARNING << "Already found wrapped AppRun, using existing file/symlink" << std::endl;
                 } else {
                     // backup original AppRun
-                    bf::rename(appRunPath, wrappedAppRunPath);
+                    fs::rename(appRunPath, wrappedAppRunPath);
                 }
 
                 // in case the above check triggered a warning, it's possible that there is another AppRun in the AppDir
                 // this one has to be cleaned up in that case
-                if (bf::exists(appRunPath)) {
+                if (fs::exists(appRunPath)) {
                     ldLog() << LD_WARNING << "Found an AppRun file/symlink, possibly due to re-run of linuxdeploy, "
                                             "overwriting" << std::endl;
-                    bf::remove(appRunPath);
+                    fs::remove(appRunPath);
                 }
 
 
@@ -250,7 +271,7 @@ namespace linuxdeploy {
 
         AppDirRootSetup::AppDirRootSetup(const AppDir& appDir) : d(new Private(appDir)) {}
 
-        bool AppDirRootSetup::run(const DesktopFile& desktopFile, const bf::path& customAppRunPath) const {
+        bool AppDirRootSetup::run(const DesktopFile& desktopFile, const fs::path& customAppRunPath) const {
             // first step that is always required is to deploy the desktop file and the corresponding icon
             if (!d->deployDesktopFileAndIcon(desktopFile)) {
                 ldLog() << LD_DEBUG << "deployDesktopFileAndIcon returned false" << std::endl;

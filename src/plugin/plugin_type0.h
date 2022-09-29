@@ -1,10 +1,8 @@
-// system includes
+// system headers
+#include <filesystem>
 #include <string>
 
-// library includes
-#include <boost/filesystem.hpp>
-
-// local includes
+// local headers
 #include "linuxdeploy/core/log.h"
 #include "linuxdeploy/plugin/base.h"
 
@@ -18,7 +16,7 @@ namespace linuxdeploy {
          */
         class Type0Plugin : public base::PluginBase<0> {
             public:
-                explicit Type0Plugin(const boost::filesystem::path& path);
+                explicit Type0Plugin(const std::filesystem::path& path);
         };
     }
 }

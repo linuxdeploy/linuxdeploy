@@ -1,6 +1,8 @@
+add_library(test_util OBJECT test_util.cpp)
+
 function(ld_core_add_test_executable NAME)
     add_executable(${ARGV})
-    target_link_libraries(${NAME} PRIVATE linuxdeploy_core gtest)
+    target_link_libraries(${NAME} PRIVATE linuxdeploy_core gtest test_util)
     target_include_directories(${NAME} PRIVATE ${PROJECT_SOURCE_DIR}/include)
 
     # calculate paths to resources using CMake and hardcode them in the test binary

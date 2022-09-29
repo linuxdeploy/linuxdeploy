@@ -1,10 +1,15 @@
+// system headers
+#include <filesystem>
 #include <iostream>
-#include <boost/filesystem.hpp>
-#include <linuxdeploy/core/appdir.h>
-#include "core/appdir.cpp"
+
+// library headers
 #include <args.hxx>
 
-namespace bf = boost::filesystem;
+// local headers
+#include <linuxdeploy/core/appdir.h>
+#include "core/appdir.cpp"
+
+namespace fs = std::filesystem;
 
 using namespace linuxdeploy::core;
 

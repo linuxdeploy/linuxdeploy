@@ -1,15 +1,19 @@
+// system headers
+#include <algorithm>
+#include <assert.h>
+#include <filesystem>
 #include <iostream>
-#include <boost/filesystem/path.hpp>
 
+// local headers
 #include <linuxdeploy/core/appdir.h>
 #include <linuxdeploy/core/log.h>
-
 #include "core.h"
 
 using namespace linuxdeploy::core;
 using namespace linuxdeploy::core::log;
 using namespace linuxdeploy::desktopfile;
-namespace bf = boost::filesystem;
+
+namespace fs = std::filesystem;
 
 namespace linuxdeploy {
     class DeployError : public std::runtime_error {
@@ -33,13 +37,13 @@ namespace linuxdeploy {
             return deployedDesktopFiles[0];
         }
 
-        auto firstDeployedDesktopFileName = boost::filesystem::path(desktopFilePaths.front()).filename().string();
+        auto firstDeployedDesktopFileName = fs::path(desktopFilePaths.front()).filename().string();
 
         auto desktopFileMatchingName = find_if(
             deployedDesktopFiles.begin(),
             deployedDesktopFiles.end(),
             [&firstDeployedDesktopFileName](const desktopfile::DesktopFile& desktopFile) {
-                auto fileName = bf::path(desktopFile.path()).filename().string();
+                auto fileName = fs::path(desktopFile.path()).filename().string();
                 return fileName == firstDeployedDesktopFileName;
             }
         );
@@ -61,9 +65,9 @@ namespace linuxdeploy {
             ldLog() << LD_INFO << "Deploying custom AppRun: " << customAppRunPath << std::endl;
 
             const auto& appRunPathInAppDir = appDir.path() / "AppRun";
-            if (bf::exists(appRunPathInAppDir)) {
+            if (fs::exists(appRunPathInAppDir)) {
                 ldLog() << LD_WARNING << "File exists, replacing with custom AppRun" << std::endl;
-                bf::remove(appRunPathInAppDir);
+                fs::remove(appRunPathInAppDir);
             }
 
             appDir.deployFile(customAppRunPath, appDir.path() / "AppRun");

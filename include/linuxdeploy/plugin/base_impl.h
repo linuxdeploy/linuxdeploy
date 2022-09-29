@@ -1,12 +1,12 @@
 // system headers
+#include <fcntl.h>
+#include <filesystem>
+#include <poll.h>
 #include <set>
 #include <string>
 #include <vector>
-#include <fcntl.h>
-#include <poll.h>
 
 // library headers
-#include <boost/filesystem.hpp>
 #include <fnmatch.h>
 #include <thread>
 
@@ -28,30 +28,39 @@ namespace linuxdeploy {
             template<int API_LEVEL>
             class PluginBase<API_LEVEL>::PrivateData {
                 public:
-                    const boost::filesystem::path pluginPath;
+                    const std::filesystem::path pluginPath;
                     std::string name;
                     int apiLevel;
                     PLUGIN_TYPE pluginType;
 
                 public:
-                    explicit PrivateData(const boost::filesystem::path& path) : pluginPath(path) {
-                        if (!boost::filesystem::exists(path)) {
+                    explicit PrivateData(const std::filesystem::path& path) : pluginPath(path) {
+                        if (!std::filesystem::exists(path)) {
                             throw PluginError("No such file or directory: " + path.string());
                         }
 
                         apiLevel = getApiLevelFromExecutable();
                         pluginType = getPluginTypeFromExecutable();
 
-                        boost::cmatch res;
-                        boost::regex_match(path.filename().c_str(), res, PLUGIN_EXPR);
+                        std::cmatch res;
+                        std::regex_match(path.filename().c_str(), res, PLUGIN_EXPR);
                         name = res[1].str();
                     };
 
                 private:
+                    subprocess::subprocess_env_map_t getFixedEnvironment() {
+                        auto rv = subprocess::get_environment();
+                        rv.erase("VERBOSE");
+                        return rv;
+                    }
+
                     int getApiLevelFromExecutable() {
                         const auto arg =  "--plugin-api-version";
 
-                        const subprocess::subprocess proc({pluginPath.string(), arg});
+                        // during plugin detection, we must make sure $VERBOSE is not passed to the AppImage runtime
+                        // otherwise, in combination with $APPIMAGE_EXTRACT_AND_RUN, the runtime will spam the file
+                        // extraction messages, which makes parsing the output very hard
+                        const subprocess::subprocess proc({pluginPath.string(), arg}, getFixedEnvironment());
                         const auto stdoutOutput = proc.check_output();
 
                         if (stdoutOutput.empty()) {
@@ -59,9 +68,13 @@ namespace linuxdeploy {
                             return -1;
                         }
 
+                        if (getenv("DEBUG_PLUGIN_DETECTION")) {
+                            ldLog() << LD_DEBUG << "output from plugin:" << stdoutOutput << std::endl;
+                        }
+
                         try {
-                            auto apiLevel = std::stoi(stdoutOutput);
-                            return apiLevel;
+                            const int parsedApiLevel = std::stoi(stdoutOutput);
+                            return parsedApiLevel;
                         } catch (const std::exception&) {
                             return -1;
                         }
@@ -73,7 +86,10 @@ namespace linuxdeploy {
 
                         // check whether plugin implements --plugin-type
                         try {
-                            const subprocess::subprocess proc({pluginPath.c_str(), "--plugin-type"});
+                            // during plugin detection, we must make sure $VERBOSE is not passed to the AppImage runtime
+                            // otherwise, in combination with $APPIMAGE_EXTRACT_AND_RUN, the runtime will spam the file
+                            // extraction messages, which makes parsing the output very hard
+                            const subprocess::subprocess proc({pluginPath.c_str(), "--plugin-type"}, getFixedEnvironment());
                             const auto stdoutOutput = proc.check_output();
 
                             // the specification requires a single line, but we'll silently accept more than that, too
@@ -92,7 +108,7 @@ namespace linuxdeploy {
             };
 
             template<int API_LEVEL>
-            PluginBase<API_LEVEL>::PluginBase(const boost::filesystem::path& path) : IPlugin(path) {
+            PluginBase<API_LEVEL>::PluginBase(const std::filesystem::path& path) : IPlugin(path) {
                 d = new PrivateData(path);
 
                 if (d->apiLevel != API_LEVEL) {
@@ -108,7 +124,7 @@ namespace linuxdeploy {
             }
 
             template<int API_LEVEL>
-            boost::filesystem::path PluginBase<API_LEVEL>::path() const {
+            std::filesystem::path PluginBase<API_LEVEL>::path() const {
                 return d->pluginPath;
             }
 
@@ -135,7 +151,7 @@ namespace linuxdeploy {
             }
 
             template<int API_LEVEL>
-            int PluginBase<API_LEVEL>::run(const boost::filesystem::path& appDirPath) {
+            int PluginBase<API_LEVEL>::run(const std::filesystem::path& appDirPath) {
                 plugin_process_handler handler(d->name, path());
                 return handler.run(appDirPath);
             }
