@@ -17,9 +17,7 @@ execute_process(
 
 # set version and build number
 set(VERSION 1-alpha)
-if(DEFINED ENV{TRAVIS_BUILD_NUMBER})
-    set(BUILD_NUMBER "Travis build $ENV{TRAVIS_BUILD_NUMBER}")
-elseif(DEFINED ENV{GITHUB_RUN_NUMBER})
+if(DEFINED ENV{GITHUB_RUN_NUMBER})
     set(BUILD_NUMBER "GitHub actions build $ENV{GITHUB_RUN_NUMBER}")
 else()
     set(BUILD_NUMBER "<local dev build>")
