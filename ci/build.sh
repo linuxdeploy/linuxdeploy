@@ -41,6 +41,8 @@ wget -O- https://github.com/Kitware/CMake/releases/download/v3.18.1/cmake-3.18.1
 export PATH="$(readlink -f cmake-prefix/bin):$PATH"
 cmake --version
 
+env | grep GITHUB_
+
 # configure build for AppImage release
 cmake "$REPO_ROOT" -DSTATIC_BUILD=On -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=RelWithDebInfo "${EXTRA_CMAKE_ARGS[@]}"
 
