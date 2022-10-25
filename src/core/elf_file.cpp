@@ -183,7 +183,7 @@ namespace linuxdeploy {
                 delete d;
             }
 
-            std::vector<fs::path> ElfFile::traceDynamicDependencies() {
+            std::vector<fs::path> ElfFile::traceDynamicDependencies(const std::vector<std::string>& excludeLibraryPatterns) {
                 // this method's purpose is to abstract this process
                 // the caller doesn't care _how_ it's done, after all
 
@@ -244,7 +244,10 @@ namespace linuxdeploy {
                             missingLib.erase(missingLib.find(pattern), pattern.size());
                             util::trim(missingLib);
                             util::trim(missingLib, '\t');
-                            throw DependencyNotFoundError("Could not find dependency: " + missingLib);
+                            if (!util::isInExcludelist(missingLib, excludeLibraryPatterns)) {
+                                throw DependencyNotFoundError("Could not find dependency: " + missingLib);
+                            }
+                            ldLog() << LD_WARNING << resolvedPath.string() << "depends on excluded library:" << missingLib << std::endl;
                         } else {
                             ldLog() << LD_DEBUG << "Invalid ldd output: " << line << std::endl;
                         }
