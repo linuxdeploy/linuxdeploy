@@ -5,6 +5,7 @@
 #include <climits>
 #include <cstring>
 #include <filesystem>
+#include <fnmatch.h>
 #include <sstream>
 #include <string>
 #include <unistd.h>
@@ -145,6 +146,26 @@ namespace linuxdeploy {
                     result = split(ret, delimiter);
                 }
                 return result;
+            }
+
+            static bool isInExcludelist(const std::filesystem::path& fileName, const std::vector<std::string> &excludeList) {
+                for (const auto& excludePattern : excludeList) {
+                    // simple string match is faster than using fnmatch
+                    if (excludePattern == fileName)
+                        return true;
+
+                    auto fnmatchResult = fnmatch(excludePattern.c_str(), fileName.string().c_str(), FNM_PATHNAME);
+                    switch (fnmatchResult) {
+                        case 0:
+                            return true;
+                        case FNM_NOMATCH:
+                            break;
+                        default:
+                            return false;
+                    }
+                }
+
+                return false;
             }
         }
     }

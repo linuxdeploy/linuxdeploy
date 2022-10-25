@@ -46,7 +46,7 @@ namespace linuxdeploy {
                     // this works for both libraries and executables
                     // the resulting vector consists of absolute paths to the libraries determined by the same methods a system's
                     // linker would use
-                    std::vector<std::filesystem::path> traceDynamicDependencies();
+                    std::vector<std::filesystem::path> traceDynamicDependencies(const std::vector<std::string>& excludeLibraryPatterns={});
 
                     // fetch rpath stored in binary
                     // it appears that according to the ELF standard, the rpath is ignored in libraries, therefore if the path
