@@ -10,3 +10,6 @@
 [submodule "lib/cmake-scripts"]
 	path = lib/cmake-scripts
 	url = https://github.com/linuxdeploy/cmake-scripts.git
+[submodule "linuxdeploy-plugin-appimage"]
+	path = linuxdeploy-plugin-appimage
+	url = https://github.com/linuxdeploy/linuxdeploy-plugin-appimage

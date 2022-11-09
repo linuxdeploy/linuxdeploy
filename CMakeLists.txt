@@ -9,11 +9,21 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake/Modules/")
 
+SET(BUILD_APPIMAGE_PLUGIN OFF CACHE BOOL "Build appimage plugin?")
+
+include(SubProject)
+if(BUILD_APPIMAGE_PLUGIN)
+    message(STATUS "Adding subproject: linuxdeploy-plugin-appimage")
+    add_subproject(linuxdeploy-plugin-appimage)
+else()
+    message(WARNING "Not building appimage plugin, set -DBUILD_APPIMAGE_PLUGIN=ON to enable")
+endif()
+
 find_program(PATCHELF patchelf REQUIRED)
 
 # support for ccache
 # call CMake with -DUSE_CCACHE=ON to make use of it
-set(USE_CCACHE ON CACHE BOOL "")
+set(USE_CCACHE ON CACHE BOOL "Use ccache?")
 if(USE_CCACHE)
     find_program(CCACHE ccache)
     if(CCACHE)
