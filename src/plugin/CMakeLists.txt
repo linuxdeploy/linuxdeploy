@@ -18,3 +18,5 @@ target_link_libraries(linuxdeploy_plugin PUBLIC linuxdeploy_core linuxdeploy_sub
 
 unset(headers)
 unset(headers_dir)
+
+install(TARGETS linuxdeploy_plugin)
