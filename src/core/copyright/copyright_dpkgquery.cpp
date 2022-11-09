@@ -10,7 +10,13 @@ namespace linuxdeploy {
             using namespace log;
 
             std::vector<fs::path> DpkgQueryCopyrightFilesManager::getCopyrightFilesForPath(const fs::path& path) {
-                subprocess::subprocess proc{{"dpkg-query", "-S", path.c_str()}};
+                const auto realpath = fs::canonical(path);
+
+                if (std::string(realpath) != std::string(path)) {
+                    ldLog() << LD_DEBUG << "Canonical path" << realpath << "not equivalent to" << path << std::endl;
+                }
+
+                subprocess::subprocess proc{{"dpkg-query", "-S", realpath.c_str()}};
 
                 auto result = proc.run();
 
