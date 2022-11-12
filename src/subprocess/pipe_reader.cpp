@@ -56,4 +56,5 @@ pipe_reader::result pipe_reader::read(std::vector<std::string::value_type>& buff
             // this is a should-never-ever-happen case, a return value not handled by the lines above is actually not possible
             throw std::runtime_error{"unexpected return value from pollfd"};
     }
+    return result::RUNTIME_ERROR;
 }
