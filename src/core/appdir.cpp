@@ -852,13 +852,20 @@ namespace linuxdeploy {
                     if (!d->deployElfDependencies(sharedLibrary))
                         return false;
 
-                    const auto rpath = elf_file::ElfFile(sharedLibrary).getRPath();
-                    auto rpathList = util::split(rpath, ':');
-                    if (std::find(rpathList.begin(), rpathList.end(), "$ORIGIN") == rpathList.end()) {
-                        rpathList.push_back("$ORIGIN");
+                    // add correct rpath
+                    const auto rpathDestination = path() / "usr" / PrivateData::getLibraryDirName(sharedLibrary);
+                    ldLog() << LD_DEBUG << "rpath destination:" << rpathDestination << std::endl;
+
+                    const auto rpath = PrivateData::calculateRelativeRPath(sharedLibrary.parent_path(), rpathDestination, false);
+                    ldLog() << LD_DEBUG << "Calculated rpath:" << rpath << std::endl;
+
+                    const auto rpaths = elf_file::ElfFile(sharedLibrary).getRPath();
+                    auto rpathList = util::split(rpaths, ':');
+                    if (std::find(rpathList.begin(), rpathList.end(), rpath) == rpathList.end()) {
+                        rpathList.push_back(rpath);
                         d->setElfRPathOperations[sharedLibrary] = util::join(rpathList, ":");
                     } else {
-                        d->setElfRPathOperations[sharedLibrary] = rpath;
+                        d->setElfRPathOperations[sharedLibrary] = rpaths;
                     }
                 }
 
