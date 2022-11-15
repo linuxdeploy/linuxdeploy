@@ -807,13 +807,30 @@ namespace linuxdeploy {
                     executables.push_back(file);
                 }
 
+                for (const auto& file : listFilesInDirectory(path() / "usr/lib/libexec", true)) {
+                    // make sure it's an ELF file
+                    try {
+                        elf_file::ElfFile elfFile(file);
+                    } catch (const elf_file::ElfFileParseError&) {
+                        // FIXME: remove this workaround once the MIME check below works as intended
+                        continue;
+                    }
+
+                    executables.push_back(file);
+                }
+
                 return executables;
             }
 
             std::vector<fs::path> AppDir::listSharedLibraries() const {
+                const auto libexecPath = (path() / "usr/lib/libexec/").string();
                 std::vector<fs::path> sharedLibraries;
 
                 for (const auto& file : listFilesInDirectory(path() / "usr" / "lib", true)) {
+                    // skip executables in libexec
+                    if (util::stringStartsWith(file.string(), libexecPath))
+                        continue;
+
                     // exclude debug symbols
                     if (d->isInDebugSymbolsLocation(file))
                         continue;
@@ -840,7 +857,12 @@ namespace linuxdeploy {
                     if (!d->deployElfDependencies(executable))
                         return false;
 
-                    std::string rpath = "$ORIGIN/../" + PrivateData::getLibraryDirName(executable);
+                    // set rpath correctly
+                    const auto rpathDestination = path() / "usr" / PrivateData::getLibraryDirName(executable);
+                    ldLog() << LD_DEBUG << "rpath destination:" << rpathDestination << std::endl;
+
+                    const auto rpath = PrivateData::calculateRelativeRPath(executable.parent_path(), rpathDestination, false);
+                    ldLog() << LD_DEBUG << "Calculated rpath:" << rpath << std::endl;
 
                     d->setElfRPathOperations[executable] = rpath;
                 }
