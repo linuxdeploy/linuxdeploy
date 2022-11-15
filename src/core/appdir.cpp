@@ -385,13 +385,13 @@ namespace linuxdeploy {
                         return stripPath;
                     }
 
-                    static std::string calculateRelativeRPath(const fs::path& originDir, const fs::path& dependencyLibrariesDir) {
+                    static std::string calculateRelativeRPath(const fs::path& originDir, const fs::path& dependencyLibrariesDir, bool appendOrigin = true) {
                         auto relPath = fs::relative(fs::absolute(dependencyLibrariesDir), fs::absolute(originDir));
                         if (relPath.empty() || relPath == ".") {
                             return "$ORIGIN";
                         } else {
-                            auto rpath = "$ORIGIN/" + relPath.string() + ":$ORIGIN";
-                            return rpath;
+                            auto rpath = "$ORIGIN/" + relPath.string();
+                            return appendOrigin ? rpath + ":$ORIGIN" : rpath;
                         }
                     }
 
