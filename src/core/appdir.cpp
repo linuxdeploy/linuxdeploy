@@ -387,8 +387,12 @@ namespace linuxdeploy {
 
                     static std::string calculateRelativeRPath(const fs::path& originDir, const fs::path& dependencyLibrariesDir) {
                         auto relPath = fs::relative(fs::absolute(dependencyLibrariesDir), fs::absolute(originDir));
-                        std::string rpath = "$ORIGIN/" + relPath.string() + ":$ORIGIN";
-                        return rpath;
+                        if (relPath.empty() || relPath == ".") {
+                            return "$ORIGIN";
+                        } else {
+                            auto rpath = "$ORIGIN/" + relPath.string() + ":$ORIGIN";
+                            return rpath;
+                        }
                     }
 
                     bool deployLibrary(const fs::path& path, bool forceDeploy = false, bool deployDependencies = true, const fs::path& destination = fs::path()) {
