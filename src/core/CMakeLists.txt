@@ -5,7 +5,29 @@ file(GLOB HEADERS ${PROJECT_SOURCE_DIR}/include/linuxdeploy/core/*.h)
 
 find_package(Threads)
 
-find_package(CImg REQUIRED)
+
+find_package(CImg)
+
+if(NOT CImg_FOUND)
+    message(STATUS "CImg not found, fetching from GitHub")
+
+    cmake_minimum_required(VERSION 3.14)
+    include(FetchContent)
+    FetchContent_Declare(
+        CImg
+        GIT_REPOSITORY https://github.com/dtschump/CImg
+        GIT_TAG v.2.9.9
+    )
+
+    FetchContent_MakeAvailable(CImg)
+
+    # unfortunately there is no easy way to fetch the source dir with MakeAvailable
+    # FETCHCONTENT_SOURCE_DIR_CIMG is not set
+    # we can apparently predict the path from the base dir, though
+    # we'll have to see how reliable this is going to be
+    set(CIMG_DIR "${FETCHCONTENT_BASE_DIR}/cimg-src")
+    find_package(CImg REQUIRED)
+endif()
 
 message(STATUS "Generating excludelist")
 execute_process(
