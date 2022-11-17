@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 #include <poll.h>
-
+#include <sys/utsname.h>
 // library headers
 #include <boost/filesystem.hpp>
 #include <fnmatch.h>
@@ -157,7 +157,8 @@ namespace linuxdeploy {
 
                 auto printOutput = [&pfds, opfd, epfd, this, &process]() {
                     poll(pfds.data(), pfds.size(), -1);
-
+                    struct utsname os_uname;
+                    uname(&os_uname);
                     auto printUntilLastLine = [this](std::vector<char>& buf, size_t& bufSize, const std::string& streamType) {
                         std::ostringstream oss;
 
@@ -167,7 +168,7 @@ namespace linuxdeploy {
 
                             if (firstLineFeed == buf.end() && firstCarriageReturn == buf.end())
                                 break;
-                            
+
                             const auto endOfLine = std::min(firstLineFeed, firstCarriageReturn);
 
                             std::string line(buf.begin(), endOfLine+1);
@@ -209,8 +210,10 @@ namespace linuxdeploy {
                         }
                     }
 
-                    std::this_thread::sleep_for(std::chrono::milliseconds(50));
-
+                    if(os_uname.machine == "x86_64")
+                    {
+                        // std::this_thread::sleep_for(std::chrono::milliseconds(50));
+                    }
                     if (epfd->revents & POLLIN) {
                         if (stderrBufSize >= stderrBuf.size())
                             throw std::runtime_error("Buffer overflow");
@@ -232,8 +235,10 @@ namespace linuxdeploy {
                         }
                     }
 
-                    std::this_thread::sleep_for(std::chrono::milliseconds(50));
-
+                    if(os_uname.machine == "x86_64")
+                    {
+                        // std::this_thread::sleep_for(std::chrono::milliseconds(50));
+                    }
                     return true;
                 };
 
