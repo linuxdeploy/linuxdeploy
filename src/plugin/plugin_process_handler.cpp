@@ -3,7 +3,7 @@
 #include <thread>
 #include <tuple>
 #include <utility>
-
+#include <array>
 // local headers
 #include <linuxdeploy/plugin/plugin_process_handler.h>
 #include <linuxdeploy/subprocess/process.h>
