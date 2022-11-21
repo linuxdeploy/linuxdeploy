@@ -82,3 +82,6 @@
 [submodule "lib/linuxdeploy-desktopfile"]
 	path = lib/linuxdeploy-desktopfile
 	url = https://github.com/linuxdeploy/linuxdeploy-desktopfile
+[submodule "lib/cmake-scripts"]
+	path = lib/cmake-scripts
+	url = https://github.com/linuxdeploy/cmake-scripts.git
