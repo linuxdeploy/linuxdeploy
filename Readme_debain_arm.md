@@ -18,3 +18,16 @@ Prerequisite Fedora/Centos
 
 
 
+If you encounnter any of these errors:
+
+    /usr/bin/ld: cannot find -lz
+    /usr/bin/ld: cannot find -ljpeg
+    /usr/bin/ld: cannot find -lm
+    /usr/bin/ld: cannot find -lc
+    /usr/bin/ld: cannot find -lpng
+
+
+
+    install theses dependencies
+
+    sudo libpng-static libstdc++-static glibc-static zlib-static wine-devel
