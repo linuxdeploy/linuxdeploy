@@ -1,7 +1,10 @@
 cmake_minimum_required(VERSION 3.0)
 
-file(GLOB HEADERS ${PROJECT_SOURCE_DIR}/include/linuxdeploy/util/*.h)
+set(headers_dir ${PROJECT_SOURCE_DIR}/include/linuxdeploy/util/)
 
-add_library(linuxdeploy_util STATIC subprocess.cpp ${HEADERS})
+add_library(linuxdeploy_util INTERFACE)
+target_sources(linuxdeploy_util INTERFACE
+    ${headers_dir}/misc.h
+    ${headers_dir}/util.h
+)
 target_include_directories(linuxdeploy_util INTERFACE ${CMAKE_CURRENT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/include)
-target_link_libraries(linuxdeploy_util PUBLIC subprocess)

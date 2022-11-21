@@ -29,7 +29,7 @@ namespace linuxdeploy {
              * @param customAppRunPath
              * @return
              */
-            bool run(const desktopfile::DesktopFile& desktopFile, const boost::filesystem::path& customAppRunPath = "") const;
+            bool run(const desktopfile::DesktopFile& desktopFile, const std::filesystem::path& customAppRunPath = "") const;
         };
 
     }

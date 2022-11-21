@@ -16,7 +16,7 @@ linuxdeploy was greatly influenced by [linuxdeployqt](https://github.com/probono
 
 ## User guides and examples
 
-Please see the [linuxdeploy user guide](https://docs.appimage.org/packaging-guide/linuxdeploy-user-guide.html) and the [native binaries packaging guide](https://docs.appimage.org/packaging-guide/native-binaries.html) in the [AppImage documentation](https://docs.appimage.org). There's also an [examples section](https://docs.appimage.org/packaging-guide/native-binaries.html#examples).
+Please see the [linuxdeploy user guide](https://docs.appimage.org/packaging-guide/from-source/linuxdeploy-user-guide.html) and the [native binaries packaging guide](https://docs.appimage.org/packaging-guide/from-source/native-binaries.html) in the [AppImage documentation](https://docs.appimage.org). There's also an [examples section](https://docs.appimage.org/packaging-guide/from-source/native-binaries.html#examples).
 
 
 ## Projects using linuxdeploy
@@ -29,6 +29,7 @@ This is an incomplete list of projects using linuxdeploy. You might want to read
 - [AppImageUpdate](https://github.com/AppImage/AppImageUpdate)
 - [appimaged](https://github.com/AppImage/appimaged)
 - [MediaElch](https://github.com/Komet/MediaElch/)
+- [CPU-X](https://github.com/X0rg/CPU-X) (details available [here](https://github.com/AppImage/AppImageKit/wiki/Bundling-GTK3-apps#fully-automated-deployment-from-sources-with-github-actions-cpu-x))
 
 
 ## Plugins
@@ -63,8 +64,8 @@ linuxdeploy does not change any environment variables such as `$PATH`. Your appl
 
 ## Contact
 
-The easiest way to get in touch with the developers is to join the IRC chatroom [#AppImage](https://webchat.freenode.net/?channels=appimage) on FreeNode. This is the preferred way for general feedback or questions how to use this application.
+The easiest way to get in touch with the developers is to join the IRC chatroom [#AppImage](https://web.libera.chat/#appimage) on [https://libera.chat](Libera.Chat). This is the preferred way for general feedback or questions how to use this application.
 
-To report problems, please [create an issue](https://github.com/TheAssassin/linuxdeploy/issues/new) on GitHub.
+To report problems, please [create an issue](https://github.com/linuxdeploy/linuxdeploy/issues/new) on GitHub.
 
 Contributions welcome! Please feel free to fork this repository and send us a pull request. Even small changes, e.g., in this README, are highly appreciated!

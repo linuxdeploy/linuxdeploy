@@ -1,12 +1,12 @@
-// library includes
-#include <subprocess.hpp>
+// system headers
+#include <filesystem>
 
-// local includes
+// local headers
 #include "copyright.h"
 
 #pragma once
 
-namespace bf = boost::filesystem;
+namespace fs = std::filesystem;
 
 namespace linuxdeploy {
     namespace core {
@@ -16,7 +16,7 @@ namespace linuxdeploy {
                     class PrivateData;
 
                 public:
-                    std::vector<bf::path> getCopyrightFilesForPath(const bf::path& path) override;
+                    std::vector<fs::path> getCopyrightFilesForPath(const fs::path& path) override;
             };
         }
     }

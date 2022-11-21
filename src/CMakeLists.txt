@@ -4,17 +4,6 @@ cmake_minimum_required(VERSION 3.5)
 # globally include own includes
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
-if(USE_SYSTEM_BOOST)
-    set(Boost_USE_STATIC_LIBS ON)
-    find_package(Boost REQUIRED COMPONENTS filesystem regex)
-    set(BOOST_LIBS Boost::filesystem Boost::regex)
-else()
-    # use custom built libs
-    set(BOOST_LIBS boost_system boost_filesystem boost_regex)
-endif()
-
-
-
 # read Git revision ID
 # WARNING: this value will be stored in the CMake cache
 # to update it, you will have to reset the CMake cache
@@ -28,10 +17,10 @@ execute_process(
 
 # set version and build number
 set(VERSION 1-alpha)
-if("$ENV{TRAVIS_BUILD_NUMBER}" STREQUAL "")
-    set(BUILD_NUMBER "<local dev build>")
+if(DEFINED ENV{GITHUB_RUN_NUMBER})
+    set(BUILD_NUMBER "GitHub actions build $ENV{GITHUB_RUN_NUMBER}")
 else()
-    set(BUILD_NUMBER "Travis build $ENV{TRAVIS_BUILD_NUMBER}")
+    set(BUILD_NUMBER "<local dev build>")
 endif()
 
 # get current date
@@ -43,6 +32,7 @@ execute_process(
 
 add_subdirectory(util)
 add_subdirectory(plugin)
+add_subdirectory(subprocess)
 add_subdirectory(core)
 
 add_executable(linuxdeploy main.cpp core.cpp)
@@ -54,11 +44,20 @@ target_compile_definitions(linuxdeploy PRIVATE -DLD_VERSION="${VERSION}")
 target_compile_definitions(linuxdeploy PRIVATE -DLD_BUILD_NUMBER="${BUILD_NUMBER}")
 target_compile_definitions(linuxdeploy PRIVATE -DLD_BUILD_DATE="${DATE}")
 
+if(STATIC_BUILD)
+    message(WARNING "static builds enabled")
+    cmake_minimum_required(VERSION 3.13)
+    target_link_options(linuxdeploy PUBLIC -static -static-libgcc -static-libstdc++)
+endif()
+
+
 add_executable(plugin_test plugin_test_main.cpp)
 target_link_libraries(plugin_test linuxdeploy_plugin)
 set_target_properties(plugin_test PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin")
 
-add_executable(appdir_test appdir_test_main.cpp)
+add_executable(appdir_test appdir_test_main.cpp ../include/linuxdeploy/util/assert.h)
 target_link_libraries(appdir_test linuxdeploy_core args)
 target_include_directories(appdir_test PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/core)
 set_target_properties(appdir_test PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin")
+
+install(TARGETS linuxdeploy)

@@ -8,7 +8,7 @@
 // local headers
 #include "linuxdeploy/core/appdir.h"
 #include "linuxdeploy/desktopfile/desktopfile.h"
-#include "linuxdeploy/core/elf.h"
+#include "linuxdeploy/core/elf_file.h"
 #include "linuxdeploy/core/log.h"
 #include "linuxdeploy/plugin/plugin.h"
 #include "linuxdeploy/util/util.h"
@@ -19,7 +19,7 @@ using namespace linuxdeploy::core;
 using namespace linuxdeploy::core::log;
 using namespace linuxdeploy::util;
 
-namespace bf = boost::filesystem;
+namespace fs = std::filesystem;
 
 int main(int argc, char** argv) {
     args::ArgumentParser parser(
@@ -33,13 +33,17 @@ int main(int argc, char** argv) {
     args::ValueFlag<std::string> appDirPath(parser, "appdir", "Path to target AppDir", {"appdir"});
 
     args::ValueFlagList<std::string> sharedLibraryPaths(parser, "library", "Shared library to deploy", {'l', "library"});
+    args::ValueFlagList<std::string> excludeLibraryPatterns(parser, "pattern", "Shared library to exclude from deployment (glob pattern)", {"exclude-library"});
 
     args::ValueFlagList<std::string> executablePaths(parser, "executable", "Executable to deploy", {'e', "executable"});
+
+    args::ValueFlagList<std::string> deployDepsOnlyPaths(parser, "path", "Path to ELF file or directory containing such files (libraries or executables) in the AppDir whose dependencies shall be deployed by linuxdeploy without copying them into the AppDir", {"deploy-deps-only"});
 
     args::ValueFlagList<std::string> desktopFilePaths(parser, "desktop file", "Desktop file to deploy", {'d', "desktop-file"});
     args::Flag createDesktopFile(parser, "", "Create basic desktop file that is good enough for some tests", {"create-desktop-file"});
 
     args::ValueFlagList<std::string> iconPaths(parser, "icon file", "Icon to deploy", {'i', "icon-file"});
+    args::ValueFlag<std::string> iconTargetFilename(parser, "filename", "Filename all icons passed via -i should be renamed to", {"icon-filename"});
 
     args::ValueFlag<std::string> customAppRunPath(parser, "AppRun path", "Path to custom AppRun script (linuxdeploy will not create a symlink but copy this file instead)", {"custom-apprun"});
 
@@ -51,6 +55,21 @@ int main(int argc, char** argv) {
         parser.ParseCLI(argc, argv);
     } catch (args::Help&) {
         std::cerr << parser;
+
+        // license information
+        std::cerr << std::endl
+                  << "===== library information =====" << std::endl
+                  << std::endl
+                  << "This software uses the great CImg library, as well as libjpeg and libpng." << std::endl
+                  << std::endl
+                  << "libjpeg license information: this software is based in part on the work of the Independent JPEG Group" << std::endl
+                  << std::endl
+                  << "CImg license information: This software is governed either by the CeCILL or the CeCILL-C "
+                     "license under French law and abiding by the rules of distribution of free software. You can "
+                     "use, modify and or redistribute the software under the terms of the CeCILL or CeCILL-C "
+                     "licenses as circulated by CEA, CNRS and INRIA at the following URL: "
+                     "\"http://cecill.info\"." << std::endl;
+
         return 0;
     } catch (args::ParseError& e) {
         std::cerr << e.what() << std::endl;
@@ -92,6 +111,7 @@ int main(int argc, char** argv) {
     }
 
     appdir::AppDir appDir(appDirPath.Get());
+    appDir.setExcludeLibraryPatterns(excludeLibraryPatterns.Get());
 
     // allow disabling copyright files deployment via environment variable
     if (getenv("DISABLE_COPYRIGHT_FILES_DEPLOYMENT") != nullptr) {
@@ -117,13 +137,13 @@ int main(int argc, char** argv) {
         ldLog() << std::endl << "-- Deploying shared libraries --" << std::endl;
 
         for (const auto& libraryPath : sharedLibraryPaths.Get()) {
-            if (!bf::exists(libraryPath)) {
-                std::cerr << "No such file or directory: " << libraryPath << std::endl;
+            if (!fs::exists(libraryPath)) {
+                ldLog() << LD_ERROR << "No such file or directory: " << libraryPath << std::endl;
                 return 1;
             }
 
             if (!appDir.forceDeployLibrary(libraryPath)) {
-                std::cerr << "Failed to deploy library: " << libraryPath << std::endl;
+                ldLog() << LD_ERROR << "Failed to deploy library: " << libraryPath << std::endl;
                 return 1;
             }
         }
@@ -134,13 +154,43 @@ int main(int argc, char** argv) {
         ldLog() << std::endl << "-- Deploying executables --" << std::endl;
 
         for (const auto& executablePath : executablePaths.Get()) {
-            if (!bf::exists(executablePath)) {
-                std::cerr << "No such file or directory: " << executablePath << std::endl;
+            if (!fs::exists(executablePath)) {
+                ldLog() << LD_ERROR << "No such file or directory: " << executablePath << std::endl;
                 return 1;
             }
 
             if (!appDir.deployExecutable(executablePath)) {
-                std::cerr << "Failed to deploy executable: " << executablePath << std::endl;
+                ldLog() << LD_ERROR << "Failed to deploy executable: " << executablePath << std::endl;
+                return 1;
+            }
+        }
+    }
+
+    // deploy executables to usr/bin, and deploy their dependencies to usr/lib
+    if (deployDepsOnlyPaths) {
+        ldLog() << std::endl << "-- Deploying dependencies only for ELF files --" << std::endl;
+
+        for (const auto& path : deployDepsOnlyPaths.Get()) {
+            if (fs::is_directory(path)) {
+                ldLog() << "Deploying files in directory" << path << std::endl;
+
+                for (auto it = fs::directory_iterator{path}; it != fs::directory_iterator{}; ++it) {
+                    if (!fs::is_regular_file(*it)) {
+                        continue;
+                    }
+
+                    if (!appDir.deployDependenciesOnlyForElfFile(*it, true)) {
+                        ldLog() << LD_WARNING << "Failed to deploy dependencies for ELF file" << *it << LD_NO_SPACE << ", skipping" << std::endl;
+                        continue;
+                    }
+                }
+            } else if (fs::is_regular_file(path)) {
+                if (!appDir.deployDependenciesOnlyForElfFile(path)) {
+                    ldLog() << LD_ERROR << "Failed to deploy dependencies for ELF file: " << path << std::endl;
+                    return 1;
+                }
+            } else {
+                ldLog() << LD_ERROR << "No such file or directory: " << path << std::endl;
                 return 1;
             }
         }
@@ -190,13 +240,21 @@ int main(int argc, char** argv) {
         ldLog() << std::endl << "-- Deploying icons --" << std::endl;
 
         for (const auto& iconPath : iconPaths.Get()) {
-            if (!bf::exists(iconPath)) {
-                std::cerr << "No such file or directory: " << iconPath << std::endl;
+            if (!fs::exists(iconPath)) {
+                ldLog() << LD_ERROR << "No such file or directory: " << iconPath << std::endl;
                 return 1;
             }
 
-            if (!appDir.deployIcon(iconPath)) {
-                std::cerr << "Failed to deploy icon: " << iconPath << std::endl;
+            bool iconDeployedSuccessfully;
+
+            if (iconTargetFilename) {
+                iconDeployedSuccessfully = appDir.deployIcon(iconPath, iconTargetFilename.Get());
+            } else {
+                iconDeployedSuccessfully = appDir.deployIcon(iconPath);
+            }
+
+            if (!iconDeployedSuccessfully) {
+                ldLog() << LD_ERROR << "Failed to deploy icon: " << iconPath << std::endl;
                 return 1;
             }
         }
@@ -206,15 +264,15 @@ int main(int argc, char** argv) {
         ldLog() << std::endl << "-- Deploying desktop files --" << std::endl;
 
         for (const auto& desktopFilePath : desktopFilePaths.Get()) {
-            if (!bf::exists(desktopFilePath)) {
-                std::cerr << "No such file or directory: " << desktopFilePath << std::endl;
+            if (!fs::exists(desktopFilePath)) {
+                ldLog() << LD_ERROR << "No such file or directory: " << desktopFilePath << std::endl;
                 return 1;
             }
 
             desktopfile::DesktopFile desktopFile(desktopFilePath);
 
             if (!appDir.deployDesktopFile(desktopFile)) {
-                std::cerr << "Failed to deploy desktop file: " << desktopFilePath << std::endl;
+                ldLog() << LD_ERROR << "Failed to deploy desktop file: " << desktopFilePath << std::endl;
                 return 1;
             }
         }
@@ -235,11 +293,11 @@ int main(int argc, char** argv) {
         ldLog() << std::endl << "-- Creating desktop file --" << std::endl;
         ldLog() << LD_WARNING << "Please beware the created desktop file is of low quality and should be edited or replaced before using it for production releases!" << std::endl;
 
-        auto executableName = bf::path(executablePaths.Get().front()).filename().string();
+        auto executableName = fs::path(executablePaths.Get().front()).filename().string();
 
         auto desktopFilePath = appDir.path() / "usr/share/applications" / (executableName + ".desktop");
 
-        if (bf::exists(desktopFilePath)) {
+        if (fs::exists(desktopFilePath)) {
             ldLog() << LD_WARNING << "Working on existing desktop file:" << desktopFilePath << std::endl;
         } else {
             ldLog() << "Creating new desktop file:" << desktopFilePath << std::endl;
@@ -255,6 +313,21 @@ int main(int argc, char** argv) {
             return 1;
         }
     }
+
+    // linuxdeploy offers a special "plugin mode" where plugins can run linuxdeploy again to deploy dependencies
+    // this way, they don't have to use liblinuxdeploy (like, e.g., the Qt plugin), but can just be, e.g., shell scripts
+    // copying .so files into the AppDir
+    // as linuxdeploy aims to be idempotent, so this just costs some time/performance/file I/O, but should not change
+    // the outcome
+    // the AppDir root deployment, however, does make some assumptions that are only valid when not being run from a
+    // plugin
+    // therefore, we let plugins signalize that they are calling linuxdeploy, and skip those steps
+    // TODO: eliminate the need for this mode in the AppDir root deployment
+    if (getenv("LINUXDEPLOY_PLUGIN_MODE") != nullptr) {
+        ldLog() << LD_WARNING << "Running in plugin mode, exiting" << std::endl;
+        return 0;
+    }
+
     if (!linuxdeploy::deployAppDirRootFiles(desktopFilePaths.Get(), customAppRunPath.Get(), appDir))
         return 1;
 
@@ -283,8 +356,7 @@ int main(int argc, char** argv) {
             auto retcode = plugin->run(appDir.path());
 
             if (retcode != 0) {
-                ldLog() << LD_ERROR << "Failed to run plugin:" << pluginName << std::endl;
-                ldLog() << LD_DEBUG << "Exited with return code:" << retcode << std::endl;
+                ldLog() << LD_ERROR << "Failed to run plugin:" << pluginName << "(exit code:" << retcode << LD_NO_SPACE << ")" << std::endl;
                 return 1;
             }
         }

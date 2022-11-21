@@ -1,17 +1,15 @@
 // system includes
+#include <filesystem>
 #include <vector>
 #include <string>
 // including system elf header, which allows for interpretation of the return values of the methods
 #include <elf.h>
 
-// library includes
-#include <boost/filesystem.hpp>
-
 #pragma once
 
 namespace linuxdeploy {
     namespace core {
-        namespace elf {
+        namespace elf_file {
             // thrown by constructor if file is not an ELF file
             class ElfFileParseError : public std::runtime_error {
                 public:
@@ -30,7 +28,7 @@ namespace linuxdeploy {
                     PrivateData* d;
 
                 public:
-                    explicit ElfFile(const boost::filesystem::path& path);
+                    explicit ElfFile(const std::filesystem::path& path);
                     ~ElfFile();
 
                 public:
@@ -48,7 +46,7 @@ namespace linuxdeploy {
                     // this works for both libraries and executables
                     // the resulting vector consists of absolute paths to the libraries determined by the same methods a system's
                     // linker would use
-                    std::vector<boost::filesystem::path> traceDynamicDependencies();
+                    std::vector<std::filesystem::path> traceDynamicDependencies();
 
                     // fetch rpath stored in binary
                     // it appears that according to the ELF standard, the rpath is ignored in libraries, therefore if the path
@@ -64,6 +62,12 @@ namespace linuxdeploy {
 
                     // return OS ABI
                     uint8_t getElfABI();
+
+                    // check if this file is a debug symbols file
+                    bool isDebugSymbolsFile();
+
+                    // check whether the file contains a dynsym section
+                    bool isDynamicallyLinked();
             };
         }
     }

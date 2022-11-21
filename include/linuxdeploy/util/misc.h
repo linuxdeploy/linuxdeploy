@@ -1,8 +1,10 @@
 #pragma once
 
+// system headers
 #include <algorithm>
 #include <climits>
 #include <cstring>
+#include <filesystem>
 #include <sstream>
 #include <string>
 #include <unistd.h>
@@ -52,6 +54,18 @@ namespace linuxdeploy {
                 return split(s, '\n');
             }
 
+            static std::string join(const std::vector<std::string> &strings, const std::string &delimiter) {
+                std::string result;
+                for (size_t i = 0; i < strings.size(); i++) {
+                    result += strings[i];
+
+                    if (i != strings.size() - 1) {
+                        result += delimiter;
+                    }
+                }
+                return result;
+            }
+
             static inline std::string strLower(std::string s) {
                 std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c) { return std::tolower(c); });
                 return s;
@@ -87,6 +101,33 @@ namespace linuxdeploy {
 
                 return buf.data();
             }
+
+            // very simple but for our purposes good enough which like algorithm to find binaries in $PATH
+            static std::filesystem::path which(const std::string& name) {
+                const auto* path = getenv("PATH");
+
+                namespace fs = std::filesystem;
+
+                if (path == nullptr)
+                    return "";
+
+                for (const auto& binDir : split(path, ':')) {
+                    if (!fs::is_directory(binDir)) {
+                        continue;
+                    }
+
+                    for (fs::directory_iterator it(binDir); it != fs::directory_iterator{}; ++it) {
+                        const auto binary = it->path();
+
+                        if (binary.filename() == name) {
+                            // TODO: check if file is executable (skip otherwise)
+                            return binary;
+                        }
+                    }
+                }
+
+                return {};
+            };
         }
     }
 }
