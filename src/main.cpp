@@ -19,7 +19,7 @@ using namespace linuxdeploy::core;
 using namespace linuxdeploy::core::log;
 using namespace linuxdeploy::util;
 
-namespace bf = boost::filesystem;
+namespace fs = std::filesystem;
 
 int main(int argc, char** argv) {
     args::ArgumentParser parser(
@@ -33,6 +33,7 @@ int main(int argc, char** argv) {
     args::ValueFlag<std::string> appDirPath(parser, "appdir", "Path to target AppDir", {"appdir"});
 
     args::ValueFlagList<std::string> sharedLibraryPaths(parser, "library", "Shared library to deploy", {'l', "library"});
+    args::ValueFlagList<std::string> excludeLibraryPatterns(parser, "pattern", "Shared library to exclude from deployment (glob pattern)", {"exclude-library"});
 
     args::ValueFlagList<std::string> executablePaths(parser, "executable", "Executable to deploy", {'e', "executable"});
 
@@ -59,7 +60,7 @@ int main(int argc, char** argv) {
         std::cerr << std::endl
                   << "===== library information =====" << std::endl
                   << std::endl
-                  << "This software uses the great CImg library, as well as libjpeg and libpng as well as various Boost libraries." << std::endl
+                  << "This software uses the great CImg library, as well as libjpeg and libpng." << std::endl
                   << std::endl
                   << "libjpeg license information: this software is based in part on the work of the Independent JPEG Group" << std::endl
                   << std::endl
@@ -110,6 +111,7 @@ int main(int argc, char** argv) {
     }
 
     appdir::AppDir appDir(appDirPath.Get());
+    appDir.setExcludeLibraryPatterns(excludeLibraryPatterns.Get());
 
     // allow disabling copyright files deployment via environment variable
     if (getenv("DISABLE_COPYRIGHT_FILES_DEPLOYMENT") != nullptr) {
@@ -135,7 +137,7 @@ int main(int argc, char** argv) {
         ldLog() << std::endl << "-- Deploying shared libraries --" << std::endl;
 
         for (const auto& libraryPath : sharedLibraryPaths.Get()) {
-            if (!bf::exists(libraryPath)) {
+            if (!fs::exists(libraryPath)) {
                 ldLog() << LD_ERROR << "No such file or directory: " << libraryPath << std::endl;
                 return 1;
             }
@@ -152,7 +154,7 @@ int main(int argc, char** argv) {
         ldLog() << std::endl << "-- Deploying executables --" << std::endl;
 
         for (const auto& executablePath : executablePaths.Get()) {
-            if (!bf::exists(executablePath)) {
+            if (!fs::exists(executablePath)) {
                 ldLog() << LD_ERROR << "No such file or directory: " << executablePath << std::endl;
                 return 1;
             }
@@ -169,11 +171,11 @@ int main(int argc, char** argv) {
         ldLog() << std::endl << "-- Deploying dependencies only for ELF files --" << std::endl;
 
         for (const auto& path : deployDepsOnlyPaths.Get()) {
-            if (bf::is_directory(path)) {
+            if (fs::is_directory(path)) {
                 ldLog() << "Deploying files in directory" << path << std::endl;
 
-                for (auto it = bf::directory_iterator{path}; it != bf::directory_iterator{}; ++it) {
-                    if (!bf::is_regular_file(*it)) {
+                for (auto it = fs::directory_iterator{path}; it != fs::directory_iterator{}; ++it) {
+                    if (!fs::is_regular_file(*it)) {
                         continue;
                     }
 
@@ -182,7 +184,7 @@ int main(int argc, char** argv) {
                         continue;
                     }
                 }
-            } else if (bf::is_regular_file(path)) {
+            } else if (fs::is_regular_file(path)) {
                 if (!appDir.deployDependenciesOnlyForElfFile(path)) {
                     ldLog() << LD_ERROR << "Failed to deploy dependencies for ELF file: " << path << std::endl;
                     return 1;
@@ -238,7 +240,7 @@ int main(int argc, char** argv) {
         ldLog() << std::endl << "-- Deploying icons --" << std::endl;
 
         for (const auto& iconPath : iconPaths.Get()) {
-            if (!bf::exists(iconPath)) {
+            if (!fs::exists(iconPath)) {
                 ldLog() << LD_ERROR << "No such file or directory: " << iconPath << std::endl;
                 return 1;
             }
@@ -262,7 +264,7 @@ int main(int argc, char** argv) {
         ldLog() << std::endl << "-- Deploying desktop files --" << std::endl;
 
         for (const auto& desktopFilePath : desktopFilePaths.Get()) {
-            if (!bf::exists(desktopFilePath)) {
+            if (!fs::exists(desktopFilePath)) {
                 ldLog() << LD_ERROR << "No such file or directory: " << desktopFilePath << std::endl;
                 return 1;
             }
@@ -291,11 +293,11 @@ int main(int argc, char** argv) {
         ldLog() << std::endl << "-- Creating desktop file --" << std::endl;
         ldLog() << LD_WARNING << "Please beware the created desktop file is of low quality and should be edited or replaced before using it for production releases!" << std::endl;
 
-        auto executableName = bf::path(executablePaths.Get().front()).filename().string();
+        auto executableName = fs::path(executablePaths.Get().front()).filename().string();
 
         auto desktopFilePath = appDir.path() / "usr/share/applications" / (executableName + ".desktop");
 
-        if (bf::exists(desktopFilePath)) {
+        if (fs::exists(desktopFilePath)) {
             ldLog() << LD_WARNING << "Working on existing desktop file:" << desktopFilePath << std::endl;
         } else {
             ldLog() << "Creating new desktop file:" << desktopFilePath << std::endl;

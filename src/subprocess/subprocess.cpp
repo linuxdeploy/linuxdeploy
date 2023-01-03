@@ -15,8 +15,15 @@
 
 namespace linuxdeploy {
     namespace subprocess {
+
+        subprocess::subprocess(std::initializer_list<std::string> args)
+            : subprocess(std::vector<std::string>(args), get_environment()) {}
+
         subprocess::subprocess(std::initializer_list<std::string> args, subprocess_env_map_t env)
             : subprocess(std::vector<std::string>(args), std::move(env)) {}
+
+        subprocess::subprocess(std::vector<std::string> args)
+            : args_(std::move(args)), env_(get_environment()) {}
 
         subprocess::subprocess(std::vector<std::string> args, subprocess_env_map_t env)
             : args_(std::move(args)), env_(std::move(env)) {
@@ -27,55 +34,68 @@ namespace linuxdeploy {
         subprocess_result subprocess::run() const {
             process proc{args_, env_};
 
+            class PipeState {
+            public:
+                pipe_reader reader;
+                subprocess_result_buffer_t  buffer;
+                bool eof = false;
+
+                explicit PipeState(int fd) : reader(fd) {}
+            };
+
             // create pipe readers and empty buffers for both stdout and stderr
             // we manage them in this (admittedly, kind of complex-looking) array so we can later easily perform the
             // operations in a loop
-            std::array<std::pair<pipe_reader, subprocess_result_buffer_t>, 2> buffers{
-                std::make_pair(pipe_reader(proc.stdout_fd()), subprocess_result_buffer_t{}),
-                std::make_pair(pipe_reader(proc.stderr_fd()), subprocess_result_buffer_t{}),
+            std::array<PipeState, 2> buffers = {
+                PipeState(proc.stdout_fd()),
+                PipeState(proc.stderr_fd())
             };
 
             for (;;) {
-                for (auto& pair : buffers) {
-                    // make code more readable
-                    auto& reader = pair.first;
-                    auto& buffer = pair.second;
-
+                for (auto& pipe_state : buffers) {
                     // read some bytes into smaller intermediate buffer to prevent either of the pipes to overflow
                     // the results are immediately appended to the main buffer
                     subprocess_result_buffer_t intermediate_buffer(4096);
 
                     // (try to) read all available data from pipe
-                    for (;;) {
-                        const auto bytes_read = reader.read(intermediate_buffer);
-
-                        if (bytes_read == 0) {
-                            break;
+                    for (; !pipe_state.eof; ) {
+                        switch (pipe_state.reader.read(intermediate_buffer)) {
+                            case pipe_reader::result::SUCCESS: {
+                                // append to main buffer
+                                pipe_state.buffer.reserve(pipe_state.buffer.size() + intermediate_buffer.size());
+                                std::copy(intermediate_buffer.begin(), intermediate_buffer.end(), std::back_inserter(pipe_state.buffer));
+                                break;
+                            }
+                            case pipe_reader::result::END_OF_FILE: {
+                                pipe_state.eof = true;
+                                break;
+                            }
+                            default:
+                                break;
                         }
-
-                        // append to main buffer
-                        buffer.reserve(buffer.size() + bytes_read);
-                        std::copy(intermediate_buffer.begin(), (intermediate_buffer.begin() + bytes_read),
-                                  std::back_inserter(buffer));
                     }
                 }
 
-                // do-while might be a little more elegant, but we can save this one unnecessary sleep, so...
                 if (proc.is_running()) {
-                    // reduce load on CPU
+                    // reduce load on CPU until EOF
                     std::this_thread::sleep_for(std::chrono::milliseconds(50));
-                } else {
+                }
+
+                // once all buffers are EOF, we can stop reading
+                if (std::all_of(buffers.begin(), buffers.end(), [](const PipeState& pipe_state) {
+                    return pipe_state.eof;
+                })) {
                     break;
                 }
             }
 
             // make sure contents are null-terminated
-            buffers[0].second.emplace_back('\0');
-            buffers[1].second.emplace_back('\0');
+            buffers[0].buffer.emplace_back('\0');
+            buffers[1].buffer.emplace_back('\0');
 
             auto exit_code = proc.close();
 
-            return subprocess_result{exit_code, buffers[0].second, buffers[1].second};
+            return subprocess_result{exit_code, buffers[0].buffer, buffers[1].buffer};
         }
 
         std::string subprocess::check_output() const {

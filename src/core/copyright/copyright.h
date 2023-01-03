@@ -2,9 +2,6 @@
 #include <memory>
 #include <vector>
 
-// library includes
-#include <boost/filesystem.hpp>
-
 #pragma once
 
 namespace linuxdeploy {
@@ -19,7 +16,7 @@ namespace linuxdeploy {
                     static std::shared_ptr<ICopyrightFilesManager> getInstance();
 
                 public:
-                    virtual std::vector<boost::filesystem::path> getCopyrightFilesForPath(const boost::filesystem::path& path) = 0;
+                    virtual std::vector<std::filesystem::path> getCopyrightFilesForPath(const std::filesystem::path& path) = 0;
             };
         }
     }

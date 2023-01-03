@@ -1,6 +1,7 @@
 // system headers
-#include <tuple>
+#include <filesystem>
 #include <thread>
+#include <tuple>
 #include <utility>
 
 // local headers
@@ -10,20 +11,20 @@
 #include <linuxdeploy/core/log.h>
 #include <linuxdeploy/subprocess/pipe_reader.h>
 
-namespace bf = boost::filesystem;
+namespace fs = std::filesystem;
 
 namespace linuxdeploy {
     namespace plugin {
         using namespace core::log;
 
-        plugin_process_handler::plugin_process_handler(std::string name, bf::path path) : name_(std::move(name)),
+        plugin_process_handler::plugin_process_handler(std::string name, fs::path path) : name_(std::move(name)),
                                                                                           path_(std::move(path)) {}
 
-        int plugin_process_handler::run(const bf::path& appDir) const {
+        int plugin_process_handler::run(const fs::path& appDir) const {
             // prepare arguments and environment variables
             const std::initializer_list<std::string> args = {path_.string(), "--appdir", appDir.string()};
 
-            subprocess::subprocess_env_map_t environmentVariables{};
+            auto environmentVariables = subprocess::get_environment();
 
             // add $LINUXDEPLOY, which points to the current binary
             // we do not need to pass $APPIMAGE or alike, since while linuxdeploy is running, the path in the
@@ -43,6 +44,7 @@ namespace linuxdeploy {
                 std::string stream_name_;
                 ldLog log_;
                 bool print_prefix_in_next_iteration_;
+                bool eof = false;
 
                 pipe_to_be_logged(int pipe_fd, std::string stream_name) : reader_(pipe_fd),
                                                                           stream_name_(std::move(stream_name)),
@@ -57,69 +59,73 @@ namespace linuxdeploy {
 
             for (;;) {
                 for (auto& pipe_to_be_logged : pipes_to_be_logged) {
+                    if (pipe_to_be_logged.eof) {
+                        continue;
+                    }
+
                     const auto log_prefix = "[" + name_ + "/" + pipe_to_be_logged.stream_name_ + "] ";
 
                     // since we have our own ldLog instance for every pipe, we can get away with this rather small read buffer
                     subprocess::subprocess_result_buffer_t intermediate_buffer(4096);
 
                     // (try to) read from pipe
-                    const auto bytes_read = pipe_to_be_logged.reader_.read(intermediate_buffer);
+                    switch (pipe_to_be_logged.reader_.read(intermediate_buffer)) {
+                        case pipe_reader::result::SUCCESS: {
+                            // all we have to do now is to look for CR or LF, send everything up to that location into the ldLog instance,
+                            // write our prefix and then repeat
+                            for (auto it = intermediate_buffer.begin(); it != intermediate_buffer.end(); ++it) {
+                                if (pipe_to_be_logged.print_prefix_in_next_iteration_) {
+                                    pipe_to_be_logged.log_ << log_prefix;
+                                }
 
-                    // no action required in case we have not read anything from the pipe
-                    if (bytes_read <= 0) {
-                        continue;
-                    }
+                                const auto next_lf = std::find(it, intermediate_buffer.end(), '\n');
+                                const auto next_cr = std::find(it, intermediate_buffer.end(), '\r');
 
-                    // we just trim the buffer to the bytes we read (makes the code below easier)
-                    intermediate_buffer.resize(bytes_read);
+                                // we don't care which one goes first -- we pick the closest one, write everything up to it into our ldLog,
+                                // then print our prefix and repeat that until there's nothing left in our buffer
+                                auto next_control_char = std::min({next_lf, next_cr});
 
-                    // all we have to do now is to look for CR or LF, send everything up to that location into the ldLog instance,
-                    // write our prefix and then repeat
-                    for (auto it = intermediate_buffer.begin(); it != intermediate_buffer.end(); ++it) {
-                        if (pipe_to_be_logged.print_prefix_in_next_iteration_) {
-                            pipe_to_be_logged.log_ << log_prefix;
-                        }
+                                // if there is a control char, we remember this for the next iteration, where we print our
+                                // log prefix
+                                // in any case, we can write the remaining buffer contents into the ldLog object
+                                pipe_to_be_logged.print_prefix_in_next_iteration_ = (next_control_char !=
+                                                                                     intermediate_buffer.end());
 
-                        const auto next_lf = std::find(it, intermediate_buffer.end(), '\n');
-                        const auto next_cr = std::find(it, intermediate_buffer.end(), '\r');
+                                const auto distance_from_begin_to_it = std::distance(intermediate_buffer.begin(), it);
+                                auto distance_from_it_to_next_cc = std::distance(it, next_control_char);
 
-                        // we don't care which one goes first -- we pick the closest one, write everything up to it into our ldLog,
-                        // then print our prefix and repeat that until there's nothing left in our buffer
-                        auto next_control_char = std::min({next_lf, next_cr});
+                                if (pipe_to_be_logged.print_prefix_in_next_iteration_) {
+                                    distance_from_it_to_next_cc++;
+                                }
 
-                        // if there is a control char, we remember this for the next iteration, where we print our
-                        // log prefix
-                        // in any case, we can write the remaining buffer contents into the ldLog object
-                        pipe_to_be_logged.print_prefix_in_next_iteration_ = (next_control_char !=
-                                                                             intermediate_buffer.end());
+                                // need to make sure we include the control char in the write
+                                pipe_to_be_logged.log_.write(
+                                    intermediate_buffer.data() + distance_from_begin_to_it,
+                                    distance_from_it_to_next_cc
+                                );
 
-                        const auto distance_from_begin_to_it = std::distance(intermediate_buffer.begin(), it);
-                        auto distance_from_it_to_next_cc = std::distance(it, next_control_char);
+                                it = next_control_char;
 
-                        if (pipe_to_be_logged.print_prefix_in_next_iteration_) {
-                            distance_from_it_to_next_cc++;
-                        }
-
-                        // need to make sure we include the control char in the write
-                        pipe_to_be_logged.log_.write(
-                        intermediate_buffer.data() + distance_from_begin_to_it,
-                            distance_from_it_to_next_cc
-                        );
-
-                        it = next_control_char;
-
-                        // TODO: should not be necessary, should be fixed in for loop
-                        if (!pipe_to_be_logged.print_prefix_in_next_iteration_) {
+                                // TODO: should not be necessary, should be fixed in for loop
+                                if (!pipe_to_be_logged.print_prefix_in_next_iteration_) {
+                                    break;
+                                }
+                            }
                             break;
                         }
+                        case pipe_reader::result::END_OF_FILE: {
+                            pipe_to_be_logged.eof = true;
+                            break;
+                        }
+                        case pipe_reader::result::TIMEOUT:
+                            break;
                     }
                 }
 
-                // do-while might be a little more elegant, but we can save this one unnecessary sleep, so...
-                if (proc.is_running()) {
-                    // reduce load on CPU
-                    std::this_thread::sleep_for(std::chrono::milliseconds(50));
-                } else {
+                // once all buffers are EOF, we can stop reading
+                if (std::all_of(pipes_to_be_logged.begin(), pipes_to_be_logged.end(), [](const pipe_to_be_logged& pipe_state) {
+                    return pipe_state.eof;
+                })) {
                     break;
                 }
             }

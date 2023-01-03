@@ -1,15 +1,18 @@
+// system headers
+#include <filesystem>
 #include <iostream>
-#include <boost/filesystem.hpp>
+
+// local headers
 #include <linuxdeploy/plugin/plugin.h>
 
-namespace bf = boost::filesystem;
+namespace fs = std::filesystem;
 
 int main(const int argc, const char* const* const argv) {
     auto plugins = linuxdeploy::plugin::findPlugins();
 
     if (argc > 1) {
         for (int i = 1; i < argc; i++) {
-            const bf::path path = argv[1];
+            const fs::path path = argv[1];
             auto* plugin = linuxdeploy::plugin::createPluginInstance(path);
             plugins[path.filename().string()] = plugin;
         }

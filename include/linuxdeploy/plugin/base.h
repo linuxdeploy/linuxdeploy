@@ -1,8 +1,6 @@
 // system includes
+#include <filesystem>
 #include <string>
-
-// library includes
-#include <boost/filesystem.hpp>
 
 // local includes
 #include "linuxdeploy/core/log.h"
@@ -27,7 +25,7 @@ namespace linuxdeploy {
                 public:
                     // default constructor
                     // construct Plugin from given path
-                    explicit PluginBase(const boost::filesystem::path& path);
+                    explicit PluginBase(const std::filesystem::path& path);
 
                     ~PluginBase() override;
 
@@ -35,14 +33,14 @@ namespace linuxdeploy {
                     int apiLevel() const override;
 
                     // get path to plugin
-                    boost::filesystem::path path() const override;
+                    std::filesystem::path path() const override;
 
                     // get plugin type
                     PLUGIN_TYPE pluginType() const override;
                     std::string pluginTypeString() const override;
 
                     // run plugin
-                    int run(const boost::filesystem::path& appDirPath) override;
+                    int run(const std::filesystem::path& appDirPath) override;
             };
         }
     }

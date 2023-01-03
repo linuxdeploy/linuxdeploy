@@ -1,8 +1,6 @@
 // system includes
+#include <filesystem>
 #include <iostream>
-
-// library includes
-#include <boost/filesystem.hpp>
 
 #pragma once
 
@@ -58,7 +56,7 @@ namespace linuxdeploy {
                 public:
                     ldLog operator<<(const std::string& message);
                     ldLog operator<<(const char* message);
-                    ldLog operator<<(const boost::filesystem::path& path);
+                    ldLog operator<<(const std::filesystem::path& path);
                     ldLog operator<<(const int val);
                     ldLog operator<<(const size_t val);
                     ldLog operator<<(const double val);

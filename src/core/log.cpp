@@ -51,7 +51,7 @@ namespace linuxdeploy {
                 return ldLog(true, logLevelSet, currentLogLevel);
             }
 
-            ldLog ldLog::operator<<(const boost::filesystem::path& path) {
+            ldLog ldLog::operator<<(const std::filesystem::path& path) {
                 if (checkVerbosity()) {
                     checkPrependSpace();
                     stream << path.string();

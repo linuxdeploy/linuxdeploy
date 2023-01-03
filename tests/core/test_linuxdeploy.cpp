@@ -1,29 +1,31 @@
 #include "gtest/gtest.h"
 
 #include "core.h"
+#include "test_util.h"
 
 using namespace std;
 using namespace linuxdeploy::core;
-namespace bf = boost::filesystem;
+
+namespace fs = std::filesystem;
 
 namespace LinuxDeployTest {
     class IntegrationTests : public ::testing::Test {
     public:
-        bf::path tmpAppDir;
-        bf::path source_executable_path;
-        bf::path target_executable_path;
+        fs::path tmpAppDir;
+        fs::path source_executable_path;
+        fs::path target_executable_path;
 
-        bf::path source_desktop_path;
-        bf::path target_desktop_path;
+        fs::path source_desktop_path;
+        fs::path target_desktop_path;
 
-        bf::path source_icon_path;
-        std::vector<bf::path> target_icon_paths;
+        fs::path source_icon_path;
+        std::vector<fs::path> target_icon_paths;
 
-        bf::path source_apprun_path;
-        bf::path target_apprun_path;
+        fs::path source_apprun_path;
+        fs::path target_apprun_path;
 
         void SetUp() override {
-            tmpAppDir = bf::temp_directory_path() / bf::unique_path("linuxdeploy-tests-%%%%-%%%%-%%%%");
+            tmpAppDir = make_temporary_directory();
             source_executable_path = SIMPLE_EXECUTABLE_PATH;
             target_executable_path = tmpAppDir / "usr/bin" / source_executable_path.filename();
 
@@ -39,8 +41,6 @@ namespace LinuxDeployTest {
             }
             source_apprun_path = SIMPLE_FILE_PATH;
             target_apprun_path = tmpAppDir / "AppRun";
-
-            create_directories(tmpAppDir);
         }
 
         void TearDown() override {
@@ -51,8 +51,8 @@ namespace LinuxDeployTest {
 
         void listDeployedFiles() {
             std::cout << "Files deployed in AppDir:" << std::endl;
-            bf::recursive_directory_iterator end_itr; // default construction yields past-the-end
-            for (bf::recursive_directory_iterator itr(tmpAppDir); itr != end_itr; itr++) {
+            fs::recursive_directory_iterator end_itr; // default construction yields past-the-end
+            for (fs::recursive_directory_iterator itr(tmpAppDir); itr != end_itr; itr++) {
                 std::cout << relative(itr->path(), tmpAppDir).string() << std::endl;
             }
         }
@@ -63,7 +63,7 @@ namespace LinuxDeployTest {
             add_icon();
         }
 
-        bf::path add_executable() const {
+        fs::path add_executable() const {
             create_directories(target_executable_path.parent_path());
             copy_file(source_executable_path, target_executable_path);
 
