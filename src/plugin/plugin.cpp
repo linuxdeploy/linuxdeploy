@@ -37,7 +37,7 @@ namespace linuxdeploy {
 
         std::map<std::string, IPlugin*> findPlugins() {
             std::map<std::string, IPlugin*> foundPlugins;
-            
+
             const auto PATH = getenv("PATH");
 
             auto paths = util::split(PATH, ':');
