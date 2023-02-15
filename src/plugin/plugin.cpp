@@ -58,16 +58,16 @@ namespace linuxdeploy {
             paths.emplace_back(cwd.get());
 
             for (const auto& dir : paths) {
-                try {
-                    if (!fs::is_directory(dir))
-                        continue;
+                if (!fs::is_directory(dir))
+                    continue;
 
-                    ldLog() << LD_DEBUG << "Searching for plugins in directory" << dir << std::endl;
+                ldLog() << LD_DEBUG << "Searching for plugins in directory" << dir << std::endl;
 
-                    bool extendedDebugLoggingEnabled = (getenv("DEBUG_PLUGIN_DETECTION") != nullptr);
+                bool extendedDebugLoggingEnabled = (getenv("DEBUG_PLUGIN_DETECTION") != nullptr);
 
-                    for (fs::directory_iterator i(dir); i != fs::directory_iterator(); ++i) {
-                        // must be a file, and not a directory
+                for (fs::directory_iterator i(dir); i != fs::directory_iterator(); ++i) {
+                    // must be a file, and not a directory
+                    try {
                         if (fs::is_directory(fs::absolute(*i))) {
                             if (extendedDebugLoggingEnabled)
                                 ldLog() << LD_DEBUG << "Entry is a directory, skipping:" << i->path() << std::endl;
@@ -83,44 +83,43 @@ namespace linuxdeploy {
 
                             continue;
                         }
-
-                        // entry name must match regular expression
-                        std::cmatch res;
-
-                        if (!std::regex_match(i->path().filename().string().c_str(), res, PLUGIN_EXPR)) {
-                            ldLog() << LD_DEBUG << "Doesn't match plugin regex, skipping:" << i->path() << std::endl;
-                            continue;
-                        }
-
-                        try {
-                            auto name = res[1].str();
-                            auto* plugin = createPluginInstance(*i);
-                            if (plugin == nullptr) {
-                                ldLog() << LD_DEBUG << "Failed to create instance for plugin" << i->path() << std::endl;;
-                            } else {
-                                ldLog() << LD_DEBUG << "Found plugin '" << LD_NO_SPACE << name << LD_NO_SPACE << "':" << plugin->path() << std::endl;
-
-                                if (foundPlugins.find(name) != foundPlugins.end()) {
-                                    ldLog() << LD_DEBUG << "Already found" << name << "plugin in" << foundPlugins[name]->path() << std::endl;
-                                } else {
-                                    foundPlugins[name] = plugin;
-                                }
-                            }
-                        } catch (const PluginError& e) {
-                            ldLog() << LD_WARNING << "Could not load plugin" << i->path() << LD_NO_SPACE << ": " << e.what();
-                        }
+                    } catch(std::filesystem::filesystem_error const& ex) {
+                        ldLog() << LD_DEBUG
+                        << "Got file system error while looking for plugins :  " << ex.what() << std::endl
+                        << "path1(): " << ex.path1() << std::endl
+                        << "path2(): " << ex.path2() << std::endl
+                        << "code().value():    " << ex.code().value() << std::endl
+                        << "code().message():  " << ex.code().message() << std::endl
+                        << "code().category(): " << ex.code().category().name() << std::endl;
                     }
-                } catch(std::filesystem::filesystem_error const& ex) {
-                    ldLog() << LD_WARNING
-                    << "Got file system error while looking for plugins :  " << ex.what() << '\n'
-                    << "path1(): " << ex.path1() << '\n'
-                    << "path2(): " << ex.path2() << '\n'
-                    << "code().value():    " << ex.code().value() << '\n'
-                    << "code().message():  " << ex.code().message() << '\n'
-                    << "code().category(): " << ex.code().category().name() << '\n';
+
+                    // entry name must match regular expression
+                    std::cmatch res;
+
+                    if (!std::regex_match(i->path().filename().string().c_str(), res, PLUGIN_EXPR)) {
+                        ldLog() << LD_DEBUG << "Doesn't match plugin regex, skipping:" << i->path() << std::endl;
+                        continue;
+                    }
+
+                    try {
+                        auto name = res[1].str();
+                        auto* plugin = createPluginInstance(*i);
+                        if (plugin == nullptr) {
+                            ldLog() << LD_DEBUG << "Failed to create instance for plugin" << i->path() << std::endl;;
+                        } else {
+                            ldLog() << LD_DEBUG << "Found plugin '" << LD_NO_SPACE << name << LD_NO_SPACE << "':" << plugin->path() << std::endl;
+
+                            if (foundPlugins.find(name) != foundPlugins.end()) {
+                                ldLog() << LD_DEBUG << "Already found" << name << "plugin in" << foundPlugins[name]->path() << std::endl;
+                            } else {
+                                foundPlugins[name] = plugin;
+                            }
+                        }
+                    } catch (const PluginError& e) {
+                        ldLog() << LD_WARNING << "Could not load plugin" << i->path() << LD_NO_SPACE << ": " << e.what();
+                    }
                 }
             }
-
             return foundPlugins;
         }
     }
