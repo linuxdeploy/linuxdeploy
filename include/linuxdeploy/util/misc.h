@@ -104,9 +104,17 @@ namespace linuxdeploy {
 
             // very simple but for our purposes good enough which like algorithm to find binaries in $PATH
             static std::filesystem::path which(const std::string& name) {
-                const auto* path = getenv("PATH");
-
                 namespace fs = std::filesystem;
+
+                // check if name is an absolute path and a valid binary to run
+                const fs::path name_path(name);
+                if (name_path.is_absolute()
+                    && fs::exists(name_path)
+                    && (fs::status(name_path).permissions() & fs::perms::owner_exec) != fs::perms::none) {
+                        return name_path;
+                }
+
+                const auto* path = getenv("PATH");
 
                 if (path == nullptr)
                     return "";
