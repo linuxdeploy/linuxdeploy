@@ -158,7 +158,7 @@ namespace linuxdeploy {
                                 return false;
                             }
 
-                            if (*(to.string().end() - 1) == '/' || fs::is_directory(to))
+                            if (to.string().back() == '/' || fs::is_directory(to))
                                 to /= from.filename();
 
                             if (!overwrite && fs::exists(to)) {
