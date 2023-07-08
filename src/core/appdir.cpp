@@ -807,22 +807,25 @@ namespace linuxdeploy {
             }
 
             std::vector<fs::path> AppDir::listSharedLibraries() const {
+                static const std::vector<std::string> libDirectories = {"lib", "lib32", "lib64"};
                 std::vector<fs::path> sharedLibraries;
 
-                for (const auto& file : listFilesInDirectory(path() / "usr" / "lib", true)) {
-                    // exclude debug symbols
-                    if (d->isInDebugSymbolsLocation(file))
-                        continue;
+                for (const std::string &libDirectory : libDirectories) {
+                    for (const auto& file : listFilesInDirectory(path() / "usr" / libDirectory, true)) {
+                        // exclude debug symbols
+                        if (d->isInDebugSymbolsLocation(file))
+                            continue;
 
-                    // make sure it's an ELF file
-                    try {
-                        elf_file::ElfFile elfFile(file);
-                    } catch (const elf_file::ElfFileParseError&) {
-                        // FIXME: remove this workaround once the MIME check below works as intended
-                        continue;
+                        // make sure it's an ELF file
+                        try {
+                            elf_file::ElfFile elfFile(file);
+                        } catch (const elf_file::ElfFileParseError&) {
+                            // FIXME: remove this workaround once the MIME check below works as intended
+                            continue;
+                        }
+
+                        sharedLibraries.push_back(file);
                     }
-
-                    sharedLibraries.push_back(file);
                 }
 
                 return sharedLibraries;
