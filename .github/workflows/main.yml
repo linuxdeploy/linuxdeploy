@@ -14,13 +14,14 @@ jobs:
       matrix:
         ARCH: [x86_64, i386]
         BUILD_TYPE: [appimage, coverage]
+        USE_STATIC_RUNTIME: [""]
         include:
-        - ARCH: x86_64
-          BUILD_TYPE: appimage
-          USE_STATIC_RUNTIME: 1
+          - ARCH: x86_64
+            BUILD_TYPE: appimage
+            USE_STATIC_RUNTIME: 1
       fail-fast: false
 
-    name: ${{ matrix.BUILD_TYPE }} ${{ matrix.ARCH }} USE_STATIC_RUNTIME=${{ matrix.USE_STATIC_RUNTIME }}
+    name: ${{ matrix.BUILD_TYPE }} ${{ matrix.ARCH }} static=${{ matrix.USE_STATIC_RUNTIME }}
     runs-on: ubuntu-20.04
 
     env:
