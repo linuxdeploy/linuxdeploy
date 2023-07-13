@@ -79,6 +79,14 @@ ln -s ../../plugins/linuxdeploy-plugin-appimage/AppRun AppDir/usr/bin/linuxdeplo
 export UPD_INFO="gh-releases-zsync|linuxdeploy|linuxdeploy|continuous|linuxdeploy-$ARCH.AppImage.zsync"
 export OUTPUT="linuxdeploy-$ARCH.AppImage"
 
+# special set of builds using a different experimental runtime, used for testing purposes
+if [[ "$USE_STATIC_RUNTIME" != "" ]]; then
+    export OUTPUT="linuxdeploy-static-$ARCH.AppImage"
+    wget https://github.com/AppImage/type2-runtime/releases/download/continuous/runtime-"$ARCH"
+    runtime_filename="$(echo "$CUSTOM_RUNTIME_URL" | rev | cut -d/ -f1 | rev)"
+    export LDAI_RUNTIME_FILE"$(readlink -f "$runtime_filename")"
+fi
+
 # build AppImage using plugin
 AppDir/usr/bin/linuxdeploy-plugin-appimage --appdir AppDir/
 
