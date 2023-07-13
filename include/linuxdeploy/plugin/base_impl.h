@@ -39,6 +39,8 @@ namespace linuxdeploy {
                             throw PluginError("No such file or directory: " + path.string());
                         }
 
+                        ldLog() << LD_DEBUG << "Probing plugin" << path.string() << std::endl;
+
                         apiLevel = getApiLevelFromExecutable();
                         pluginType = getPluginTypeFromExecutable();
 
