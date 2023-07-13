@@ -15,12 +15,12 @@ jobs:
         ARCH: [x86_64, i386]
         BUILD_TYPE: [appimage, coverage]
         include:
-          - ARCH: x86_64
-            BUILD_TYPE: appimage
-            USE_STATIC_RUNTIME: 1
+        - ARCH: x86_64
+          BUILD_TYPE: appimage
+          USE_STATIC_RUNTIME: 1
       fail-fast: false
 
-    name: ${{ matrix.BUILD_TYPE }} ${{ matrix.ARCH }}
+    name: ${{ matrix.BUILD_TYPE }} ${{ matrix.ARCH }} USE_STATIC_RUNTIME=${{ matrix.USE_STATIC_RUNTIME }}
     runs-on: ubuntu-20.04
 
     env:
@@ -77,4 +77,4 @@ jobs:
         run: |
             wget -q https://github.com/TheAssassin/pyuploadtool/releases/download/continuous/pyuploadtool-x86_64.AppImage
             chmod +x pyuploadtool-x86_64.AppImage
-            ./pyuploadtool-x86_64.AppImage **/linuxdeploy*.AppImage*
+            ./pyuploadtool-x86_64.AppImage ./**/linuxdeploy*.AppImage*
