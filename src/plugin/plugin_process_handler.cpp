@@ -1,4 +1,5 @@
 // system headers
+#include <array>
 #include <filesystem>
 #include <thread>
 #include <tuple>
