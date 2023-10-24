@@ -92,7 +92,7 @@ namespace linuxdeploy {
                 //   the farther the icon dimensions are from that, the less preferred the icon is
                 auto bestIcon = foundIconPaths.end();
                 for (auto iconPath = foundIconPaths.begin(); iconPath != foundIconPaths.end(); ++iconPath) {
-                    if (iconPath.size() < iconName.size())
+                    if (iconPath->string().size() < iconName.size())
                         continue; // No chance to match anything
 
                     if (iconName.front() == '/') { // Full path to the icon specified
