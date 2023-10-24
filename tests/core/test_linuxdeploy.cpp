@@ -19,7 +19,7 @@ namespace LinuxDeployTest {
         fs::path target_desktop_path;
 
         fs::path source_icon_path;
-        fs::path target_icon_path;
+        std::vector<fs::path> target_icon_paths;
 
         fs::path source_apprun_path;
         fs::path target_apprun_path;
@@ -32,7 +32,13 @@ namespace LinuxDeployTest {
             source_desktop_path = SIMPLE_DESKTOP_ENTRY_PATH;
             target_desktop_path = tmpAppDir / "usr/share/applications" / source_desktop_path.filename();
             source_icon_path = SIMPLE_ICON_PATH;
-            target_icon_path = tmpAppDir / "usr/share/icons/hicolor/scalable/apps" / source_icon_path.filename();
+            if (source_icon_path.extension() == ".svg") {
+                target_icon_paths.push_back(tmpAppDir / "usr/share/icons/hicolor/scalable/apps" / source_icon_path.filename());
+            } else {
+                target_icon_paths.push_back(tmpAppDir / "usr/share/icons/hicolor/32x32/apps" / source_icon_path.filename());
+                target_icon_paths.push_back(tmpAppDir / "usr/share/icons/hicolor/128x128/apps" / source_icon_path.filename());
+                target_icon_paths.push_back(tmpAppDir / "usr/share/pixmaps" / source_icon_path.filename());
+            }
             source_apprun_path = SIMPLE_FILE_PATH;
             target_apprun_path = tmpAppDir / "AppRun";
         }
@@ -70,8 +76,11 @@ namespace LinuxDeployTest {
         }
 
         void add_icon() const {
-            create_directories(target_icon_path.parent_path());
-            copy_file(source_icon_path, target_icon_path);
+            for (const auto &target_icon_path : target_icon_paths) {
+                create_directories(target_icon_path.parent_path());
+                // NB: In case of PNG, the same icon is installed to all paths
+                copy_file(source_icon_path, target_icon_path);
+            }
         }
 
         void add_apprun() const {

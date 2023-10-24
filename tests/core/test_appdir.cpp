@@ -127,10 +127,13 @@ namespace AppDirTest {
 
     TEST_F(AppDirUnitTestsFixture, deployIcon) {
         appDir.deployIcon(SIMPLE_ICON_PATH);
+        appDir.deployIcon(SIMPLE_ICON_PATH2);
         ASSERT_TRUE(appDir.executeDeferredOperations());
 
-        const auto targetPath = tmpAppDir / "usr/share/icons/hicolor/scalable/apps" / path(SIMPLE_ICON_PATH).filename();
+        const auto targetPath = tmpAppDir / "usr/share/icons/hicolor/16x16/apps" / path(SIMPLE_ICON_PATH).filename();
+        const auto targetPath2 = tmpAppDir / "usr/share/icons/hicolor/scalable/apps" / path(SIMPLE_ICON_PATH2).filename();
         assertIsRegularFile(targetPath);
+        assertIsRegularFile(targetPath2);
     }
 
     TEST_F(AppDirUnitTestsFixture, deployFileToDirectory) {
