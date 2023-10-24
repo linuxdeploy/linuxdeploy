@@ -90,40 +90,40 @@ namespace linuxdeploy {
                 // - SVG is prefered over raster icons
                 // - 64x64 is picked as a reasonable best size for raster icons;
                 //   the farther the icon dimensions are from that, the less preferred the icon is
-                const fs::path* bestIcon = nullptr;
-                for (const auto &iconPath : foundIconPaths) {
+                auto bestIcon = foundIconPaths.end();
+                for (auto iconPath = foundIconPaths.begin(); iconPath != foundIconPaths.end(); ++iconPath) {
                     if (iconPath.size() < iconName.size())
                         continue; // No chance to match anything
 
                     if (iconName.front() == '/') { // Full path to the icon specified
-                        const auto iconPathStr = iconPath.string();
+                        const auto iconPathStr = iconPath->string();
                         // Check if the current icon path ends with the path specified in the desktop entry
                         // (strictly speaking, it should also start with $DESTDIR; this is left for another time)
                         if (std::equal(iconName.rbegin(), iconName.rend(), iconPathStr.rbegin())) {
-                            bestIcon = &iconPath;
+                            bestIcon = iconPath;
                             break;
                         }
                         continue;
                     }
 
-                    const bool matchesFilenameWithExtension = iconPath.filename() == iconName;
+                    const bool matchesFilenameWithExtension = iconPath->filename() == iconName;
 
-                    if (iconPath.stem() != iconEntry.value() && !matchesFilenameWithExtension)
+                    if (iconPath->stem() != iconEntry.value() && !matchesFilenameWithExtension)
                         continue;
 
-                    ldLog() << LD_DEBUG << "Icon found:" << iconPath << std::endl;
+                    ldLog() << LD_DEBUG << "Icon found:" << *iconPath << std::endl;
 
                     if (matchesFilenameWithExtension) {
                         ldLog() << LD_WARNING << "Icon= entry filename contains extension" << std::endl;
                     }
-                    if (!bestIcon) {
-                        bestIcon = &iconPath;
+                    if (bestIcon == foundIconPaths.end()) {
+                        bestIcon = iconPath;
                         continue;
                     }
 
                     // From here, the code comparing the current icon and the so far best icon begins
 
-                    const auto currentExtension = util::strLower(iconPath.extension().string());
+                    const auto currentExtension = util::strLower(iconPath->extension().string());
                     const auto bestIconExtension = util::strLower(bestIcon->extension().string());
                     // SVGs are preferred, and (normally) only come in scalable/apps/; process them early
                     if (currentExtension == ".svg") {
@@ -131,7 +131,7 @@ namespace linuxdeploy {
                         // a full filename is used in the desktop file (Icon=a.svg) then two SVG icons can
                         // match it: scalable/apps/a.svg and scalable/apps/a.svg.svg; in this case a.svg wins
                         if (matchesFilenameWithExtension || bestIconExtension != ".svg")
-                            bestIcon = &iconPath;
+                            bestIcon = iconPath;
 
                         break; // Further icons can't be better than what bestIcon has now.
                     }
@@ -145,7 +145,7 @@ namespace linuxdeploy {
                     // Both icons are raster
 
                     if (matchesFilenameWithExtension && bestIcon->filename() != iconName) { // The other way around
-                        bestIcon = &iconPath;
+                        bestIcon = iconPath;
                         continue;
                     }
 
@@ -157,14 +157,14 @@ namespace linuxdeploy {
                     // preferring larger icons in case of a tie (see getIconPreference() implementation);
                     // as a last resort, if the preference is the same (e.g. two icons deployed to pixmaps/),
                     // PNGs win over XPMs.
-                    const auto currentPreference = getIconPreference(iconPath);
+                    const auto currentPreference = getIconPreference(*iconPath);
                     const auto bestPreference = getIconPreference(*bestIcon);
                     if (currentPreference > bestPreference
                         || (currentPreference == bestPreference && currentExtension < bestIconExtension))
-                        bestIcon = &iconPath;
+                        bestIcon = iconPath;
                 }
 
-                if (!bestIcon) {
+                if (bestIcon == foundIconPaths.end()) {
                     ldLog() << LD_ERROR << "Could not find suitable icon for Icon entry:" << iconEntry.value() << std::endl;
                     return false;
                 }
