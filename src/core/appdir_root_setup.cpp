@@ -34,7 +34,7 @@ namespace linuxdeploy {
                 );
             }
 
-       public:
+        public:
             static int getIconPreference(const fs::path &iconPath) {
                 int iconWidth = 0;
                 try {
