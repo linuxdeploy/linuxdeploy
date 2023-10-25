@@ -32,7 +32,7 @@ using namespace cimg_library;
 
 namespace fs = std::filesystem;
 
-namespace {
+namespace private_items {
     // equivalent to 0644
     constexpr fs::perms DEFAULT_PERMS = fs::perms::owner_write | fs::perms::owner_read | fs::perms::group_read | fs::perms::others_read;
     // equivalent to 0755
@@ -97,6 +97,7 @@ namespace {
 namespace linuxdeploy {
     namespace core {
         namespace appdir {
+            using namespace private_items;
             class AppDir::PrivateData {
                 public:
                     fs::path appDirPath;

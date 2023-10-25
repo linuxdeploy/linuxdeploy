@@ -20,6 +20,7 @@ public:
         SUCCESS = 0,
         TIMEOUT,
         END_OF_FILE,
+        RUNTIME_ERROR
     };
 
     /**
