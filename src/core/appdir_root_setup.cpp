@@ -35,6 +35,30 @@ namespace linuxdeploy {
             }
 
         public:
+            static int getIconPreference(const fs::path &iconPath) {
+                int iconWidth = 0;
+                try {
+                    // Assuming that iconPath ends with WxH[@D]/apps/*.*, pick the W component, taking
+                    // the D component into account if it's there
+                    const auto dirName = iconPath.parent_path().parent_path().filename().string();
+                    const auto dpiPos = dirName.rfind('@');
+                    iconWidth = std::stoi(dirName)
+                                * (dpiPos != std::string::npos ? std::stoi(dirName.substr(dpiPos + 1)) : 1);
+                } catch (const std::logic_error &) {
+                    ldLog() << LD_WARNING << "Icon size of" << iconPath << "could not be determined" << std::endl;
+                    // size remains zero
+                }
+
+                // Preference takes values from 0 to 100, with the highest value reached for 64x64 icons, going down
+                // as width goes from 64 either way. For "equally remote" sizes (32x32 and 128x128, e.g.) the larger
+                // icons are preferred (preference value for 32x32 is 49 while 128x128 are at 50).
+                // For other examples, 96x96 yields 66, 48x48 gets 73, and so on.
+                // Also, since size cannot be determined for icons in pixmaps/, preference for these is 0; in other
+                // words, icons in /usr/share/icons/hicolor are preferred, in alignment with the icon naming spec
+                return iconWidth < 64 ? 100 * iconWidth / 65 : 6400 / iconWidth;
+            }
+
+        public:
             bool deployDesktopFileAndIcon(const DesktopFile& desktopFile) const {
                 ldLog() << "Deploying desktop file to AppDir root:" << desktopFile.path() << std::endl;
 
@@ -47,44 +71,107 @@ namespace linuxdeploy {
                 // look for suitable icon
                 DesktopFileEntry iconEntry;
 
-                if (!desktopFile.getEntry("Desktop Entry", "Icon", iconEntry)) {
+                if (!desktopFile.getEntry("Desktop Entry", "Icon", iconEntry) || iconEntry.value().empty()) {
                     ldLog() << LD_ERROR << "Icon entry missing in desktop file:" << desktopFile.path() << std::endl;
                     return false;
                 }
 
-                bool iconDeployed = false;
+                const auto iconName = iconEntry.value();
 
-                const auto foundIconPaths = appDir.deployedIconPaths();
+                auto foundIconPaths = appDir.deployedIconPaths();
 
                 if (foundIconPaths.empty()) {
                     ldLog() << LD_ERROR << "Could not find icon executable for Icon entry:" << iconEntry.value() << std::endl;
                     return false;
                 }
 
-                for (const auto& iconPath : foundIconPaths) {
-                    ldLog() << LD_DEBUG << "Icon found:" << iconPath << std::endl;
+                // There's no way of knowing the target environment where an AppImage icon will be shown
+                // therefore:
+                // - SVG is prefered over raster icons
+                // - 64x64 is picked as a reasonable best size for raster icons;
+                //   the farther the icon dimensions are from that, the less preferred the icon is
+                auto bestIcon = foundIconPaths.end();
+                for (auto iconPath = foundIconPaths.begin(); iconPath != foundIconPaths.end(); ++iconPath) {
+                    if (iconPath->string().size() < iconName.size())
+                        continue; // No chance to match anything
 
-                    const bool matchesFilenameWithExtension = iconPath.filename() == iconEntry.value();
-
-                    if (iconPath.stem() == iconEntry.value() || matchesFilenameWithExtension) {
-                        if (matchesFilenameWithExtension) {
-                            ldLog() << LD_WARNING << "Icon= entry filename contains extension" << std::endl;
+                    if (iconName.front() == '/') { // Full path to the icon specified
+                        const auto iconPathStr = iconPath->string();
+                        // Check if the current icon path ends with the path specified in the desktop entry
+                        // (strictly speaking, it should also start with $DESTDIR; this is left for another time)
+                        if (std::equal(iconName.rbegin(), iconName.rend(), iconPathStr.rbegin())) {
+                            bestIcon = iconPath;
+                            break;
                         }
-
-                        ldLog() << "Deploying icon to AppDir root:" << iconPath << std::endl;
-
-                        if (!appDir.createRelativeSymlink(iconPath, appDir.path())) {
-                            ldLog() << LD_ERROR << "Failed to create symlink for icon in AppDir root:" << iconPath << std::endl;
-                            return false;
-                        }
-
-                        iconDeployed = true;
-                        break;
+                        continue;
                     }
+
+                    const bool matchesFilenameWithExtension = iconPath->filename() == iconName;
+
+                    if (iconPath->stem() != iconEntry.value() && !matchesFilenameWithExtension)
+                        continue;
+
+                    ldLog() << LD_DEBUG << "Icon found:" << *iconPath << std::endl;
+
+                    if (matchesFilenameWithExtension) {
+                        ldLog() << LD_WARNING << "Icon= entry filename contains extension" << std::endl;
+                    }
+                    if (bestIcon == foundIconPaths.end()) {
+                        bestIcon = iconPath;
+                        continue;
+                    }
+
+                    // From here, the code comparing the current icon and the so far best icon begins
+
+                    const auto currentExtension = util::strLower(iconPath->extension().string());
+                    const auto bestIconExtension = util::strLower(bestIcon->extension().string());
+                    // SVGs are preferred, and (normally) only come in scalable/apps/; process them early
+                    if (currentExtension == ".svg") {
+                        // There's only one spec-compliant place for an SVG icon (icons/scalable/apps); but if
+                        // a full filename is used in the desktop file (Icon=a.svg) then two SVG icons can
+                        // match it: scalable/apps/a.svg and scalable/apps/a.svg.svg; in this case a.svg wins
+                        if (matchesFilenameWithExtension || bestIconExtension != ".svg")
+                            bestIcon = iconPath;
+
+                        break; // Further icons can't be better than what bestIcon has now.
+                    }
+
+                    // As of here, the _current_ icon is a raster one (PNG or XPM)
+
+                    if (bestIconExtension == ".svg" // SVG is always better
+                        || (!matchesFilenameWithExtension && bestIcon->filename() == iconName)) // Better filename match
+                        continue;
+
+                    // Both icons are raster
+
+                    if (matchesFilenameWithExtension && bestIcon->filename() != iconName) { // The other way around
+                        bestIcon = iconPath;
+                        continue;
+                    }
+
+                    // Get preferences (declared) sizes of the icons from the directory name and compare.
+                    //
+                    // The code diverts from Icon Naming Spec here, since the spec relies on reading
+                    // index.theme data and taking Threshold and MinSize/MaxSize values from there. Instead,
+                    // merely figure which size is "logarithmically further" from the sweet spot of 64,
+                    // preferring larger icons in case of a tie (see getIconPreference() implementation);
+                    // as a last resort, if the preference is the same (e.g. two icons deployed to pixmaps/),
+                    // PNGs win over XPMs.
+                    const auto currentPreference = getIconPreference(*iconPath);
+                    const auto bestPreference = getIconPreference(*bestIcon);
+                    if (currentPreference > bestPreference
+                        || (currentPreference == bestPreference && currentExtension < bestIconExtension))
+                        bestIcon = iconPath;
                 }
 
-                if (!iconDeployed) {
+                if (bestIcon == foundIconPaths.end()) {
                     ldLog() << LD_ERROR << "Could not find suitable icon for Icon entry:" << iconEntry.value() << std::endl;
+                    return false;
+                }
+                ldLog() << "Deploying icon to AppDir root:" << *bestIcon << std::endl;
+
+                if (!appDir.createRelativeSymlink(*bestIcon, appDir.path())) {
+                    ldLog() << LD_ERROR << "Failed to create symlink for icon in AppDir root:" << *bestIcon << std::endl;
                     return false;
                 }
 
