@@ -8,7 +8,6 @@
 
 // library headers
 #include <CImg.h>
-#include <fnmatch.h>
 
 
 // local headers
@@ -358,7 +357,7 @@ namespace linuxdeploy {
                     bool deployElfDependencies(const fs::path& path) {
                         ldLog() << "Deploying dependencies for ELF file" << path << std::endl;
                         try {
-                            for (const auto &dependencyPath : elf_file::ElfFile(path).traceDynamicDependencies())
+                            for (const auto &dependencyPath : elf_file::ElfFile(path).traceDynamicDependencies(excludeLibraryPatterns))
                                 if (!deployLibrary(dependencyPath, false, false))
                                     return false;
                         } catch (const elf_file::DependencyNotFoundError& e) {
@@ -402,28 +401,7 @@ namespace linuxdeploy {
                             return false;
                         }
 
-                        static auto isInExcludelist = [](const fs::path& fileName, const std::vector<std::string> &excludeList) {
-                            for (const auto& excludePattern : excludeList) {
-                                // simple string match is faster than using fnmatch
-                                if (excludePattern == fileName)
-                                    return true;
-
-                                auto fnmatchResult = fnmatch(excludePattern.c_str(), fileName.string().c_str(), FNM_PATHNAME);
-                                switch (fnmatchResult) {
-                                    case 0:
-                                        return true;
-                                    case FNM_NOMATCH:
-                                        break;
-                                    default:
-                                        ldLog() << LD_ERROR << "fnmatch() reported error:" << fnmatchResult << std::endl;
-                                        return false;
-                                }
-                            }
-
-                            return false;
-                        };
-
-                        if (!forceDeploy && (isInExcludelist(path.filename(), generatedExcludelist) || isInExcludelist(path.filename(), excludeLibraryPatterns))) {
+                        if (!forceDeploy && (util::isInExcludelist(path.filename(), generatedExcludelist) || util::isInExcludelist(path.filename(), excludeLibraryPatterns))) {
                             ldLog() << "Skipping deployment of blacklisted library" << path << std::endl;
 
                             // mark file as visited
