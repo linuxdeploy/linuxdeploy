@@ -10,30 +10,36 @@ else
     TEMP_BASE=/tmp
 fi
 
-BUILD_DIR=$(mktemp -d -p "$TEMP_BASE" linuxdeploy-build-XXXXXX)
+build_dir=$(mktemp -d -p "$TEMP_BASE" linuxdeploy-build-XXXXXX)
 
 cleanup () {
-    if [ -d "$BUILD_DIR" ]; then
-        rm -rf "$BUILD_DIR"
+    if [ -d "$build_dir" ]; then
+        rm -rf "$build_dir"
     fi
 }
 
 trap cleanup EXIT
 
 # store repo root as variable
-REPO_ROOT=$(readlink -f $(dirname $(dirname $0)))
-OLD_CWD=$(readlink -f .)
+repo_root="$(readlink -f "$(dirname "${BASH_SOURCE[0]}")")"/..
+old_cwd="$(readlink -f "$PWD")"
 
-pushd "$BUILD_DIR"
+pushd "$build_dir"
 
-if [ "$ARCH" == "x86_64" ]; then
-    EXTRA_CMAKE_ARGS=()
-elif [ "$ARCH" == "i386" ]; then
-    EXTRA_CMAKE_ARGS=("-DCMAKE_TOOLCHAIN_FILE=$REPO_ROOT/cmake/toolchains/i386-linux-gnu.cmake" "-DUSE_SYSTEM_CIMG=OFF")
-else
-    echo "Architecture not supported: $ARCH" 1>&2
-    exit 1
-fi
+extra_cmake_args=()
+
+case "$ARCH" in
+    "x86_64")
+        ;;
+    "i386")
+        echo "Enabling x86_64->i386 cross-compile toolchain"
+        extra_cmake_args=("-DCMAKE_TOOLCHAIN_FILE=$repo_root/cmake/toolchains/i386-linux-gnu.cmake" "-DUSE_SYSTEM_CIMG=OFF")
+        ;;
+    *)
+        echo "Architecture not supported: $ARCH" 1>&2
+        exit 1
+    ;;
+esac
 
 # fetch up-to-date CMake
 mkdir cmake-prefix
@@ -42,29 +48,30 @@ export PATH="$(readlink -f cmake-prefix/bin):$PATH"
 cmake --version
 
 # configure build for AppImage release
-cmake "$REPO_ROOT" -DSTATIC_BUILD=On -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=RelWithDebInfo "${EXTRA_CMAKE_ARGS[@]}"
+cmake "$repo_root" -DSTATIC_BUILD=On -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=RelWithDebInfo "${extra_cmake_args[@]}"
 
 make -j"$(nproc)"
 
 # build patchelf
-"$REPO_ROOT"/ci/build-static-patchelf.sh "$(readlink -f out/)"
+"$repo_root"/ci/build-static-patchelf.sh "$(readlink -f out/)"
 patchelf_path="$(readlink -f out/usr/bin/patchelf)"
 
 # build custom strip
-"$REPO_ROOT"/ci/build-static-binutils.sh "$(readlink -f out/)"
+"$repo_root"/ci/build-static-binutils.sh "$(readlink -f out/)"
 strip_path="$(readlink -f out/usr/bin/strip)"
 
 # use tools we just built for linuxdeploy test run
-export PATH="$(readlink -f out/usr/bin):$PATH"
+PATH="$(readlink -f out/usr/bin):$PATH"
+export PATH
 
 ## Run Unit Tests
 ctest -V
 
 # args are used more than once
-LINUXDEPLOY_ARGS=("--appdir" "AppDir" "-e" "bin/linuxdeploy" "-i" "$REPO_ROOT/resources/linuxdeploy.png" "-d" "$REPO_ROOT/resources/linuxdeploy.desktop" "-e" "$patchelf_path" "-e" "$strip_path")
+linuxdeploy_args=("--appdir" "AppDir" "-e" "bin/linuxdeploy" "-i" "$repo_root/resources/linuxdeploy.png" "-d" "$repo_root/resources/linuxdeploy.desktop" "-e" "$patchelf_path" "-e" "$strip_path")
 
 # deploy patchelf which is a dependency of linuxdeploy
-bin/linuxdeploy "${LINUXDEPLOY_ARGS[@]}"
+bin/linuxdeploy "${linuxdeploy_args[@]}"
 
 # bundle AppImage plugin
 mkdir -p AppDir/plugins
@@ -76,6 +83,7 @@ mv squashfs-root/ AppDir/plugins/linuxdeploy-plugin-appimage
 
 ln -s ../../plugins/linuxdeploy-plugin-appimage/AppRun AppDir/usr/bin/linuxdeploy-plugin-appimage
 
+# interpreted by linuxdeploy-plugin-appimage
 export UPD_INFO="gh-releases-zsync|linuxdeploy|linuxdeploy|continuous|linuxdeploy-$ARCH.AppImage.zsync"
 export OUTPUT="linuxdeploy-$ARCH.AppImage"
 
@@ -94,9 +102,10 @@ AppDir/usr/bin/linuxdeploy-plugin-appimage --appdir AppDir/
 mv "$OUTPUT" test.AppImage
 
 # verify that the resulting AppImage works
-./test.AppImage "${LINUXDEPLOY_ARGS[@]}"
+./test.AppImage "${linuxdeploy_args[@]}"
 
 # check whether AppImage plugin is found and works
-./test.AppImage "${LINUXDEPLOY_ARGS[@]}" --output appimage
+./test.AppImage "${linuxdeploy_args[@]}" --output appimage
 
-mv "$OUTPUT"* "$OLD_CWD"/
+# using a glob because we want to include the .zsync file
+mv "$OUTPUT"* "$old_cwd"/
