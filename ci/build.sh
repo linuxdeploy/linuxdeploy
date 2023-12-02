@@ -1,11 +1,10 @@
 #! /bin/bash
 
-set -e
-set -x
+set -euxo pipefail
 
 # use RAM disk if possible
-if [ "$CI" == "" ] && [ -d /dev/shm ]; then
-    TEMP_BASE=/dev/shm
+if [ -d /docker-ramdisk ]; then
+    TEMP_BASE=/docker-ramdisk
 else
     TEMP_BASE=/tmp
 fi
@@ -26,49 +25,43 @@ old_cwd="$(readlink -f "$PWD")"
 
 pushd "$build_dir"
 
+# work around ninja colors bug
 extra_cmake_args=()
-
-case "$ARCH" in
-    "x86_64")
-        ;;
-    "i386")
-        echo "Enabling x86_64->i386 cross-compile toolchain"
-        extra_cmake_args=("-DCMAKE_TOOLCHAIN_FILE=$repo_root/cmake/toolchains/i386-linux-gnu.cmake" "-DUSE_SYSTEM_CIMG=OFF")
-        ;;
-    *)
-        echo "Architecture not supported: $ARCH" 1>&2
-        exit 1
-    ;;
-esac
-
-# fetch up-to-date CMake
-mkdir cmake-prefix
-wget -O- https://github.com/Kitware/CMake/releases/download/v3.18.1/cmake-3.18.1-Linux-x86_64.tar.gz | tar -xz -C cmake-prefix --strip-components=1
-export PATH="$(readlink -f cmake-prefix/bin):$PATH"
-cmake --version
+if [ -t 0 ]; then
+    extra_cmake_args+=(
+        "-DCMAKE_C_FLAGS=-fdiagnostics-color=always"
+        "-DCMAKE_CXX_FLAGS=-fdiagnostics-color=always"
+    )
+fi
 
 # configure build for AppImage release
-cmake "$repo_root" -DSTATIC_BUILD=On -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=RelWithDebInfo "${extra_cmake_args[@]}"
+cmake \
+    -G Ninja \
+    "$repo_root" \
+    -DSTATIC_BUILD=ON \
+    -DCMAKE_INSTALL_PREFIX=/usr \
+    -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+    "${extra_cmake_args[@]}"
 
-make -j"$(nproc)"
+nprocs="$(nproc)"
+[[ "${CI:-}" == "" ]] && [[ "$nprocs" -gt 2 ]] && nprocs="$(nproc --ignore=1)"
 
-# build patchelf
-"$repo_root"/ci/build-static-patchelf.sh "$(readlink -f out/)"
-patchelf_path="$(readlink -f out/usr/bin/patchelf)"
-
-# build custom strip
-"$repo_root"/ci/build-static-binutils.sh "$(readlink -f out/)"
-strip_path="$(readlink -f out/usr/bin/strip)"
-
-# use tools we just built for linuxdeploy test run
-PATH="$(readlink -f out/usr/bin):$PATH"
-export PATH
+ninja -j"$nprocs" -v
 
 ## Run Unit Tests
 ctest -V
 
 # args are used more than once
-linuxdeploy_args=("--appdir" "AppDir" "-e" "bin/linuxdeploy" "-i" "$repo_root/resources/linuxdeploy.png" "-d" "$repo_root/resources/linuxdeploy.desktop" "-e" "$patchelf_path" "-e" "$strip_path")
+patchelf_path="$(which patchelf)"
+strip_path="$(which strip)"
+linuxdeploy_args=(
+    --appdir AppDir
+    -e bin/linuxdeploy
+    -i "$repo_root/resources/linuxdeploy.png"
+    -d "$repo_root/resources/linuxdeploy.desktop"
+    -e "$patchelf_path"
+    -e "$strip_path"
+)
 
 # deploy patchelf which is a dependency of linuxdeploy
 bin/linuxdeploy "${linuxdeploy_args[@]}"
@@ -83,18 +76,20 @@ git clone --recursive https://github.com/linuxdeploy/linuxdeploy-plugin-appimage
 bash linuxdeploy-plugin-appimage/ci/build-bundle.sh
 mv linuxdeploy-plugin-appimage-bundle AppDir/plugins/linuxdeploy-plugin-appimage
 
-ln -s ../../plugins/linuxdeploy-plugin-appimage/AppRun AppDir/usr/bin/linuxdeploy-plugin-appimage
+ln -s ../../plugins/linuxdeploy-plugin-appimage/usr/bin/linuxdeploy-plugin-appimage AppDir/usr/bin/linuxdeploy-plugin-appimage
 
 # interpreted by linuxdeploy-plugin-appimage
 export UPD_INFO="gh-releases-zsync|linuxdeploy|linuxdeploy|continuous|linuxdeploy-$ARCH.AppImage.zsync"
 export OUTPUT="linuxdeploy-$ARCH.AppImage"
 
 # special set of builds using a different experimental runtime, used for testing purposes
-if [[ "$USE_STATIC_RUNTIME" != "" ]]; then
+if [[ "${USE_STATIC_RUNTIME:-}" != "" ]]; then
+    custom_runtime_url="https://github.com/AppImage/type2-runtime/releases/download/continuous/runtime-$ARCH"
+    wget "$custom_runtime_url"
+    runtime_filename="$(echo "$custom_runtime_url" | rev | cut -d/ -f1 | rev)"
+    LDAI_RUNTIME_FILE="$(readlink -f "$runtime_filename")"
+    export LDAI_RUNTIME_FILE
     export OUTPUT="linuxdeploy-static-$ARCH.AppImage"
-    wget https://github.com/AppImage/type2-runtime/releases/download/continuous/runtime-"$ARCH"
-    runtime_filename="$(echo "$CUSTOM_RUNTIME_URL" | rev | cut -d/ -f1 | rev)"
-    export LDAI_RUNTIME_FILE"$(readlink -f "$runtime_filename")"
 fi
 
 # build AppImage using plugin
@@ -102,6 +97,9 @@ AppDir/usr/bin/linuxdeploy-plugin-appimage --appdir AppDir/
 
 # rename AppImage to avoid "Text file busy" issues when using it to create another one
 mv "$OUTPUT" test.AppImage
+
+# qemu is not happy about the AppImage type 2 magic bytes, so we need to "fix" that
+dd if=/dev/zero bs=1 count=3 seek=8 conv=notrunc of=test.AppImage
 
 # verify that the resulting AppImage works
 ./test.AppImage "${linuxdeploy_args[@]}"
