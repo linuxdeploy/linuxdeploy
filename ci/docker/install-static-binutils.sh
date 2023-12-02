@@ -3,34 +3,6 @@
 set -e
 set -x
 
-INSTALL_DESTDIR="$1"
-
-if [[ "$INSTALL_DESTDIR" == "" ]]; then
-    echo "Error: build dir $BUILD_DIR does not exist" 1>&2
-    exit 1
-fi
-
-# support cross-compilation for 32-bit ISAs
-case "$ARCH" in
-    "x86_64"|"amd64")
-        ;;
-    "i386"|"i586"|"i686")
-        export CFLAGS="-m32"
-        export CXXFLAGS="-m32"
-        ;;
-    *)
-        echo "Error: unsupported architecture: $ARCH"
-        exit 1
-        ;;
-esac
-
-# use RAM disk if possible
-if [ "$CI" == "" ] && [ -d /dev/shm ]; then
-    TEMP_BASE=/dev/shm
-else
-    TEMP_BASE=/tmp
-fi
-
 cleanup () {
     if [ -d "$BUILD_DIR" ]; then
         rm -rf "$BUILD_DIR"
@@ -55,5 +27,5 @@ make -j "$(nproc)"
 make clean
 make -j "$(nproc)" LDFLAGS="-all-static"
 
-# install into user-specified destdir
-make install DESTDIR="$(readlink -f "$INSTALL_DESTDIR")"
+# install into separate destdir to avoid polluting the $PATH with tools like ld that will break things
+make install DESTDIR="${TOOLS_DIR}"

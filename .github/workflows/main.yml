@@ -12,48 +12,44 @@ jobs:
   build-and-test:
     strategy:
       matrix:
-        ARCH: [x86_64, i386]
-        BUILD_TYPE: [appimage, coverage]
+        ARCH: [x86_64, i386, armhf, aarch64]
+        BUILD_TYPE: ["appimage"]
         USE_STATIC_RUNTIME: [""]
+
         include:
+          # test build
+          - ARCH: x86_64
+            DOCKER_ARCH: amd64
+            BUILD_TYPE: coverage
+
+          # experimental build
           - ARCH: x86_64
             BUILD_TYPE: appimage
             USE_STATIC_RUNTIME: 1
+
       fail-fast: false
 
-    name: ${{ matrix.BUILD_TYPE }} ${{ matrix.ARCH }} static=${{ matrix.USE_STATIC_RUNTIME }}
+    name: ${{ matrix.BUILD_TYPE }} ${{ matrix.ARCH }} static_runtime=${{ matrix.USE_STATIC_RUNTIME }}
+    # Ubuntu 22.04 with qemu-static and ldd is a bad combination apparently
     runs-on: ubuntu-20.04
 
     env:
       ARCH: ${{ matrix.ARCH }}
       BUILD_TYPE: ${{ matrix.BUILD_TYPE }}
       USE_STATIC_RUNTIME: ${{ matrix.USE_STATIC_RUNTIME }}
+      # make sure to always(!) pull the base image
+      UPDATE: 1
 
     steps:
       - uses: actions/checkout@v3
         with:
           submodules: recursive
 
-      - name: Install dependencies (x86_64)
-        if: matrix.ARCH == 'x86_64'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y gcovr libmagic-dev libjpeg-dev libpng-dev cimg-dev libfuse2
+      - name: Set up QEMU integration for Docker
+        run: docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
 
-      - name: Install dependencies (i386)
-        if: matrix.ARCH == 'i386'
-        run: |
-          sudo dpkg --add-architecture i386
-          sudo apt-get update
-          sudo apt-get install -y gcovr libmagic-dev:i386 libjpeg-dev:i386 libpng-dev:i386 cimg-dev gcc-multilib g++-multilib libfuse2:i386
-
-      - name: Test coverage
-        run: bash -ex ci/test-coverage.sh
-        if: matrix.BUILD_TYPE == 'coverage'
-
-      - name: Build, test and build AppImage
-        run: bash -ex ci/build.sh
-        if: matrix.BUILD_TYPE != 'coverage'
+      - name: Build
+        run: bash ci/build-in-docker.sh
 
       - name: Archive artifacts
         uses: actions/upload-artifact@v2
