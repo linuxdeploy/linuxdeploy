@@ -76,10 +76,12 @@ bin/linuxdeploy "${linuxdeploy_args[@]}"
 # bundle AppImage plugin
 mkdir -p AppDir/plugins
 
-wget https://github.com/linuxdeploy/linuxdeploy-plugin-appimage/releases/download/continuous/linuxdeploy-plugin-appimage-"$ARCH".AppImage
-chmod +x linuxdeploy-plugin-appimage-"$ARCH".AppImage
-./linuxdeploy-plugin-appimage-"$ARCH".AppImage --appimage-extract
-mv squashfs-root/ AppDir/plugins/linuxdeploy-plugin-appimage
+# build linuxdeploy-plugin-appimage instead of using prebuilt versions
+# this prevents a circular dependency
+# the other repository provides a script for this purpose that builds a bundle we can use
+git clone --recursive https://github.com/linuxdeploy/linuxdeploy-plugin-appimage
+bash linuxdeploy-plugin-appimage/ci/build-bundle.sh
+mv linuxdeploy-plugin-appimage-bundle AppDir/plugins/linuxdeploy-plugin-appimage
 
 ln -s ../../plugins/linuxdeploy-plugin-appimage/AppRun AppDir/usr/bin/linuxdeploy-plugin-appimage
 
