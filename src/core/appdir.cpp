@@ -356,9 +356,16 @@ namespace linuxdeploy {
                     }
 
                     bool deployElfDependencies(const fs::path& path) {
+                        elf_file::ElfFile elfFile(path);
+
+                        if (!elfFile.isDynamicallyLinked()) {
+                            ldLog() << LD_WARNING << "ELF file" << path << "is not dynamically linked, skipping" << std::endl;
+                            return true;
+                        }
+
                         ldLog() << "Deploying dependencies for ELF file" << path << std::endl;
                         try {
-                            for (const auto &dependencyPath : elf_file::ElfFile(path).traceDynamicDependencies())
+                            for (const auto &dependencyPath : elfFile.traceDynamicDependencies())
                                 if (!deployLibrary(dependencyPath, false, false))
                                     return false;
                         } catch (const elf_file::DependencyNotFoundError& e) {

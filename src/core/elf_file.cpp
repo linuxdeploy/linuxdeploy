@@ -189,6 +189,9 @@ namespace linuxdeploy {
 
                 // for now, we use the same ldd based method linuxdeployqt uses
 
+                // of course, it makes no sense to call this method on statically linked binaries
+                assert(isDynamicallyLinked());
+
                 std::vector<fs::path> paths;
 
                 auto env = subprocess::get_environment();
