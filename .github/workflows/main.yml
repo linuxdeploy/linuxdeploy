@@ -65,7 +65,7 @@ jobs:
         run: bash ci/build-in-docker.sh
         env:
           CACHE_FROM: 1
-          PUSH_IMAGE: ${{ matrix.DISABLE_PUSH == '' &&  github.event_name == 'pull_request' && '1' || '' }}
+          PUSH_IMAGE: ${{ (matrix.DISABLE_PUSH == '' && github.event_name == 'pull_request') && '1' || '' }}
 
       - name: Archive artifacts
         uses: actions/upload-artifact@v2

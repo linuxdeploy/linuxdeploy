@@ -79,6 +79,8 @@ docker build \
 if [[ "${PUSH_IMAGE:-}" ]]; then
     warning "pushing image to quay (requires login): $image_tag"
     docker push "$image_tag"
+else
+    warning "\$PUSH_IMAGE not set, not pushing image"
 fi
 
 docker_args=()
