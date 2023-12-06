@@ -57,7 +57,16 @@ else
     build_args+=("--pull")
 fi
 
-image_tag="linuxdeploy-build:$ARCH"
+image_tag="quay.io/theassassin/linuxdeploy-build:$ARCH"
+
+if [[ "${CACHE_FROM:-}" != "" ]]; then
+    warning "using cached image from quay: $image_tag"
+
+    build_args+=(
+        "--cache-from"
+        "$image_tag"
+    )
+fi
 
 docker build \
     --build-arg ARCH="$ARCH" \
@@ -65,6 +74,12 @@ docker build \
     "${build_args[@]}" \
     -t "$image_tag" \
     "$this_dir"/docker
+
+# by default, we are not logged into the registry and therefore must not attempt to push the image
+if [[ "${PUSH_IMAGE:-}" ]]; then
+    warning "pushing image to quay (requires login): $image_tag"
+    docker push "$image_tag"
+fi
 
 docker_args=()
 # only if there's more than 1G of free space in RAM, we can build in a RAM disk
