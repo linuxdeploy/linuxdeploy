@@ -87,7 +87,7 @@ docker_args=()
 # only if there's more than 1G of free space in RAM, we can build in a RAM disk
 if [[ "${GITHUB_ACTIONS:-}" != "" ]]; then
     warning "Building on GitHub actions, which does not support --tmpfs flag -> building on regular disk"
-elif [[ "$(free -m  | grep "Mem:" | awk '{print $4}')" -gt 1024 ]]; then
+elif [[ "$(env LC_ALL=C free -m | grep "Mem:" | awk '{print $4}')" -gt 1024 ]]; then
     info "Host system has enough free memory -> building in RAM disk"
     docker_args+=(
         "--tmpfs"
@@ -109,7 +109,6 @@ if [ -t 1 ]; then
     docker_args+=("-t")
 fi
 
-DOCKER_OPTS=()
 # fix for https://stackoverflow.com/questions/51195528/rcc-error-in-resource-qrc-cannot-find-file-png
 if [ "${CI:-}" != "" ]; then
     docker_args+=(
