@@ -66,6 +66,9 @@ if [[ "${CACHE_FROM:-}" != "" ]]; then
         "--cache-from"
         "$image_tag"
     )
+
+    # need to be pulled manually for versions that do not use buildkit (yet), apparently
+    docker pull "$image_tag"
 fi
 
 docker build \
