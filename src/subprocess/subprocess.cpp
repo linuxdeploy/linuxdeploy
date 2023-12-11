@@ -1,4 +1,5 @@
 // system headers
+#include <array>
 #include <algorithm>
 #include <array>
 #include <iostream>
@@ -12,6 +13,7 @@
 #include "linuxdeploy/subprocess/subprocess.h"
 #include "linuxdeploy/subprocess/process.h"
 #include "linuxdeploy/subprocess/pipe_reader.h"
+#include "linuxdeploy/subprocess/subprocess_result.h"
 #include "linuxdeploy/util/assert.h"
 
 namespace linuxdeploy {
