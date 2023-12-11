@@ -71,12 +71,15 @@ if [[ "${CACHE_FROM:-}" != "" ]]; then
     docker pull "$image_tag"
 fi
 
-docker build \
-    --build-arg ARCH="$ARCH" \
-    --build-arg docker_arch="$docker_arch" \
-    "${build_args[@]}" \
-    -t "$image_tag" \
-    "$this_dir"/docker
+(
+    set -x
+    docker build \
+        --build-arg ARCH="$ARCH" \
+        --build-arg docker_arch="$docker_arch" \
+        "${build_args[@]}" \
+        -t "$image_tag" \
+        "$this_dir"/docker
+)
 
 # by default, we are not logged into the registry and therefore must not attempt to push the image
 if [[ "${PUSH_IMAGE:-}" ]]; then
@@ -125,17 +128,20 @@ fi
 #   b) allow the build scripts to "mv" the binaries into the /out directory
 uid="${UID:-"$(id -u)"}"
 info "Running build with uid $uid"
-docker run \
-    --rm \
-    -i \
-    -e GITHUB_RUN_NUMBER \
-    -e ARCH \
-    -e BUILD_TYPE \
-    -e USE_STATIC_RUNTIME \
-    -e CI \
-    --user "$uid" \
-    "${docker_args[@]}" \
-    -v "$(readlink -f "$this_dir"/..):/ws" \
-    -w /ws \
-    "$image_tag" \
-    bash -xc "$build_script"
+(
+    set -x
+    docker run \
+        --rm \
+        -i \
+        -e GITHUB_RUN_NUMBER \
+        -e ARCH \
+        -e BUILD_TYPE \
+        -e USE_STATIC_RUNTIME \
+        -e CI \
+        --user "$uid" \
+        "${docker_args[@]}" \
+        -v "$(readlink -f "$this_dir"/..):/ws" \
+        -w /ws \
+        "$image_tag" \
+        bash -xc "$build_script"
+)
