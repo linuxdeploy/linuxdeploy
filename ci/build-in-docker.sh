@@ -69,7 +69,7 @@ if [[ "${GITHUB_ACTION:-}" != "" ]]; then
         "--cache-to" "type=gha"
     )
 
-    docker_build_command=("docker" "buildx" "build")
+    docker_build_command=("docker" "buildx" "build" "--load")
 fi
 
 (
