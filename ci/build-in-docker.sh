@@ -65,8 +65,8 @@ if [[ "${GITHUB_ACTION:-}" != "" ]]; then
     warning "using GitHub actions cache"
 
     build_args+=(
-        "--cache-from type=gha"
-        "--cache-to type=gha"
+        "--cache-from" "type=gha"
+        "--cache-to" "type=gha"
     )
 
     build_command="buildx"
