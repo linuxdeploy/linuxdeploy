@@ -59,7 +59,7 @@ fi
 
 image_tag="linuxdeploy-build:$ARCH"
 
-docker_build_command="build"
+docker_build_command=("docker" "build")
 
 if [[ "${GITHUB_ACTION:-}" != "" ]]; then
     warning "using GitHub actions cache"
@@ -69,12 +69,12 @@ if [[ "${GITHUB_ACTION:-}" != "" ]]; then
         "--cache-to" "type=gha"
     )
 
-    build_command="buildx"
+    docker_build_command=("docker" "buildx" "build")
 fi
 
 (
     set -x
-    docker "$docker_build_command" \
+    "${docker_build_command[@]}" \
         --build-arg ARCH="$ARCH" \
         --build-arg docker_arch="$docker_arch" \
         "${build_args[@]}" \
