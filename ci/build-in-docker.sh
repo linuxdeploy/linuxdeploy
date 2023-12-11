@@ -57,20 +57,14 @@ else
     build_args+=("--pull")
 fi
 
-image_tag="quay.io/theassassin/linuxdeploy-build:$ARCH"
+image_tag="linuxdeploy-build:$ARCH"
 
-if [[ "${CACHE_FROM:-}" != "" ]]; then
-    warning "using cached image from quay: $image_tag"
+if [[ "${GITHUB_ACTION:-}" != "" ]]; then
+    warning "using GitHub actions cache"
 
     build_args+=(
-        "--cache-from"
-        "$image_tag"
-    )
-
-    # need to be pulled manually for versions that do not use buildkit (yet), apparently
-    (
-        set -x
-        docker pull "$image_tag"
+        "--cache-from type=gha"
+        "--cache-to type=gha"
     )
 fi
 
@@ -83,14 +77,6 @@ fi
         -t "$image_tag" \
         "$this_dir"/docker
 )
-
-# by default, we are not logged into the registry and therefore must not attempt to push the image
-if [[ "${PUSH_IMAGE:-}" ]]; then
-    warning "pushing image to quay (requires login): $image_tag"
-    docker push "$image_tag"
-else
-    warning "\$PUSH_IMAGE not set, not pushing image"
-fi
 
 docker_args=()
 # only if there's more than 1G of free space in RAM, we can build in a RAM disk
