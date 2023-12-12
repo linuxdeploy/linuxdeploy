@@ -8,6 +8,7 @@
 #include <utility>
 #include <unistd.h>
 #include <thread>
+#include <array>
 
 // local headers
 #include "linuxdeploy/subprocess/subprocess.h"
