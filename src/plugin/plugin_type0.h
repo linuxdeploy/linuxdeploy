@@ -3,7 +3,7 @@
 #include <string>
 
 // local headers
-#include "linuxdeploy/core/log.h"
+#include "linuxdeploy/log/log.h"
 #include "linuxdeploy/plugin/base.h"
 
 #pragma once

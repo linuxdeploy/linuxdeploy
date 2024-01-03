@@ -8,6 +8,7 @@
 #include <utility>
 #include <unistd.h>
 #include <thread>
+#include <sstream>
 
 // local headers
 #include "linuxdeploy/subprocess/subprocess.h"
@@ -15,9 +16,11 @@
 #include "linuxdeploy/subprocess/pipe_reader.h"
 #include "linuxdeploy/subprocess/subprocess_result.h"
 #include "linuxdeploy/util/assert.h"
+#include "linuxdeploy/log/log.h"
 
 namespace linuxdeploy {
     namespace subprocess {
+        using namespace log;
 
         subprocess::subprocess(std::initializer_list<std::string> args)
             : subprocess(std::vector<std::string>(args), get_environment()) {}
@@ -40,7 +43,7 @@ namespace linuxdeploy {
             class PipeState {
             public:
                 pipe_reader reader;
-                subprocess_result_buffer_t  buffer;
+                subprocess_result_buffer_t buffer;
                 bool eof = false;
 
                 explicit PipeState(int fd) : reader(fd) {}
@@ -55,18 +58,19 @@ namespace linuxdeploy {
             };
 
             for (;;) {
-                for (auto& pipe_state : buffers) {
+                for (auto& pipe_state: buffers) {
                     // read some bytes into smaller intermediate buffer to prevent either of the pipes to overflow
                     // the results are immediately appended to the main buffer
                     subprocess_result_buffer_t intermediate_buffer(4096);
 
                     // (try to) read all available data from pipe
-                    for (; !pipe_state.eof; ) {
+                    for (; !pipe_state.eof;) {
                         switch (pipe_state.reader.read(intermediate_buffer)) {
                             case pipe_reader::result::SUCCESS: {
                                 // append to main buffer
                                 pipe_state.buffer.reserve(pipe_state.buffer.size() + intermediate_buffer.size());
-                                std::copy(intermediate_buffer.begin(), intermediate_buffer.end(), std::back_inserter(pipe_state.buffer));
+                                std::copy(intermediate_buffer.begin(), intermediate_buffer.end(),
+                                          std::back_inserter(pipe_state.buffer));
                                 break;
                             }
                             case pipe_reader::result::END_OF_FILE: {
@@ -105,7 +109,28 @@ namespace linuxdeploy {
             const auto result = run();
 
             if (result.exit_code() != 0) {
-                throw std::logic_error{"subprocess failed (exit code " + std::to_string(result.exit_code()) + ")"};
+                std::ostringstream out;
+
+                out << "subprocess ";
+                for (const auto& arg: args_) {
+                    out << arg << " ";
+                }
+                out << "failed with exit code " << std::to_string(result.exit_code());
+
+                auto stdoutString = result.stdout_string();
+                if (stdoutString.empty()) {
+                    stdoutString = "(no output)";
+                }
+                auto stderrString = result.stderr_string();
+                if (stderrString.empty()) {
+                    stderrString = "(no output)";
+                }
+
+                ldLog() << LD_DEBUG << out.str() << std::endl;
+                ldLog() << LD_DEBUG << "stdout:" << stdoutString << std::endl;
+                ldLog() << LD_DEBUG << "stderr:" << stderrString << std::endl;
+
+                throw std::logic_error{out.str()};
             }
 
             return result.stdout_string();

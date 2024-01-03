@@ -6,11 +6,11 @@
 
 // local headers
 #include <linuxdeploy/core/appdir.h>
-#include <linuxdeploy/core/log.h>
+#include <linuxdeploy/log/log.h>
 #include "core.h"
 
 using namespace linuxdeploy::core;
-using namespace linuxdeploy::core::log;
+using namespace linuxdeploy::log;
 using namespace linuxdeploy::desktopfile;
 
 namespace fs = std::filesystem;

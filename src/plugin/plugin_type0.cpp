@@ -1,19 +1,8 @@
 // system headers
 #include <filesystem>
-#include <set>
-#include <string>
-#include <vector>
-
-// library headers
-#include <fnmatch.h>
-
-// local headers
-#include "linuxdeploy/core/log.h"
-#include "linuxdeploy/plugin/plugin.h"
 #include "plugin_type0.h"
 
-using namespace linuxdeploy::core;
-using namespace linuxdeploy::core::log;
+using namespace linuxdeploy::log;
 
 namespace fs = std::filesystem;
 

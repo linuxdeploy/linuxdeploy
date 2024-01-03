@@ -34,14 +34,11 @@ execute_process(
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
 )
 
-add_library(linuxdeploy_core_log STATIC log.cpp)
-target_include_directories(linuxdeploy_core_log PUBLIC ${PROJECT_SOURCE_DIR}/include)
-
 add_subdirectory(copyright)
 
 add_library(linuxdeploy_core STATIC elf_file.cpp appdir.cpp ${HEADERS} appdir_root_setup.cpp)
 target_link_libraries(linuxdeploy_core PUBLIC
-    linuxdeploy_plugin linuxdeploy_core_log linuxdeploy_util linuxdeploy_desktopfile_static
+    linuxdeploy_plugin linuxdeploy_log linuxdeploy_util linuxdeploy_desktopfile_static
     CImg ${CMAKE_THREAD_LIBS_INIT}
 )
 target_link_libraries(linuxdeploy_core PRIVATE linuxdeploy_core_copyright)

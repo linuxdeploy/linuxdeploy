@@ -13,6 +13,7 @@ add_library(linuxdeploy_subprocess STATIC
     ${headers_dir}/util.h
 )
 target_include_directories(linuxdeploy_subprocess PUBLIC ${PROJECT_SOURCE_DIR}/include)
+target_link_libraries(linuxdeploy_subprocess PUBLIC linuxdeploy_log)
 
 add_executable(subprocess_demo subprocess_demo.cpp)
 target_link_libraries(subprocess_demo PUBLIC linuxdeploy_subprocess)
