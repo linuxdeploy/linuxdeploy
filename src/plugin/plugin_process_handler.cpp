@@ -8,14 +8,14 @@
 #include <linuxdeploy/plugin/plugin_process_handler.h>
 #include <linuxdeploy/subprocess/process.h>
 #include <linuxdeploy/util/util.h>
-#include <linuxdeploy/core/log.h>
+#include <linuxdeploy/log/log.h>
 #include <linuxdeploy/subprocess/pipe_reader.h>
 
 namespace fs = std::filesystem;
 
 namespace linuxdeploy {
     namespace plugin {
-        using namespace core::log;
+        using namespace log;
 
         plugin_process_handler::plugin_process_handler(std::string name, fs::path path) : name_(std::move(name)),
                                                                                           path_(std::move(path)) {}

@@ -32,6 +32,7 @@ execute_process(
 
 add_subdirectory(util)
 add_subdirectory(plugin)
+add_subdirectory(log)
 add_subdirectory(subprocess)
 add_subdirectory(core)
 

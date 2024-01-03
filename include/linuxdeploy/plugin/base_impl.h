@@ -11,7 +11,7 @@
 #include <thread>
 
 // local headers
-#include "linuxdeploy/core/log.h"
+#include "linuxdeploy/log/log.h"
 #include "linuxdeploy/util/util.h"
 #include "linuxdeploy/subprocess/process.h"
 #include "linuxdeploy/plugin/plugin_process_handler.h"
@@ -23,7 +23,7 @@
 namespace linuxdeploy {
     namespace plugin {
         namespace base {
-            using namespace linuxdeploy::core::log;
+            using namespace linuxdeploy::log;
 
             template<int API_LEVEL>
             class PluginBase<API_LEVEL>::PrivateData {

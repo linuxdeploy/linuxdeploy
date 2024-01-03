@@ -1,5 +1,5 @@
 // local includes
-#include "linuxdeploy/core/log.h"
+#include "linuxdeploy/log/log.h"
 #include "linuxdeploy/util/util.h"
 #include "copyright.h"
 

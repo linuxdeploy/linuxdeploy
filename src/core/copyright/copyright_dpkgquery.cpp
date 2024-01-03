@@ -1,6 +1,6 @@
 // local includes
 #include "copyright_dpkgquery.h"
-#include "linuxdeploy/core/log.h"
+#include "linuxdeploy/log/log.h"
 #include "linuxdeploy/util/util.h"
 #include "linuxdeploy/subprocess/subprocess.h"
 
@@ -21,7 +21,8 @@ namespace linuxdeploy {
                 auto result = proc.run();
 
                 if (result.exit_code() != 0 || result.stdout_contents().empty()) {
-                    ldLog() << LD_WARNING << "Could not find copyright files for file" << path << "using dpkg-query" << std::endl;
+                    ldLog() << LD_WARNING << "Could not find copyright files for file" << path << "using dpkg-query"
+                            << std::endl;
                     return {};
                 }
 
@@ -34,7 +35,8 @@ namespace linuxdeploy {
                         return {copyrightFilePath};
                     }
                 } else {
-                    ldLog() << LD_WARNING << "Could not find copyright files for file" << path << "using dpkg-query" << std::endl;
+                    ldLog() << LD_WARNING << "Could not find copyright files for file" << path << "using dpkg-query"
+                            << std::endl;
                 }
 
                 return {};

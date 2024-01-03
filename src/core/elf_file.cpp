@@ -9,11 +9,11 @@
 
 // local headers
 #include "linuxdeploy/core/elf_file.h"
-#include "linuxdeploy/core/log.h"
+#include "linuxdeploy/log/log.h"
 #include "linuxdeploy/util/util.h"
 #include "linuxdeploy/subprocess/subprocess.h"
 
-using namespace linuxdeploy::core::log;
+using namespace linuxdeploy::log;
 
 namespace fs = std::filesystem;
 

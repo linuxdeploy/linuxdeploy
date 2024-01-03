@@ -3,7 +3,7 @@
 
 // local headers
 #include <linuxdeploy/util/util.h>
-#include <linuxdeploy/core/log.h>
+#include <linuxdeploy/log/log.h>
 #include "appdir_root_setup.h"
 
 namespace fs = std::filesystem;

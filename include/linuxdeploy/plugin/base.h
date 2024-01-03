@@ -3,7 +3,7 @@
 #include <string>
 
 // local includes
-#include "linuxdeploy/core/log.h"
+#include "linuxdeploy/log/log.h"
 #include "linuxdeploy/plugin/plugin.h"
 
 #pragma once

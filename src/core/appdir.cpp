@@ -14,8 +14,7 @@
 // local headers
 #include "linuxdeploy/core/appdir.h"
 #include "linuxdeploy/core/elf_file.h"
-#include "linuxdeploy/core/log.h"
-#include "linuxdeploy/desktopfile/desktopfileentry.h"
+#include "linuxdeploy/log/log.h"
 #include "linuxdeploy/util/util.h"
 #include "linuxdeploy/subprocess/subprocess.h"
 #include "copyright.h"
@@ -26,7 +25,7 @@
 
 using namespace linuxdeploy::core;
 using namespace linuxdeploy::desktopfile;
-using namespace linuxdeploy::core::log;
+using namespace linuxdeploy::log;
 
 using namespace cimg_library;
 
