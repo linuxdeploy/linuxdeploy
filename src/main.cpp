@@ -210,7 +210,7 @@ int main(int argc, char** argv) {
             ldLog() << std::endl << "-- Running input plugin:" << pluginName << "--" << std::endl;
 
             if (it == foundPlugins.end()) {
-                ldLog() << LD_ERROR << "Could not find plugin:" << pluginName;
+                ldLog() << LD_ERROR << "Could not find plugin:" << pluginName << std::endl;
                 return 1;
             }
 
@@ -336,7 +336,7 @@ int main(int argc, char** argv) {
             ldLog() << std::endl << "-- Running output plugin:" << pluginName << "--" << std::endl;
 
             if (it == foundPlugins.end()) {
-                ldLog() << LD_ERROR << "Could not find plugin:" << pluginName;
+                ldLog() << LD_ERROR << "Could not find plugin:" << pluginName << std::endl;
                 return 1;
             }
 
