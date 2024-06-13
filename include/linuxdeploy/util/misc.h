@@ -135,7 +135,17 @@ namespace linuxdeploy {
                 }
 
                 return {};
-            };
+            }
+
+            // returns a string vector splitted from envVar
+            static std::vector<std::string> splitEnv(const char *envVar, char delimiter) {
+                std::vector<std::string> result;
+                const auto ret = getenv(envVar);
+                if (ret) {
+                    result = split(ret, delimiter);
+                }
+                return result;
+            }
         }
     }
 }
