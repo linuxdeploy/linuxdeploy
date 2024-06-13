@@ -135,7 +135,23 @@ namespace linuxdeploy {
                 }
 
                 return {};
-            };
+            }
+
+            // sets strings vector with strings from envVar if exists
+            static bool stringVectorFromEnv(const char *envVar, char delimiter, std::vector<std::string> &strings) {
+                const auto ret = getenv(envVar);
+                if (ret) {
+                    strings = split(ret, delimiter);
+                    return true;
+                }
+                return false;
+            }
+
+            // set envVar with value from strings
+            static bool stringVectorToEnv(const char *envVar, char delimiter, const std::vector<std::string> &strings) {
+                const auto ret = join(strings, std::string{delimiter});
+                return setenv(envVar, ret.c_str(), 1) == 0;
+            }
         }
     }
 }
