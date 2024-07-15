@@ -12,15 +12,16 @@
 
 
 // local headers
-#include "linuxdeploy/core/appdir.h"
-#include "linuxdeploy/core/elf_file.h"
-#include "linuxdeploy/log/log.h"
-#include "linuxdeploy/util/util.h"
-#include "linuxdeploy/subprocess/subprocess.h"
-#include "copyright.h"
+#include <copyright.h>
+#include <linuxdeploy/core/appdir.h>
+#include <linuxdeploy/core/elf_file.h>
+#include <linuxdeploy/log/log.h>
+#include <linuxdeploy/util/util.h>
+#include <linuxdeploy/subprocess/subprocess.h>
+
 
 // auto-generated headers
-#include "excludelist.h"
+#include <excludelist.h>
 #include "appdir_root_setup.h"
 
 using namespace linuxdeploy::core;
