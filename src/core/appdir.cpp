@@ -5,10 +5,12 @@
 #include <set>
 #include <string>
 #include <vector>
+#include <sstream>
 
 // library headers
 #include <CImg.h>
 #include <fnmatch.h>
+#include <curl/curl.h>
 
 
 // local headers
@@ -121,6 +123,10 @@ namespace linuxdeploy {
 
                     // decides whether copyright files deployment is performed
                     bool disableCopyrightFilesDeployment = false;
+
+                    // updated excludelist, downloaded at runtime
+                    bool updatedExcludelistExists = false;
+                    std::vector<std::string> updatedExcludelist;
 
                 public:
                 PrivateData() : copyOperationsStorage(), stripOperations(), setElfRPathOperations(), visitedFiles(), appDirPath(), excludeLibraryPatterns() {
@@ -429,7 +435,15 @@ namespace linuxdeploy {
                             return false;
                         };
 
-                        if (!forceDeploy && (isInExcludelist(path.filename(), generatedExcludelist) || isInExcludelist(path.filename(), excludeLibraryPatterns))) {
+                        // get most recent existing excludelist
+                        std::vector<std::string> excludelist;
+                        if (updatedExcludelistExists) {
+                        	excludelist = updatedExcludelist;
+                        } else {
+                        	excludelist = generatedExcludelist;
+                        }
+
+                        if (!forceDeploy && (isInExcludelist(path.filename(), excludelist) || isInExcludelist(path.filename(), excludeLibraryPatterns))) {
                             ldLog() << "Skipping deployment of blacklisted library" << path << std::endl;
 
                             // mark file as visited
@@ -690,6 +704,80 @@ namespace linuxdeploy {
                 }
 
                 return true;
+            }
+
+            static size_t writeCallback(void *content, size_t size, size_t nmemb, void *userdata) {
+            	((std::string*) userdata)->append((char*) content, size * nmemb);
+                return size * nmemb;
+            }
+
+            static std::string downloadExcludelist() {
+            	const std::string excludelistLink = "https://raw.githubusercontent.com/probonopd/AppImages/master/excludelist";
+            	CURL* curl;
+            	std::string readBuffer;
+
+            	curl = curl_easy_init();
+            	if (curl) {
+            		curl_easy_setopt(curl, CURLOPT_URL, excludelistLink.c_str());
+            		curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+            		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeCallback);
+            		curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
+
+					CURLcode res = curl_easy_perform(curl);
+					curl_easy_cleanup(curl);
+                    if (res != CURLE_OK) {
+                    	throw 1;
+                    }
+
+                    // check for valid HTTP response
+                    long response_code = 0;
+                    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
+                    if (response_code != 200) {
+                    	throw 1;
+                    }
+            	} else {
+            		throw 1;
+            	}
+            	return readBuffer;
+            }
+
+            static std::vector<std::string> processExcludelist(const std::string& excludelist) {
+                std::set<std::string> excludedItems;
+                std::istringstream stream(excludelist);
+                std::string line;
+
+                while (std::getline(stream, line)) {
+                    // Remove comments
+                    auto commentPos = line.find('#');
+                    if (commentPos != std::string::npos) {
+                        line = line.substr(0, commentPos);
+                    }
+
+                    // Trim whitespace
+                    line.erase(0, line.find_first_not_of(" \t"));
+                    line.erase(line.find_last_not_of(" \t") + 1);
+
+                    if (!line.empty()) {
+                        excludedItems.insert(line);
+                    }
+                }
+
+                return std::vector<std::string>(excludedItems.begin(), excludedItems.end());
+            }
+
+            bool AppDir::updateExcludelist() {
+            	try {
+            		std::string excludelistString = downloadExcludelist();
+            		std::vector<std::string> updatedExcludelist = processExcludelist(excludelistString);
+            		if (updatedExcludelist.size() == 0) {
+            			return false;
+            		}
+            		d->updatedExcludelistExists = true;
+            		d->updatedExcludelist = updatedExcludelist;
+            	} catch (int _) {
+            		return false;
+            	}
+            	return true;
             }
 
             bool AppDir::deployLibrary(const fs::path& path, const fs::path& destination) {
