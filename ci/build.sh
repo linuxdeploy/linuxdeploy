@@ -84,7 +84,7 @@ export OUTPUT="linuxdeploy-$ARCH.AppImage"
 
 # special set of builds using a different experimental runtime, used for testing purposes
 if [[ "${USE_STATIC_RUNTIME:-}" != "" ]]; then
-    custom_runtime_url="https://github.com/AppImage/type2-runtime/releases/download/continuous/runtime-fuse3-$ARCH"
+    custom_runtime_url="https://github.com/AppImage/type2-runtime/releases/download/continuous/runtime-$ARCH"
     wget "$custom_runtime_url"
     runtime_filename="$(echo "$custom_runtime_url" | rev | cut -d/ -f1 | rev)"
     LDAI_RUNTIME_FILE="$(readlink -f "$runtime_filename")"
