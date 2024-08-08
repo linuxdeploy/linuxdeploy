@@ -119,13 +119,18 @@ namespace linuxdeploy {
                     // platform dependent implementation of copyright files deployment
                     std::shared_ptr<copyright::ICopyrightFilesManager> copyrightFilesManager;
 
+                    // Enviroment variable delimiter
+                    char envDelimiter = ';';
+
                     // decides whether copyright files deployment is performed
                     bool disableCopyrightFilesDeployment = false;
 
                 public:
                 PrivateData() : copyOperationsStorage(), stripOperations(), setElfRPathOperations(), visitedFiles(), appDirPath(), excludeLibraryPatterns() {
                         copyrightFilesManager = copyright::ICopyrightFilesManager::getInstance();
-                    };
+                        util::misc::charFromEnv("LINUXDEPLOY_DELIMITER", envDelimiter);
+                        util::misc::stringVectorFromEnv("LINUXDEPLOY_EXCLUDED_LIBRARIES", envDelimiter, excludeLibraryPatterns);
+                    }
 
                 public:
                     // calculate library directory name for given ELF file, taking system architecture into account
@@ -656,6 +661,7 @@ namespace linuxdeploy {
             AppDir::AppDir(const std::string& path) : AppDir(fs::path(path)) {}
 
             void AppDir::setExcludeLibraryPatterns(const std::vector<std::string> &excludeLibraryPatterns) {
+                util::misc::stringVectorToEnv("LINUXDEPLOY_EXCLUDED_LIBRARIES", d->envDelimiter, excludeLibraryPatterns);
                 d->excludeLibraryPatterns = excludeLibraryPatterns;
             }
 
