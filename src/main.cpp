@@ -111,6 +111,13 @@ int main(int argc, char** argv) {
     appdir::AppDir appDir(appDirPath.Get());
     appDir.setExcludeLibraryPatterns(excludeLibraryPatterns.Get());
 
+    // update excludelist
+    ldLog() << std::endl << "-- Updating excludelist --" << std::endl;
+    if (!appDir.updateExcludelist()) {
+    	ldLog() << LD_WARNING << "Failed to update excludelist, using packaged copy" << std::endl;
+    	ldLog() << LD_WARNING << "Please run linuxdeploy with internet access or update it" << std::endl;
+    }
+
     // allow disabling copyright files deployment via environment variable
     if (getenv("DISABLE_COPYRIGHT_FILES_DEPLOYMENT") != nullptr) {
         ldLog() << std::endl << LD_WARNING << "Copyright files deployment disabled" << std::endl;
