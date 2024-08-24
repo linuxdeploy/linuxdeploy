@@ -124,7 +124,10 @@ namespace linuxdeploy {
                     // decides whether copyright files deployment is performed
                     bool disableCopyrightFilesDeployment = false;
 
-                    // updated excludelist, downloaded at runtime
+                    // whether the excludelist should be ignored
+                    bool ignoreExcludelist = false;
+
+                    // updated excludelist, downloaded at runtime if not ignored
                     bool updatedExcludelistExists = false;
                     std::vector<std::string> updatedExcludelist;
 
@@ -425,30 +428,35 @@ namespace linuxdeploy {
                                     case 0:
                                         return true;
                                     case FNM_NOMATCH:
-                                        break;
+                                        return false;
                                     default:
                                         ldLog() << LD_ERROR << "fnmatch() reported error:" << fnmatchResult << std::endl;
                                         return false;
                                 }
                             }
-
-                            return false;
                         };
 
-                        // get most recent existing excludelist
-                        std::vector<std::string> excludelist;
-                        if (updatedExcludelistExists) {
-                        	excludelist = updatedExcludelist;
-                        } else {
-                        	excludelist = generatedExcludelist;
+                        if (!ignoreExcludelist) {
+                        	// get most recent existing excludelist
+                        	std::vector<std::string> excludelist;
+                        	if (updatedExcludelistExists) {
+                        		excludelist = updatedExcludelist;
+                        	} else {
+                        		excludelist = generatedExcludelist;
+                        	}
+
+                        	if (!forceDeploy && isInExcludelist(path.filename(), excludelist)) {
+                            	// mark file as visited and return
+                            	ldLog() << "Skipping deployment of excluded core library" << path << std::endl;
+                            	visitedFiles.insert(path);
+                            	return true;
+                        	}
                         }
 
-                        if (!forceDeploy && (isInExcludelist(path.filename(), excludelist) || isInExcludelist(path.filename(), excludeLibraryPatterns))) {
-                            ldLog() << "Skipping deployment of blacklisted library" << path << std::endl;
-
-                            // mark file as visited
+						if (!forceDeploy && isInExcludelist(path.filename(), excludeLibraryPatterns)) {
+							// mark file as visited and return
+                            ldLog() << "Skipping deployment of manually blacklisted library" << path << std::endl;
                             visitedFiles.insert(path);
-
                             return true;
                         }
 
@@ -763,6 +771,10 @@ namespace linuxdeploy {
                 }
 
                 return std::vector<std::string>(excludedItems.begin(), excludedItems.end());
+            }
+
+            AppDir::ignoreExcludelist() {
+            	d->ignoreExcludelist = true;
             }
 
             bool AppDir::updateExcludelist() {
