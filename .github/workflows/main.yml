@@ -55,7 +55,7 @@ jobs:
         uses: actions/upload-artifact@v4
         if: matrix.BUILD_TYPE != 'coverage'
         with:
-          name: AppImage
+          name: AppImage  ${{ matrix.ARCH }}${{ matrix.USE_STATIC_RUNTIME}}
           path: linuxdeploy*.AppImage*
 
   upload:
