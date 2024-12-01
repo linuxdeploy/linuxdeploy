@@ -41,6 +41,6 @@ target_link_libraries(linuxdeploy_core PUBLIC
     linuxdeploy_plugin linuxdeploy_log linuxdeploy_util linuxdeploy_desktopfile_static
     CImg ${CMAKE_THREAD_LIBS_INIT}
 )
-target_link_libraries(linuxdeploy_core PRIVATE linuxdeploy_core_copyright)
+target_link_libraries(linuxdeploy_core PUBLIC linuxdeploy_core_copyright)
 target_include_directories(linuxdeploy_core PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_include_directories(linuxdeploy_core PUBLIC ${PROJECT_SOURCE_DIR}/include)
