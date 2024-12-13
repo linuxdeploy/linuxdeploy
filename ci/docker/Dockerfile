@@ -3,14 +3,12 @@
 # needs to be re-run in CI every time as we cannot store auto-built Docker images due to GitHub's strict quota
 # it will save a lot of time in local development environments, though
 
-ARG docker_arch
-
 # we'll just use Debian as a base image for now, mainly because it produces less headache than Ubuntu with arm
 # a big pro is that they ship an up to date CMake in their stable distribution
 # also, they still provide IA-32 builds for some reason...
 # some people in the AppImage community do not (want to) realize i386 is dead for good
 # we are going to drop i686 in the future!
-FROM ${docker_arch}/debian:stable
+FROM debian:stable
 
 # variables that need to be availabe during build and runtime must(!) be repeated after FROM
 ARG ARCH
