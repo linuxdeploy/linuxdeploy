@@ -17,7 +17,7 @@
 #include "linuxdeploy/log/log.h"
 #include "linuxdeploy/util/util.h"
 #include "linuxdeploy/subprocess/subprocess.h"
-#include "copyright.h"
+#include "copyright/copyright.h"
 
 // auto-generated headers
 #include "excludelist.h"
