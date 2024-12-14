@@ -28,16 +28,16 @@ this_dir="$(readlink -f "$(dirname "${BASH_SOURCE[0]}")")"
 
 case "$ARCH" in
     x86_64)
-        docker_arch=amd64
+        docker_platform=linux/amd64
         ;;
     i386)
-        docker_arch=i386
+        docker_platform=linux/386
         ;;
     armhf)
-        docker_arch=arm32v7
+        docker_platform=linux/arm/v7
         ;;
     aarch64)
-        docker_arch=arm64v8
+        docker_platform=linux/arm64/v8
         ;;
     *)
         echo "Unsupported \$ARCH: $ARCH"
@@ -48,7 +48,7 @@ esac
 # first, we need to build the image
 # we always attempt to build it, it will only be rebuilt if Docker detects changes
 # optionally, we'll pull the base image beforehand
-info "Building Docker image for $ARCH (Docker arch: $docker_arch)"
+info "Building Docker image for $ARCH (Docker platform: $docker_platform)"
 
 build_args=()
 if [[ "${UPDATE:-}" == "" ]]; then
@@ -57,11 +57,11 @@ else
     build_args+=("--pull")
 fi
 
-image_tag="linuxdeploy-build:$ARCH"
+image_tag="linuxdeploy-build"
 
 docker build \
     --build-arg ARCH="$ARCH" \
-    --build-arg docker_arch="$docker_arch" \
+    --platform "$docker_platform" \
     "${build_args[@]}" \
     -t "$image_tag" \
     "$this_dir"/docker
