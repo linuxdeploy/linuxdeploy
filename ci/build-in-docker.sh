@@ -112,7 +112,6 @@ docker run \
     -e GITHUB_RUN_NUMBER \
     -e ARCH \
     -e BUILD_TYPE \
-    -e USE_STATIC_RUNTIME \
     -e CI \
     --user "$uid" \
     "${docker_args[@]}" \
