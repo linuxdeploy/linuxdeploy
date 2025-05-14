@@ -77,6 +77,7 @@ namespace AppDirTest {
             "usr/share/icons/hicolor/64x64",
             "usr/share/icons/hicolor/64x64/apps",
             "usr/share/applications",
+            "usr/share/pixmaps",
             "usr/lib",
         };
 
