@@ -665,6 +665,7 @@ namespace linuxdeploy {
                     "usr/lib/",
                     "usr/share/applications/",
                     "usr/share/icons/hicolor/",
+                    "usr/share/pixmaps/",
                 };
 
                 for (const std::string& resolution : {"16x16", "32x32", "64x64", "128x128", "256x256", "scalable"}) {
