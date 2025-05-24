@@ -125,7 +125,8 @@ namespace linuxdeploy {
                 public:
                 PrivateData() : copyOperationsStorage(), stripOperations(), setElfRPathOperations(), visitedFiles(), appDirPath(), excludeLibraryPatterns() {
                         copyrightFilesManager = copyright::ICopyrightFilesManager::getInstance();
-                    };
+                        util::misc::stringVectorFromEnv("LINUXDEPLOY_EXCLUDED_LIBRARIES", ';', excludeLibraryPatterns);
+                    }
 
                 public:
                     // calculate library directory name for given ELF file, taking system architecture into account
@@ -656,7 +657,8 @@ namespace linuxdeploy {
             AppDir::AppDir(const std::string& path) : AppDir(fs::path(path)) {}
 
             void AppDir::setExcludeLibraryPatterns(const std::vector<std::string> &excludeLibraryPatterns) {
-                d->excludeLibraryPatterns = excludeLibraryPatterns;
+                d->excludeLibraryPatterns.insert(d->excludeLibraryPatterns.end(), excludeLibraryPatterns.begin(), excludeLibraryPatterns.end());
+                util::misc::stringVectorToEnv("LINUXDEPLOY_EXCLUDED_LIBRARIES", ';', d->excludeLibraryPatterns);
             }
 
             bool AppDir::createBasicStructure() const {
