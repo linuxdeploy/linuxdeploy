@@ -1,6 +1,6 @@
 include(FetchContent)
 
-cmake_minimum_required(VERSION 3.2)
+cmake_minimum_required(VERSION 3.6)
 
 project(linuxdeploy C CXX)
 
