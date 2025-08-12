@@ -33,7 +33,6 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
         git \
         autoconf \
         automake \
-        libfuse2 \
         cimg-dev \
         cmake \
         googletest \
