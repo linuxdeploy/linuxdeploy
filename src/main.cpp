@@ -35,7 +35,7 @@ int main(int argc, char** argv) {
 
     args::ValueFlagList<std::string> executablePaths(parser, "executable", "Executable to deploy", {'e', "executable"});
 
-    args::ValueFlagList<std::string> deployDepsOnlyPaths(parser, "path", "Path to ELF file or directory containing such files (libraries or executables) in the AppDir whose dependencies shall be deployed by linuxdeploy without copying them into the AppDir", {"deploy-deps-only"});
+    args::ValueFlagList<std::string> deployDepsOnlyPaths(parser, "path", "Path to ELF file or directory containing such files (libraries or executables) already present in the AppDir whose dependencies shall be deployed by linuxdeploy without copying them again into the AppDir.  rpath for these libraries or executables will be updated accordingly.", {"deploy-deps-only"});
 
     args::ValueFlagList<std::string> desktopFilePaths(parser, "desktop file", "Desktop file to deploy", {'d', "desktop-file"});
     args::Flag createDesktopFile(parser, "", "Create basic desktop file that is good enough for some tests", {"create-desktop-file"});
