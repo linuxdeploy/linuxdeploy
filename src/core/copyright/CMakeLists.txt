@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.6)
 
 add_library(linuxdeploy_core_copyright STATIC copyright.cpp copyright.h copyright_dpkgquery.cpp copyright_dpkgquery.h)
 
