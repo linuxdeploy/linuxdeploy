@@ -638,6 +638,22 @@ namespace linuxdeploy {
                         return true;
                     }
 
+                    // TODO: Reduce duplicated code between deploy methods
+
+                    bool deployAppstreamFile(const fs::path& path) {
+                    	if (hasBeenVisitedAlready(path)) {
+                        	ldLog() << LD_DEBUG << "File has been visited already:" << desktopFile.path() << std::endl;
+                            return true;
+                        }
+
+                        ldLog() << "Deploying appstream file" << path << std::endl;
+
+                        auto filename = path.filename().string();
+                        deployFile(path, appDirPath / "usr/share/metainfo" / filename, DEFAULT_PERMS);
+
+                        return true;
+                    }
+
                     static bool isInDebugSymbolsLocation(const fs::path& path) {
                         // TODO: check if there's more potential locations for debug symbol files
                         for (const std::string& dbgSymbolsPrefix : {".debug/"}) {
@@ -717,6 +733,10 @@ namespace linuxdeploy {
 
             bool AppDir::deployIcon(const fs::path& path, const std::string& targetFilename) {
                 return d->deployIcon(path, targetFilename);
+            }
+
+            bool AppDir::deployAppstreamFile(const fs::path& path) {
+            	return d->deployAppstreamFile(path);
             }
 
             bool AppDir::executeDeferredOperations() {
