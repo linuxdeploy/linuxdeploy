@@ -16,7 +16,4 @@ add_library(linuxdeploy_plugin STATIC
 )
 target_link_libraries(linuxdeploy_plugin PUBLIC linuxdeploy_core linuxdeploy_subprocess)
 
-unset(headers)
-unset(headers_dir)
-
 install(TARGETS linuxdeploy_plugin)
