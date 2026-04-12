@@ -48,7 +48,11 @@ namespace linuxdeploy {
 
             // also, look for plugins in current working directory
             // could be useful in a "use linuxdeploy centrally, but download plugins into project directory" scenario
+#ifdef _GNU_SOURCE
             std::shared_ptr<char> cwd(get_current_dir_name(), free);
+#else
+            std::shared_ptr<char> cwd(getcwd(nullptr, 0), free);
+#endif
             paths.emplace_back(cwd.get());
 
             for (const auto& dir : paths) {

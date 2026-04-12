@@ -5,6 +5,13 @@
 #include "linuxdeploy/subprocess/util.h"
 #include "linuxdeploy/util/misc.h"
 
+#ifdef __FreeBSD__
+// On FreeBSD environ has to be declared in the consumer code
+extern "C" {
+    extern char** environ;
+}
+#endif
+
 namespace linuxdeploy::subprocess {
     subprocess_env_map_t get_environment() {
         subprocess_env_map_t result;

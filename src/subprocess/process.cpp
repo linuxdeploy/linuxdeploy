@@ -4,7 +4,7 @@
 #include <utility>
 #include <unistd.h>
 #include <memory.h>
-#include <wait.h>
+#include <sys/wait.h>
 #include <sstream>
 
 // local headers
