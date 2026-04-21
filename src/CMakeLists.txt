@@ -53,7 +53,7 @@ endif()
 
 
 add_executable(plugin_test plugin_test_main.cpp)
-target_link_libraries(plugin_test linuxdeploy_plugin)
+target_link_libraries(plugin_test linuxdeploy_plugin CImg)
 set_target_properties(plugin_test PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin")
 
 add_executable(appdir_test appdir_test_main.cpp ../include/linuxdeploy/util/assert.h)
