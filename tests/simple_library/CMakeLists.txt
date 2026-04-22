@@ -23,5 +23,5 @@ add_custom_target(simple_library_stripped ALL DEPENDS libsimple_library.so.strip
 
 # add a static version, too
 add_library(simple_library_static STATIC simple_library.cpp simple_library.h)
-target_link_libraries(simple_library_static PUBLIC CImg)
+target_link_libraries(simple_library_static PUBLIC CImgStatic)
 target_include_directories(simple_library_static PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
