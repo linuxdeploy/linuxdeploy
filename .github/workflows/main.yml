@@ -58,6 +58,31 @@ jobs:
           name: AppImage  ${{ matrix.ARCH }}${{ matrix.USE_STATIC_RUNTIME}}
           path: linuxdeploy*.AppImage*
 
+  freebsd-build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repository checkout
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+      - uses: cross-platform-actions/action@v0.32.0
+        with:
+          operating_system: 'freebsd'
+          version: '15.0'
+          architecture: 'x86_64'
+          run: |
+            # Use latest package set
+            sudo mkdir -p /usr/local/etc/pkg/repos/
+            sudo cp /etc/pkg/FreeBSD.conf /usr/local/etc/pkg/repos/FreeBSD.conf
+            sudo sed -i.bak -e 's|/quarterly|/latest|' /usr/local/etc/pkg/repos/FreeBSD.conf
+
+            # Install deps
+            sudo -E pkg install -y \
+                bash cmake cimg googletest ninja patchelf pkgconf wget
+
+            # Run the build, skipping plugins as these aren't ready yet
+            bash ci/build.sh --skip-plugins
+
   upload:
     name: Create release and upload artifacts
     needs:
