@@ -69,6 +69,10 @@ bin/linuxdeploy "${linuxdeploy_args[@]}"
 # bundle AppImage plugin
 mkdir -p AppDir/plugins
 
+if [ $# -ge 1 ] && [ "$1" = "--skip-plugins" ]; then
+    exit 0
+fi
+
 # build linuxdeploy-plugin-appimage instead of using prebuilt versions
 # this prevents a circular dependency
 # the other repository provides a script for this purpose that builds a bundle we can use
