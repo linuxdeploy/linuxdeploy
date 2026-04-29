@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Copyright 2018 Alexander Gottwald (https://github.com/ago1024)
 # Copyright 2018 TheAssassin (https://github.com/TheAssassin)
