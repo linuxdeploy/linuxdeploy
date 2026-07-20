@@ -18,8 +18,9 @@ pushd "$BUILD_DIR"
 # fetch source code
 git clone https://github.com/NixOS/patchelf.git .
 
-# cannot use -b since it's not supported in really old versions of git
-git checkout 0.15.0
+# patchelf 0.18 and older may corrupt GNU hash tables when rewriting modern
+# ELF binaries, causing the dynamic loader to crash before the application starts.
+git checkout 0.19.1
 
 # prepare configure script
 ./bootstrap.sh
