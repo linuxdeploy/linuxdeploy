@@ -16,7 +16,7 @@ BUILD_DIR=$(mktemp -d -p "$TEMP_BASE" linuxdeploy-build-XXXXXX)
 pushd "$BUILD_DIR"
 
 # fetch source code
-wget https://ftp.gnu.org/gnu/binutils/binutils-2.35.tar.xz -O- | tar xJ --strip-components=1
+wget https://ftp.gnu.org/gnu/binutils/binutils-2.47.tar.xz -O- | tar xJ --strip-components=1
 
 # configure static build
 # inspired by https://github.com/andrew-d/static-binaries/blob/master/binutils/build.sh
