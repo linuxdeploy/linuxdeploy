@@ -28,7 +28,7 @@ int main(int argc, char** argv) {
     args::Flag showVersion(parser, "", "Print version and exit", {'V', "version"});
     args::ValueFlag<int> verbosity(parser, "verbosity", "Verbosity of log output (0 = debug, 1 = info (default), 2 = warning, 3 = error)", {'v', "verbosity"});
 
-    args::ValueFlag<std::string> appDirPath(parser, "appdir", "Path to target AppDir", {"appdir"});
+    args::ValueFlag<std::string> appDirPath(parser, "appdir", "Path to target AppDir", {'a', "appdir"});
 
     args::ValueFlagList<std::string> sharedLibraryPaths(parser, "library", "Shared library to deploy", {'l', "library"});
     args::ValueFlagList<std::string> excludeLibraryPatterns(parser, "pattern", "Shared library to exclude from deployment (glob pattern)", {"exclude-library"});
@@ -42,6 +42,8 @@ int main(int argc, char** argv) {
 
     args::ValueFlagList<std::string> iconPaths(parser, "icon file", "Icon to deploy", {'i', "icon-file"});
     args::ValueFlag<std::string> iconTargetFilename(parser, "filename", "Filename all icons passed via -i should be renamed to", {"icon-filename"});
+
+    args::ValueFlag<std::string> appstreamPath(parser, "appstream file", "Appstream file to deploy", {"appstream-file"});
 
     args::ValueFlag<std::string> customAppRunPath(parser, "AppRun path", "Path to custom AppRun script (linuxdeploy will not create a symlink but copy this file instead)", {"custom-apprun"});
 
@@ -273,6 +275,20 @@ int main(int argc, char** argv) {
                 ldLog() << LD_ERROR << "Failed to deploy desktop file: " << desktopFilePath << std::endl;
                 return 1;
             }
+        }
+    }
+
+    // deploy appstream file to usr/share/metainfo
+    if (appstreamPath) {
+    	appstreamPath = appstreamPath.Get();
+    	if (!fs::exists(appstreamPath)) {
+            ldLog() << LD_ERROR << "No such file or directory: " << appstreamPath << std::endl;
+            return 1;
+        }
+
+    	if (!appDir.deployAppstreamFile(appstreamPath)) {
+            ldLog() << LD_ERROR << "Failed to deploy appstream file: " << appstreamPath << std::endl;
+            return 1;
         }
     }
 
