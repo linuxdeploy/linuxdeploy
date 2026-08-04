@@ -19,6 +19,7 @@ function(ld_core_add_test_executable NAME)
         -DSIMPLE_ICON_PATH2="${CMAKE_CURRENT_SOURCE_DIR}/../data/simple_icon.svg"
         -DSIMPLE_FILE_PATH="${CMAKE_CURRENT_SOURCE_DIR}/../data/simple_file.txt"
         -DREADONLY_FILE_PATH="${CMAKE_CURRENT_SOURCE_DIR}/../data/readonly-file.txt"
+        -DEMPTY_FILE_PATH="${CMAKE_CURRENT_SOURCE_DIR}/../data/empty-file.txt"
     )
 
     # make sure library and executable are built before test_appdir
