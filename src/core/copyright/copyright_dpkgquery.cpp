@@ -16,12 +16,14 @@ namespace linuxdeploy {
                     ldLog() << LD_DEBUG << "Canonical path" << realpath << "not equivalent to" << path << std::endl;
                 }
 
-                subprocess::subprocess proc{{"dpkg-query", "-S", realpath.c_str()}};
+                const auto filename = fs::path(realpath).filename();
+
+                subprocess::subprocess proc{{"dpkg-query", "-S", filename.c_str()}};
 
                 auto result = proc.run();
 
                 if (result.exit_code() != 0 || result.stdout_contents().empty()) {
-                    ldLog() << LD_WARNING << "Could not find copyright files for file" << path << "using dpkg-query"
+                    ldLog() << LD_WARNING << "Could not find copyright files for file" << realpath << "using dpkg-query"
                             << std::endl;
                     return {};
                 }
@@ -35,7 +37,7 @@ namespace linuxdeploy {
                         return {copyrightFilePath};
                     }
                 } else {
-                    ldLog() << LD_WARNING << "Could not find copyright files for file" << path << "using dpkg-query"
+                    ldLog() << LD_WARNING << "Could not find copyright files for file" << realpath << "using dpkg-query"
                             << std::endl;
                 }
 
