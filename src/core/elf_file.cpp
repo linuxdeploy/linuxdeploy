@@ -236,6 +236,9 @@ namespace linuxdeploy {
 
                 auto env = subprocess::get_environment();
                 env["LC_ALL"] = "C";
+                // FreeBSD's ldd lists libraries not named lib* without their path or whether they were found, so give
+                // them the format of the others
+                env["LD_TRACE_LOADED_OBJECTS_FMT2"] = "\t%o => %p (%x)\n";
 
                 // workaround for https://sourceware.org/bugzilla/show_bug.cgi?id=25263
                 // when you pass an absolute path to ldd, it can find libraries referenced in the rpath properly

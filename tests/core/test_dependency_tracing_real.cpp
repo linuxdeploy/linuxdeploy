@@ -168,6 +168,14 @@ namespace {
         runScenario(scenarios::LibraryNames_PreserveMuslLikeNames);
     }
 
+    TEST_F(DependencyTracingTestReal, LibraryNames_PreserveLibraryNamedLdd) {
+        fs::rename(simple, directory / "ldd");
+        const auto patch = linuxdeploy::subprocess::subprocess({TEST_PATCHELF_PATH,
+            "--replace-needed", simple.filename().string(), "ldd", executable.string()}).run();
+        ASSERT_EQ(patch.exit_code(), 0) << patch.stderr_string();
+        runScenario(scenarios::LibraryNames_PreserveLibraryNamedLdd);
+    }
+
     TEST_F(DependencyTracingTestReal, LibraryNames_PreserveNotFoundInPath) {
         const auto libraryDir = directory / "not found";
         fs::create_directory(libraryDir);
@@ -181,6 +189,14 @@ namespace {
     TEST_F(DependencyTracingTestReal, MissingDependencies_RejectDirect) {
         ASSERT_TRUE(fs::remove(parent));
         runScenario(scenarios::MissingDependencies_RejectDirect);
+    }
+
+    TEST_F(DependencyTracingTestReal, MissingDependencies_RejectLibraryNamedLdd) {
+        const auto patch = linuxdeploy::subprocess::subprocess({TEST_PATCHELF_PATH,
+            "--replace-needed", simple.filename().string(), "ldd", executable.string()}).run();
+        ASSERT_EQ(patch.exit_code(), 0) << patch.stderr_string();
+        ASSERT_TRUE(fs::remove(simple));
+        runScenario(scenarios::MissingDependencies_RejectLibraryNamedLdd);
     }
 
     TEST_F(DependencyTracingTestReal, MissingDependencies_AllowExcludedDirect) {

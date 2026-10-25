@@ -238,8 +238,16 @@ namespace {
         LibraryNames_PreserveNotFoundInPath(*this);
     }
 
+    TEST_P(DependencyTracingTestRecorded, LibraryNames_PreserveLibraryNamedLdd) {
+        LibraryNames_PreserveLibraryNamedLdd(*this);
+    }
+
     TEST_P(DependencyTracingTestRecorded, MissingDependencies_RejectDirect) {
         MissingDependencies_RejectDirect(*this);
+    }
+
+    TEST_P(DependencyTracingTestRecorded, MissingDependencies_RejectLibraryNamedLdd) {
+        MissingDependencies_RejectLibraryNamedLdd(*this);
     }
 
     TEST_P(DependencyTracingTestRecorded, MissingDependencies_AllowExcludedDirect) {

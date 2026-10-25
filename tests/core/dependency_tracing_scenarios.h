@@ -101,8 +101,20 @@ namespace dependency_tracing_test {
             EXPECT_THAT(t.trace(t.executable), Contains(t.directory / "not found" / t.leaf.filename()));
         }
 
+        // the real test renames libsimple_library.so to ldd
+        inline void LibraryNames_PreserveLibraryNamedLdd(Tracer& t) {
+            EXPECT_THAT(t.trace(t.executable), Contains(t.directory / "ldd"));
+        }
+
         // the real test deletes libdependency_parent.so
         inline void MissingDependencies_RejectDirect(Tracer& t) {
+            EXPECT_THROW(t.trace(t.executable), DependencyNotFoundError);
+        }
+
+        // the real test renames libsimple_library.so to ldd, and deletes it
+        // FreeBSD's ldd lists libraries whose name does not start with lib in another format, which must not hide that
+        // they are missing
+        inline void MissingDependencies_RejectLibraryNamedLdd(Tracer& t) {
             EXPECT_THROW(t.trace(t.executable), DependencyNotFoundError);
         }
 
