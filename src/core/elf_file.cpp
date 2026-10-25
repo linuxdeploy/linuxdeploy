@@ -1,4 +1,5 @@
 // system headers
+#include <algorithm>
 #include <assert.h>
 #include <fcntl.h>
 #include <fstream>
@@ -12,6 +13,11 @@
 #include "linuxdeploy/log/log.h"
 #include "linuxdeploy/util/util.h"
 #include "linuxdeploy/subprocess/subprocess.h"
+
+// DT_FLAGS_1 flag of position-independent executables (PIEs), missing in older C libraries' headers
+#ifndef DF_1_PIE
+#define DF_1_PIE 0x08000000
+#endif
 
 using namespace linuxdeploy::log;
 
@@ -74,8 +80,8 @@ namespace linuxdeploy {
                     }
 
                 private:
-                    template<typename Ehdr_T, typename Shdr_T, typename Phdr_T>
-                    void parseElfHeader(std::shared_ptr<uint8_t> data) {
+                    template<typename Ehdr_T, typename Shdr_T, typename Phdr_T, typename Dyn_T>
+                    void parseElfHeader(std::shared_ptr<uint8_t> data, size_t dataSize) {
                         // TODO: the following code will _only_ work if the native byte order equals the program's
                         // this should not be a big problem as we don't offer ARM builds yet, and require the user to
                         // use a matching binary for the target binaries
@@ -112,15 +118,54 @@ namespace linuxdeploy {
                         isDebugSymbolsFile = (sectionsMap[".text"].sh_type == SHT_NOBITS);
 
                         // https://stackoverflow.com/a/7298931
-                        for (uint64_t i = 0; i < ehdr->e_phnum && !isDynamicallyLinked; ++i) {
+                        const Phdr_T* dynamicPhdr = nullptr;
+                        for (uint64_t i = 0; i < ehdr->e_phnum; ++i) {
                             auto* nextPhdr = reinterpret_cast<Phdr_T*>(data.get() + ehdr->e_phoff + i * sizeof(Phdr_T));
                             switch (nextPhdr->p_type) {
-                                case PT_DYNAMIC:
                                 case PT_INTERP:
                                     isDynamicallyLinked = true;
                                     break;
+                                case PT_DYNAMIC:
+                                    dynamicPhdr = nextPhdr;
+                                    break;
                             }
                         }
+
+                        // shared libraries have no PT_INTERP, but a PT_DYNAMIC segment
+                        // static-pie executables look the same, but need no other libraries
+                        // and are marked as PIE by the linker, which shared libraries never are
+                        if (!isDynamicallyLinked && dynamicPhdr != nullptr)
+                            isDynamicallyLinked = isDebugSymbolsFile || !isStaticPie<Dyn_T>(data, dataSize, dynamicPhdr);
+                    }
+
+                    // the caller must make sure the file has no PT_INTERP
+                    // not suitable for debug symbols files, whose dynamic section has been stripped,
+                    // so the segment points to unrelated data or beyond the end of the file
+                    template<typename Dyn_T, typename Phdr_T>
+                    static bool isStaticPie(const std::shared_ptr<uint8_t>& data, size_t dataSize, const Phdr_T* dynamicPhdr) {
+                        if (dynamicPhdr->p_offset >= dataSize)
+                            return false;
+
+                        bool isPie = false;
+
+                        const auto dynamicSize = std::min<uint64_t>(dynamicPhdr->p_filesz, dataSize - dynamicPhdr->p_offset);
+                        const auto dynamicEntries = dynamicSize / sizeof(Dyn_T);
+                        for (uint64_t i = 0; i < dynamicEntries; ++i) {
+                            auto* dyn = reinterpret_cast<Dyn_T*>(data.get() + dynamicPhdr->p_offset + i * sizeof(Dyn_T));
+
+                            if (dyn->d_tag == DT_NULL)
+                                break;
+
+                            // a PIE which needs other libraries but has no PT_INTERP must still be traced
+                            // (e.g., linked with --no-dynamic-linker)
+                            if (dyn->d_tag == DT_NEEDED)
+                                return false;
+
+                            if (dyn->d_tag == DT_FLAGS_1 && (dyn->d_un.d_val & DF_1_PIE) != 0)
+                                isPie = true;
+                        }
+
+                        return isPie;
                     }
 
                 public:
@@ -148,10 +193,10 @@ namespace linuxdeploy {
 
                         switch (elfClass) {
                             case ELFCLASS32:
-                                parseElfHeader<Elf32_Ehdr, Elf32_Shdr, Elf32_Phdr>(data);
+                                parseElfHeader<Elf32_Ehdr, Elf32_Shdr, Elf32_Phdr, Elf32_Dyn>(data, map_size);
                                 break;
                             case ELFCLASS64:
-                                parseElfHeader<Elf64_Ehdr, Elf64_Shdr, Elf64_Phdr>(data);
+                                parseElfHeader<Elf64_Ehdr, Elf64_Shdr, Elf64_Phdr, Elf64_Dyn>(data, map_size);
                                 break;
                             default:
                                 throw ElfFileParseError("Unknown ELF class: " + std::to_string(elfClass));
@@ -189,8 +234,9 @@ namespace linuxdeploy {
 
                 // for now, we use the same ldd based method linuxdeployqt uses
 
-                // of course, it makes no sense to call this method on statically linked binaries
-                assert(isDynamicallyLinked());
+                // static ELF files have no dynamic dependencies
+                if (!isDynamicallyLinked())
+                    return {};
 
                 std::vector<fs::path> paths;
 

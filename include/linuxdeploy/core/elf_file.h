@@ -44,6 +44,7 @@ namespace linuxdeploy {
                 public:
                     // recursively trace dynamic library dependencies of a given ELF file
                     // this works for both libraries and executables
+                    // static ELF files return an empty vector
                     // the resulting vector consists of absolute paths to the libraries determined by the same methods a system's
                     // linker would use
                     std::vector<std::filesystem::path> traceDynamicDependencies(const std::vector<std::string>& excludeLibraryPatterns={});
@@ -66,7 +67,8 @@ namespace linuxdeploy {
                     // check if this file is a debug symbols file
                     bool isDebugSymbolsFile();
 
-                    // check whether the file contains a dynsym section
+                    // check whether the file contains a program interpreter or dynamic section
+                    // static-pie executables are not considered dynamically linked
                     bool isDynamicallyLinked();
             };
         }

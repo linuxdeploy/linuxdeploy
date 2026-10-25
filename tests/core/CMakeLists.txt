@@ -31,6 +31,20 @@ function(ld_core_add_test_executable NAME)
         simple_library_debug
         simple_library_no_dependencies
     )
+
+    if(TARGET simple_executable_static_pie)
+        target_compile_definitions(${NAME} PRIVATE
+            -DSIMPLE_EXECUTABLE_STATIC_PIE_PATH="$<TARGET_FILE:simple_executable_static_pie>"
+        )
+        add_dependencies(${NAME} simple_executable_static_pie)
+    endif()
+
+    if(TARGET simple_executable_no_interpreter_pie)
+        target_compile_definitions(${NAME} PRIVATE
+            -DSIMPLE_EXECUTABLE_NO_INTERPRETER_PIE_PATH="$<TARGET_FILE:simple_executable_no_interpreter_pie>"
+        )
+        add_dependencies(${NAME} simple_executable_no_interpreter_pie)
+    endif()
 endfunction()
 
 ld_core_add_test_executable(test_appdir test_appdir.cpp)
