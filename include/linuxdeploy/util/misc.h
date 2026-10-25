@@ -103,17 +103,20 @@ namespace linuxdeploy {
                 return buf.data();
             }
 
-            // very simple but for our purposes good enough which like algorithm to find binaries in $PATH
+            // finds a program like exec* does, but skips empty $PATH entries and finds nothing if $PATH is unset, so
+            // run programs by name through subprocess rather than via the returned path
             static std::filesystem::path which(const std::string& name) {
                 namespace fs = std::filesystem;
 
-                // check if name is an absolute path and a valid binary to run
+                auto isExecutable = [](const fs::path& binary) {
+                    std::error_code ec;
+                    return access(binary.c_str(), X_OK) == 0 && fs::is_regular_file(binary, ec);
+                };
+
+                // like exec*, check a name which contains a slash directly instead of searching $PATH
                 const fs::path name_path(name);
-                if (name_path.is_absolute()
-                    && fs::exists(name_path)
-                    && (fs::status(name_path).permissions() & fs::perms::owner_exec) != fs::perms::none) {
-                        return name_path;
-                }
+                if (name.find('/') != std::string::npos)
+                    return isExecutable(name_path) ? name_path : fs::path{};
 
                 const auto* path = getenv("PATH");
 
@@ -121,18 +124,15 @@ namespace linuxdeploy {
                     return "";
 
                 for (const auto& binDir : split(path, ':')) {
-                    if (!fs::is_directory(binDir)) {
+                    // empty entries would search the current directory
+                    if (binDir.empty())
                         continue;
-                    }
 
-                    for (fs::directory_iterator it(binDir); it != fs::directory_iterator{}; ++it) {
-                        const auto binary = it->path();
+                    // check the candidate directly, as searchable but unreadable directories cannot be listed
+                    const auto binary = fs::path(binDir) / name;
 
-                        if (binary.filename() == name) {
-                            // TODO: check if file is executable (skip otherwise)
-                            return binary;
-                        }
-                    }
+                    if (isExecutable(binary))
+                        return binary;
                 }
 
                 return {};
