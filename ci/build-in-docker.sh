@@ -133,11 +133,11 @@ else
     warning "Host system does not have enough free memory -> building on regular disk"
 fi
 
-if [[ "${BUILD_TYPE:-}" == "coverage" ]]; then
-    build_script="ci/test-coverage.sh"
-else
-    build_script="ci/build.sh"
-fi
+case "${BUILD_TYPE:-}" in
+    coverage)           build_script="ci/test-coverage.sh" ;;
+    dependency-tracing) build_script="ci/test-dependency-tracing.sh" ;;
+    *)                  build_script="ci/build.sh" ;;
+esac
 
 
 if [ -t 1 ]; then
