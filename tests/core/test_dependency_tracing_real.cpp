@@ -1,0 +1,162 @@
+#include <cstdlib>
+#include <filesystem>
+#include <fstream>
+#include <iostream>
+#include <optional>
+#include <string>
+
+#include "gtest/gtest.h"
+#include "gmock/gmock.h"
+
+#include "linuxdeploy/core/elf_file.h"
+#include "linuxdeploy/subprocess/subprocess.h"
+#include "linuxdeploy/util/util.h"
+#include "test_util.h"
+#include "dependency_tracing_recording.h"
+#include "dependency_tracing_scenarios.h"
+
+namespace fs = std::filesystem;
+using namespace linuxdeploy::core::elf_file;
+using namespace dependency_tracing_test;
+
+namespace {
+    // scenarios which apply only to some platforms are skipped on the others, so they have no recording there
+#ifdef __GLIBC__
+    constexpr bool usesGlibc = true;
+#else
+    constexpr bool usesGlibc = false;
+#endif
+
+    // every ldd call is recorded, and printed if the test fails
+    // set LINUXDEPLOY_LDD_RECORD_DIR to save the recordings of all scenarios to this directory
+    class DependencyTracingTestReal : public testing::Test, public Tracer {
+    protected:
+        fs::path recordingDirectory;
+        std::optional<std::string> oldLibraryPath;
+        std::string oldPath;
+        // an unset $PATH is restored as unset, not as empty
+        bool pathWasSet = false;
+        bool isScenario = false;
+
+        void SetUp() override {
+            // saved first, as TearDown() restores it even if SetUp() fails
+            pathWasSet = getenv("PATH") != nullptr;
+            oldPath = pathWasSet ? getenv("PATH") : "";
+            if (const auto* path = getenv("LD_LIBRARY_PATH"))
+                oldLibraryPath = path;
+            ASSERT_EQ(unsetenv("LD_LIBRARY_PATH"), 0);
+
+            setFixtureDirectory(make_temporary_directory(
+                (fs::temp_directory_path() / "linuxdeploy-ldd-tests-real-XXXXXX").string()));
+            fs::copy_file(SIMPLE_EXECUTABLE_PATH, executable);
+            fs::copy_file(SIMPLE_LIBRARY_PATH, simple);
+            fs::copy_file(DEPENDENCY_PARENT_LIBRARY_PATH, parent);
+            fs::copy_file(DEPENDENCY_LEAF_LIBRARY_PATH, leaf);
+
+            // remove the build tree's search paths, so deleting a copy really makes it missing
+            // every library needs its own RUNPATH, as glibc does not use the executable's for transitive dependencies
+            for (const auto& path : {executable, simple, parent, leaf})
+                ASSERT_TRUE(ElfFile(path).setRPath("$ORIGIN"));
+            copyAsUnloadable(DEPENDENCY_LEAF_LIBRARY_PATH, unloadableLeaf);
+
+            const auto ldd = linuxdeploy::util::which("ldd");
+            ASSERT_FALSE(ldd.empty()) << "the real tests need ldd";
+            recordingDirectory = make_temporary_directory(
+                (fs::temp_directory_path() / "linuxdeploy-ldd-recording-XXXXXX").string());
+            writeRecordingLdd(recordingDirectory, ldd.parent_path());
+            ASSERT_EQ(setenv("PATH", (recordingDirectory.string() + ":" + oldPath).c_str(), 1), 0);
+        }
+
+        std::vector<fs::path> trace(const fs::path& path, const std::vector<std::string>& exclusions = {}) override {
+            auto dependencies = ElfFile(path).traceDynamicDependencies(exclusions);
+            // unlike in the mock tests, the libraries really exist
+            for (const auto& dependency : dependencies)
+                EXPECT_TRUE(fs::exists(dependency)) << dependency;
+            return dependencies;
+        }
+
+        void runScenario(void (*scenario)(Tracer&)) {
+            isScenario = true;
+            scenario(*this);
+        }
+
+        void reportRecording() {
+            // a scenario without ldd calls still gets an empty recording,
+            // so the mock tests check that it makes none, but a skipped scenario has nothing to replay
+            const auto calls = readRecordedCalls(recordingDirectory, directory);
+            if ((calls.empty() && !isScenario) || IsSkipped())
+                return;
+
+            const std::string name = testing::UnitTest::GetInstance()->current_test_info()->name();
+            const auto recording = formatRecording(calls);
+
+            if (HasFailure()) {
+                std::cout << "\n=== ldd recording";
+                if (isScenario)
+                    std::cout << ", for the mock tests save as tests/core/ldd_recordings/<platform>/" << name << ".txt";
+                std::cout << " ===\n" << recording << "=== end of ldd recording ===\n" << std::flush;
+            }
+
+            if (const auto* outputDirectory = getenv("LINUXDEPLOY_LDD_RECORD_DIR"); outputDirectory != nullptr && isScenario) {
+                fs::create_directories(outputDirectory);
+                std::ofstream file(fs::path(outputDirectory) / (name + ".txt"));
+                file << recording;
+                EXPECT_TRUE(file.good()) << "could not save the ldd recording";
+            }
+        }
+
+        void TearDown() override {
+            if (!recordingDirectory.empty() && !directory.empty())
+                reportRecording();
+            if (pathWasSet)
+                EXPECT_EQ(setenv("PATH", oldPath.c_str(), 1), 0);
+            else
+                EXPECT_EQ(unsetenv("PATH"), 0);
+            if (oldLibraryPath)
+                EXPECT_EQ(setenv("LD_LIBRARY_PATH", oldLibraryPath->c_str(), 1), 0);
+            else
+                EXPECT_EQ(unsetenv("LD_LIBRARY_PATH"), 0);
+            for (const auto& path : {directory, recordingDirectory}) {
+                if (!path.empty())
+                    fs::remove_all(path);
+            }
+        }
+    };
+
+    // === Library names ===
+
+    TEST_F(DependencyTracingTestReal, LibraryNames_PreserveMuslLikeNames) {
+        const auto libraryDir = directory / "ld-musl-testing";
+        fs::create_directory(libraryDir);
+        const auto helper = directory / "libdependency_parent-musl.so";
+        fs::rename(leaf, libraryDir / leaf.filename());
+        fs::rename(parent, helper);
+        ASSERT_TRUE(ElfFile(helper).setRPath("$ORIGIN/ld-musl-testing"));
+        const auto patch = linuxdeploy::subprocess::subprocess({TEST_PATCHELF_PATH,
+            "--replace-needed", "libdependency_parent.so", "libdependency_parent-musl.so", executable.string()}).run();
+        ASSERT_EQ(patch.exit_code(), 0) << patch.stderr_string();
+        runScenario(scenarios::LibraryNames_PreserveMuslLikeNames);
+    }
+
+    // === Invalid programs and loader diagnostics ===
+
+    TEST_F(DependencyTracingTestReal, InvalidPrograms_AcceptNonDynamicDiagnostic) {
+        if (!usesGlibc)
+            GTEST_SKIP() << "only glibc's ldd reports files it cannot load as not dynamic";
+        runScenario(scenarios::InvalidPrograms_AcceptNonDynamicDiagnostic);
+    }
+
+    // === Static programs ===
+
+    TEST_F(DependencyTracingTestReal, StaticPrograms_SkipLdd) {
+        fs::copy_file(SIMPLE_EXECUTABLE_STATIC_PATH, staticExecutable);
+        runScenario(scenarios::StaticPrograms_SkipLdd);
+    }
+
+    TEST_F(DependencyTracingTestReal, StaticPrograms_StaticPie) {
+#ifdef SIMPLE_EXECUTABLE_STATIC_PIE_PATH
+        fs::copy_file(SIMPLE_EXECUTABLE_STATIC_PIE_PATH, staticPie);
+#endif
+        runScenario(scenarios::StaticPrograms_StaticPie);
+    }
+}

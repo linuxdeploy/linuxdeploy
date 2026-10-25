@@ -7,6 +7,9 @@ function(ld_core_add_test_executable NAME)
 
     # calculate paths to resources using CMake and hardcode them in the test binary
     target_compile_definitions(${NAME} PRIVATE
+        -DDEPENDENCY_PARENT_LIBRARY_PATH="$<TARGET_FILE:dependency_parent>"
+        -DDEPENDENCY_LEAF_LIBRARY_PATH="$<TARGET_FILE:dependency_leaf>"
+
         -DSIMPLE_LIBRARY_PATH="$<TARGET_FILE:simple_library>"
         -DSIMPLE_LIBRARY_DEBUG_PATH="$<TARGET_FILE:simple_library>.debug"
         -DSIMPLE_LIBRARY_STRIPPED_PATH="$<TARGET_FILE:simple_library>.stripped"
@@ -24,6 +27,8 @@ function(ld_core_add_test_executable NAME)
 
     # make sure library and executable are built before test_appdir
     add_dependencies(${NAME}
+        dependency_parent
+        dependency_leaf
         simple_executable
         simple_executable_static
         simple_library
@@ -67,6 +72,22 @@ target_link_libraries(test_elf_file PRIVATE gtest_main gmock)
 target_include_directories(test_elf_file PRIVATE ${PROJECT_SOURCE_DIR}/src)
 # register in CTest
 ld_add_test(test_elf_file)
+
+ld_core_add_test_executable(test_dependency_tracing_mock test_dependency_tracing_mock.cpp)
+target_link_libraries(test_dependency_tracing_mock PRIVATE gtest_main gmock)
+target_compile_definitions(test_dependency_tracing_mock PRIVATE
+    -DLDD_RECORDINGS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/ldd_recordings"
+    -DMOCK_LDD_PATH="${CMAKE_CURRENT_SOURCE_DIR}/mock_ldd.sh"
+)
+ld_add_test(test_dependency_tracing_mock)
+
+ld_core_add_test_executable(test_dependency_tracing_real test_dependency_tracing_real.cpp)
+target_link_libraries(test_dependency_tracing_real PRIVATE gtest_main gmock)
+target_compile_definitions(test_dependency_tracing_real PRIVATE
+    -DTEST_PATCHELF_PATH="${PATCHELF}"
+    -DMOCK_LDD_PATH="${CMAKE_CURRENT_SOURCE_DIR}/mock_ldd.sh"
+)
+ld_add_test(test_dependency_tracing_real)
 
 ld_core_add_test_executable(test_subprocess test_subprocess.cpp)
 target_link_libraries(test_subprocess PRIVATE gtest_main gmock)
