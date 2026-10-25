@@ -55,6 +55,20 @@ If you want to use a plugin to bundle additional resources, please add `./linuxd
 **Note:** If you want to suggest a plugin for a specific framework, language etc., please feel free to [create a new issue](https://github.com/linuxdeploy/linuxdeploy/issues/new). Current plugin requests can be found [here](https://github.com/linuxdeploy/linuxdeploy/issues?utf8=%E2%9C%93&q=label%3A%22plugin+request%22).
 
 
+## Stripping
+
+linuxdeploy calls `strip` on the executables and libraries it deploys. If `$STRIP` is set, linuxdeploy runs that program, which may be a name to search for in the `$PATH` or a path (e.g., `STRIP=llvm-strip` or `STRIP=./tools/strip`). Otherwise, it uses the first strip it finds in the following places:
+
+  - the directory containing the linuxdeploy binary (the AppImage ships a strip there)
+  - the directories in the user's `$PATH`
+
+linuxdeploy does not fall back to another strip if the one set in `$STRIP` cannot be run, but fails the deployment.
+
+**Note:** Build environments (e.g., autotools, conda, Yocto or Buildroot SDKs, cross toolchains) often export `$STRIP`, which linuxdeploy then uses instead of the bundled strip. `$STRIP` must name a single program without arguments (e.g., not `strip -s`). Unset it for linuxdeploy (e.g., `env -u STRIP ./linuxdeploy-x86_64.AppImage ...`) if it does not suit the files you deploy.
+
+To disable stripping, set `$NO_STRIP` to any value.
+
+
 ## Troubleshooting
 
 > I bundled additional resources, but when I try to run them, either the system binary is called or the file is not found.

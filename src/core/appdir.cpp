@@ -415,19 +415,12 @@ namespace linuxdeploy {
                     }
 
                     static std::string getStripPath() {
-                        // by default, try to use a strip next to the linuxdeploy binary
-                        // if that isn't available, fall back to searching for strip in the PATH
-                        std::string stripPath = "strip";
+                        const auto strip = util::findTool("STRIP", "strip");
 
-                        auto binDirPath = fs::path(util::getOwnExecutablePath()).parent_path();
-                        auto localStripPath = binDirPath / "strip";
+                        ldLog() << LD_DEBUG << "Using strip (" << LD_NO_SPACE << strip.source << LD_NO_SPACE << "):"
+                                << strip.path << std::endl;
 
-                        if (fs::exists(localStripPath))
-                            stripPath = localStripPath.string();
-
-                        ldLog() << LD_DEBUG << "Using strip:" << stripPath << std::endl;
-
-                        return stripPath;
+                        return strip.path;
                     }
 
                     static std::string calculateRelativeRPath(const fs::path& originDir, const fs::path& dependencyLibrariesDir) {

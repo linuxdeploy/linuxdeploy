@@ -103,6 +103,31 @@ namespace linuxdeploy {
                 return buf.data();
             }
 
+            // the tool findTool() selected, and where it came from for messages (e.g., "set in $STRIP")
+            struct FoundTool {
+                std::string path;
+                std::string source;
+            };
+
+            // returns the tool to run: envVar if it is not empty (a name or a path), otherwise name next to the
+            // linuxdeploy binary, otherwise name, for exec* to search in $PATH
+            static FoundTool findTool(const char* envVar, const std::string& name) {
+                // allows users to use a custom tool instead of the bundled one
+                const auto* envTool = getenv(envVar);
+                if (envTool != nullptr && *envTool != '\0')
+                    return {envTool, std::string("set in $") + envVar};
+
+                // without the binary's path, the bundled tool would be searched for in the current directory
+                const auto ownPath = getOwnExecutablePath();
+                if (!ownPath.empty()) {
+                    const auto bundledTool = std::filesystem::path(ownPath).parent_path() / name;
+                    if (std::filesystem::exists(bundledTool))
+                        return {bundledTool.string(), "bundled with linuxdeploy"};
+                }
+
+                return {name, "searched for in $PATH"};
+            }
+
             // finds a program like exec* does, but skips empty $PATH entries and finds nothing if $PATH is unset, so
             // run programs by name through subprocess rather than via the returned path
             static std::filesystem::path which(const std::string& name) {
