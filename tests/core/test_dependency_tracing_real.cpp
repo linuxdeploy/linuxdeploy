@@ -1,4 +1,6 @@
+#include <cerrno>
 #include <cstdlib>
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -93,6 +95,19 @@ namespace {
         void runScenario(void (*scenario)(Tracer&)) {
             isScenario = true;
             scenario(*this);
+        }
+
+        // trace without ldd in $PATH
+        std::vector<fs::path> traceWithoutLdd(const fs::path& path) {
+            const auto emptyPath = directory / "empty-path";
+            fs::create_directories(emptyPath);
+            EXPECT_EQ(setenv("PATH", emptyPath.c_str(), 1), 0);
+            struct RestorePath {
+                const fs::path& recordingDirectory;
+                const std::string& value;
+                ~RestorePath() { setenv("PATH", (recordingDirectory.string() + ":" + value).c_str(), 1); }
+            } restorePath{recordingDirectory, oldPath};
+            return ElfFile(path).traceDynamicDependencies();
         }
 
         void reportRecording() {
@@ -254,6 +269,48 @@ namespace {
         fs::copy_file(SIMPLE_EXECUTABLE_STATIC_PIE_PATH, staticPie);
 #endif
         runScenario(scenarios::StaticPrograms_StaticPie);
+    }
+
+    // === Missing ldd ===
+
+    TEST_F(DependencyTracingTestReal, MissingLdd_Reject) {
+        EXPECT_THAT([&] { traceWithoutLdd(executable); },
+                    testing::ThrowsMessage<DependencyTraceError>(testing::HasSubstr("Failed to find or run ldd")));
+    }
+
+    TEST_F(DependencyTracingTestReal, MissingLdd_RejectLddWhoseInterpreterIsMissing) {
+        // exec* reports this like a missing ldd
+        const auto brokenDirectory = directory / "broken";
+        fs::create_directory(brokenDirectory);
+        std::ofstream(brokenDirectory / "ldd") << "#!/nonexistent/interpreter\n";
+        makeExecutable(brokenDirectory / "ldd");
+        ASSERT_EQ(setenv("PATH", brokenDirectory.c_str(), 1), 0);
+
+        EXPECT_THAT([&] { trace(executable); },
+                    testing::ThrowsMessage<DependencyTraceError>(testing::HasSubstr("Failed to find or run ldd")));
+    }
+
+    TEST_F(DependencyTracingTestReal, MissingLdd_RejectLddWhichCannotBeRun) {
+        // exec* skips an ldd which is not executable, and reports EACCES if it finds no other one
+        const auto lddDirectory = directory / "not-executable";
+        fs::create_directory(lddDirectory);
+        std::ofstream(lddDirectory / "ldd") << "#!/bin/sh\n";
+        ASSERT_EQ(setenv("PATH", lddDirectory.c_str(), 1), 0);
+
+        EXPECT_THAT([&] { trace(executable); },
+                    testing::ThrowsMessage<DependencyTraceError>(testing::AllOf(
+                        testing::HasSubstr("Failed to run ldd on"),
+                        testing::HasSubstr(std::string(": ") + strerror(EACCES)),
+                        testing::Not(testing::HasSubstr("could not be run")))));
+    }
+
+    // the mock tests cannot install an ldd in the default search path, so this test has no mock
+    // how exec* searches for programs is tested with subprocess, this checks that ldd is not searched for up front
+    TEST_F(DependencyTracingTestReal, MissingLdd_UseDefaultPathIfUnset) {
+        // like exec*, fall back to the C library's default search path, which contains ldd on all CI platforms
+        ASSERT_EQ(unsetenv("PATH"), 0);
+
+        EXPECT_THAT(trace(executable), testing::Contains(leaf));
     }
 
     // === Deployment errors ===

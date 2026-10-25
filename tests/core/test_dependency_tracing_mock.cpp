@@ -1,5 +1,7 @@
 #include <algorithm>
 #include <cctype>
+#include <cerrno>
+#include <cstring>
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
@@ -17,6 +19,7 @@
 
 namespace fs = std::filesystem;
 using namespace linuxdeploy::core::elf_file;
+using testing::ElementsAre;
 using testing::HasSubstr;
 
 namespace {
@@ -85,6 +88,39 @@ namespace {
 
         EXPECT_THAT([&] { trace(DEPENDENCY_PARENT_LIBRARY_PATH); },
                     testing::ThrowsMessage<DependencyTraceError>(HasSubstr("terminated by signal")));
+    }
+
+    // === Missing ldd ===
+
+    TEST_F(DependencyTracingTestMock, MissingLdd_Reject) {
+        // the PATH contains only an empty fixture directory
+        EXPECT_THAT([&] { trace(DEPENDENCY_PARENT_LIBRARY_PATH); },
+                    testing::ThrowsMessage<DependencyTraceError>(HasSubstr("Failed to find or run ldd")));
+    }
+
+    TEST_F(DependencyTracingTestMock, MissingLdd_RejectLddWhoseInterpreterIsMissing) {
+        // exec* reports this like a missing ldd
+        const auto brokenDirectory = directory / "broken";
+        fs::create_directory(brokenDirectory);
+        std::ofstream(brokenDirectory / "ldd") << "#!/nonexistent/interpreter\n";
+        dependency_tracing_test::makeExecutable(brokenDirectory / "ldd");
+        ASSERT_EQ(setenv("PATH", brokenDirectory.c_str(), 1), 0);
+
+        EXPECT_THAT([&] { trace(DEPENDENCY_PARENT_LIBRARY_PATH); },
+                    testing::ThrowsMessage<DependencyTraceError>(HasSubstr("Failed to find or run ldd")));
+    }
+
+    TEST_F(DependencyTracingTestMock, MissingLdd_RejectLddWhichCannotBeRun) {
+        // exec* skips an ldd which is not executable, and reports EACCES if it finds no other one
+        const auto lddDirectory = directory / "not-executable";
+        fs::create_directory(lddDirectory);
+        std::ofstream(lddDirectory / "ldd") << "#!/bin/sh\n";
+        ASSERT_EQ(setenv("PATH", lddDirectory.c_str(), 1), 0);
+
+        EXPECT_THAT([&] { trace(DEPENDENCY_PARENT_LIBRARY_PATH); },
+                    testing::ThrowsMessage<DependencyTraceError>(testing::AllOf(
+                        HasSubstr("Failed to run ldd on"), HasSubstr(std::string(": ") + strerror(EACCES)),
+                        testing::Not(HasSubstr("could not be run")))));
     }
 
     // === Recorded scenarios ===

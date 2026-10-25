@@ -1,6 +1,8 @@
 // system headers
 #include <algorithm>
 #include <assert.h>
+#include <cerrno>
+#include <cstring>
 #include <fcntl.h>
 #include <fstream>
 #include <memory>
@@ -244,6 +246,13 @@ namespace linuxdeploy {
                 subprocess::subprocess lddProc({"ldd", resolvedPath.string()}, env);
 
                 const auto result = lddProc.run();
+
+                // exec* reports a missing ldd (e.g., Alpine without musl-utils) or interpreter (e.g., glibc's ldd
+                // script without bash) as ENOENT; do not search for ldd up front, as which() follows other rules
+                if (result.exec_error() == ENOENT)
+                    throw DependencyTraceError("Failed to find or run ldd, which is required to trace the dependencies of " +
+                                               resolvedPath.string() +
+                                               " (it or its interpreter may need to be installed)");
 
                 auto lddError = [&](const std::string& reason) {
                     std::ostringstream message;
