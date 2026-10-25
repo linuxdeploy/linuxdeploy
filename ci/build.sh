@@ -2,6 +2,16 @@
 
 set -euxo pipefail
 
+ARCH="${ARCH:-$(uname -m)}"
+
+# map uname -m's names to those $ARCH uses, like build-in-docker.sh
+case "$ARCH" in
+    amd64) ARCH=x86_64 ;;
+    i?86) ARCH=i386 ;;
+    armv7*|armv8l) ARCH=armhf ;;
+    arm64) ARCH=aarch64 ;;
+esac
+
 # use RAM disk if possible
 if [ -d /docker-ramdisk ]; then
     TEMP_BASE=/docker-ramdisk

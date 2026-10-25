@@ -18,25 +18,28 @@ error() {
     log_message 1 "[error] $*"
 }
 
-if [[ "$ARCH" == "" ]]; then
-    error "Usage: env ARCH=... bash $0"
-    exit 2
-fi
 set -euo pipefail
+
+export ARCH="${ARCH:-$(uname -m)}"
 
 this_dir="$(readlink -f "$(dirname "${BASH_SOURCE[0]}")")"
 
+# map uname -m's names (e.g., armv7l) to those $ARCH uses, as it also names the AppImage
 case "$ARCH" in
-    x86_64)
+    x86_64|amd64)
+        ARCH=x86_64
         docker_platform=linux/amd64
         ;;
-    i386)
+    i?86)
+        ARCH=i386
         docker_platform=linux/386
         ;;
-    armhf)
+    armhf|armv7*|armv8l)
+        ARCH=armhf
         docker_platform=linux/arm/v7
         ;;
-    aarch64)
+    aarch64|arm64)
+        ARCH=aarch64
         docker_platform=linux/arm64/v8
         ;;
     *)
