@@ -122,6 +122,10 @@ namespace {
         LibraryNames_PreserveMuslLikeNames(*this);
     }
 
+    TEST_P(DependencyTracingTestRecorded, LibraryNames_PreserveNotFoundInPath) {
+        LibraryNames_PreserveNotFoundInPath(*this);
+    }
+
     TEST_P(DependencyTracingTestRecorded, InvalidPrograms_AcceptNonDynamicDiagnostic) {
         InvalidPrograms_AcceptNonDynamicDiagnostic(*this);
     }

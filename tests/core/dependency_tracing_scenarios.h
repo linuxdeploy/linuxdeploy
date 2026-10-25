@@ -72,6 +72,12 @@ namespace dependency_tracing_test {
             EXPECT_THAT(dependencies, Contains(t.directory / "ld-musl-testing" / t.leaf.filename()));
         }
 
+        // the real test moves libdependency_leaf.so to "not found/"
+        // FreeBSD's ldd appends an address to missing libraries, which must not match paths containing "not found"
+        inline void LibraryNames_PreserveNotFoundInPath(Tracer& t) {
+            EXPECT_THAT(t.trace(t.executable), Contains(t.directory / "not found" / t.leaf.filename()));
+        }
+
         // the real test runs only with glibc, whose ldd reports files it cannot load as not dynamic
         inline void InvalidPrograms_AcceptNonDynamicDiagnostic(Tracer& t) {
             EXPECT_THAT(t.trace(t.unloadableLeaf), testing::IsEmpty());

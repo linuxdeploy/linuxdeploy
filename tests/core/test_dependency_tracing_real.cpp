@@ -138,6 +138,14 @@ namespace {
         runScenario(scenarios::LibraryNames_PreserveMuslLikeNames);
     }
 
+    TEST_F(DependencyTracingTestReal, LibraryNames_PreserveNotFoundInPath) {
+        const auto libraryDir = directory / "not found";
+        fs::create_directory(libraryDir);
+        fs::rename(leaf, libraryDir / leaf.filename());
+        ASSERT_TRUE(ElfFile(parent).setRPath("$ORIGIN/not found"));
+        runScenario(scenarios::LibraryNames_PreserveNotFoundInPath);
+    }
+
     // === Invalid programs and loader diagnostics ===
 
     TEST_F(DependencyTracingTestReal, InvalidPrograms_AcceptNonDynamicDiagnostic) {

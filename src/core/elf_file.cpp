@@ -244,6 +244,15 @@ namespace linuxdeploy {
 
                 const auto result = lddProc.run();
 
+                // missing libraries are rejected, unless they are excluded
+                auto checkMissingLibrary = [&](std::string library) {
+                    util::trim(library);
+                    util::trim(library, '\t');
+                    if (!util::isInExcludelist(library, excludeLibraryPatterns))
+                        throw DependencyNotFoundError("Could not find dependency: " + library);
+                    ldLog() << LD_WARNING << resolvedPath.string() << "depends on excluded library:" << library << std::endl;
+                };
+
                 if (result.exit_code() != 0) {
                     if (result.stdout_string().find("not a dynamic executable") != std::string::npos || result.stderr_string().find("not a dynamic executable") != std::string::npos) {
                         ldLog() << LD_WARNING << this->d->path << "is not linked dynamically" << std::endl;
@@ -253,7 +262,10 @@ namespace linuxdeploy {
                     throw std::runtime_error{"Failed to run ldd: exited with code " + std::to_string(result.exit_code())};
                 }
 
-                const std::regex expr(R"(\s*(.+)\s+\=>\s+(.+)\s+\((.+)\)\s*)");
+                // FreeBSD's ldd appends an address to missing libraries, which the expression for resolved libraries
+                // would match, so check for missing libraries first
+                static const std::regex missingLibraryExpr(R"(\s*(.+)\s+=>\s+not found(?:\s+\([^)]+\))?\s*)");
+                static const std::regex expr(R"(\s*(.+)\s+\=>\s+(.+)\s+\((.+)\)\s*)");
                 std::smatch what;
 
                 auto lddLines = util::splitLines(result.stdout_string());
@@ -273,24 +285,17 @@ namespace linuxdeploy {
                 );
 
                 for (const auto& line : lddLines) {
+                    if (std::regex_match(line, what, missingLibraryExpr)) {
+                        checkMissingLibrary(what[1].str());
+                        continue;
+                    }
+
                     if (std::regex_search(line, what, expr)) {
                         auto libraryPath = what[2].str();
                         util::trim(libraryPath);
                         paths.push_back(fs::absolute(libraryPath));
                     } else {
-                        if (util::stringContains(line, "=> not found")) {
-                            auto missingLib = line;
-                            static const std::string pattern = "=> not found";
-                            missingLib.erase(missingLib.find(pattern), pattern.size());
-                            util::trim(missingLib);
-                            util::trim(missingLib, '\t');
-                            if (!util::isInExcludelist(missingLib, excludeLibraryPatterns)) {
-                                throw DependencyNotFoundError("Could not find dependency: " + missingLib);
-                            }
-                            ldLog() << LD_WARNING << resolvedPath.string() << "depends on excluded library:" << missingLib << std::endl;
-                        } else {
-                            ldLog() << LD_DEBUG << "Invalid ldd output: " << line << std::endl;
-                        }
+                        ldLog() << LD_DEBUG << "Invalid ldd output: " << line << std::endl;
                     }
                 }
 
