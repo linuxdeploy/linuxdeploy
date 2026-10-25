@@ -54,6 +54,31 @@ namespace {
         }
     };
 
+    // === Dependency discovery and runtime filtering ===
+
+    // musl lists the libraries it provides itself under the name it was run as, which may differ from the CI platforms'
+    // (e.g., Android's musl is named libc_musl.so, or a wrapper may run it by another name)
+    TEST_F(DependencyTracingTestMock, RuntimeDependencies_FilterRuntimeObjects_MuslLoaderNames) {
+        for (const std::string loader : {"/lib/libc_musl.so", "/lib/libc.so", "/opt/musl/bin/musl-ldd"}) {
+            SCOPED_TRACE(loader);
+            setLddOutput("\t" + loader + " (0x1000)\n"
+                         "\tlibc.so => " + loader + " (0x1000)\n"
+                         "\tlibpthread.so.0 => " + loader + " (0x1000)\n"
+                         "\tlibdependency_leaf.so => /fixture/libdependency_leaf.so (0x2000)\n");
+            EXPECT_THAT(trace(DEPENDENCY_PARENT_LIBRARY_PATH),
+                        ElementsAre(fs::path("/fixture/libdependency_leaf.so")));
+        }
+    }
+
+    // === Library names ===
+
+    // ldd lists a library by the name it was opened by, so no platform lists it under another library's file name
+    TEST_F(DependencyTracingTestMock, LibraryNames_PreserveLibcFileNameOfOtherLibraries) {
+        setLddOutput("\t/lib/ld-musl-x86_64.so.1 (0x1000)\n"
+                     "\tlibdependency_leaf.so => /opt/libc.so (0x1000)\n");
+        EXPECT_THAT(trace(DEPENDENCY_PARENT_LIBRARY_PATH), ElementsAre(fs::path("/opt/libc.so")));
+    }
+
     // === Invalid programs and loader diagnostics ===
 
     // no platform's ldd fails without a diagnostic, but a non-zero exit status must not be ignored
@@ -229,6 +254,22 @@ namespace {
     GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(DependencyTracingTestRecorded);
 
     using namespace dependency_tracing_test::scenarios;
+
+    TEST_P(DependencyTracingTestRecorded, LibraryDependencies_FindDirectAndTransitive) {
+        LibraryDependencies_FindDirectAndTransitive(*this);
+    }
+
+    TEST_P(DependencyTracingTestRecorded, RuntimeDependencies_FilterRuntimeObjects) {
+        RuntimeDependencies_FilterRuntimeObjects(*this);
+    }
+
+    TEST_P(DependencyTracingTestRecorded, RuntimeDependencies_FilterMuslAliases) {
+        RuntimeDependencies_FilterMuslAliases(*this);
+    }
+
+    TEST_P(DependencyTracingTestRecorded, LibraryNames_PreserveOrdinaryMuslAliases) {
+        LibraryNames_PreserveOrdinaryMuslAliases(*this);
+    }
 
     TEST_P(DependencyTracingTestRecorded, LibraryNames_PreserveMuslLikeNames) {
         LibraryNames_PreserveMuslLikeNames(*this);

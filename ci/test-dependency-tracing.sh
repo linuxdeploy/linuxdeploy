@@ -84,6 +84,14 @@ test -x "$appdir/usr/bin/simple_executable"
 for library in libsimple_library libdependency_parent libdependency_leaf; do
     test -f "$appdir/usr/lib/$library.so"
 done
+# musl's combined libc/loader must not be deployed, regardless of which name ldd reports it with (#340)
+for runtime_object in "$appdir"/usr/lib/{ld-musl-*,libc.musl-*,libc.so,libc_musl.so,ldd}; do
+    if [ -e "$runtime_object" ]; then
+        echo "musl runtime object was deployed: $runtime_object" >&2
+        # unlike exit, false triggers the ERR trap (on_error)
+        false
+    fi
+done
 set +x
 
 echo "## run simple_executable from appdir:"

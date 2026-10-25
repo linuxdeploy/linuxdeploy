@@ -7,6 +7,7 @@
 #include <fstream>
 #include <memory>
 #include <regex>
+#include <set>
 #include <sstream>
 #include <sys/mman.h>
 #include <utility>
@@ -352,6 +353,8 @@ namespace linuxdeploy {
                 // would match, so check for missing libraries first
                 static const std::regex missingLibraryExpr(R"(\s*(.+)\s+=>\s+not found(?:\s+\([^)]+\))?\s*)");
                 static const std::regex expr(R"(\s*(.+)\s+\=>\s+(.+)\s+\((.+)\)\s*)");
+                // other objects are listed without "=>", by their path and address
+                static const std::regex loadedObjectExpr(R"(\s*(.+)\s+\(([^)]+)\)\s*)");
                 std::smatch what;
 
                 auto lddLines = util::splitLines(result.stdout_string());
@@ -370,6 +373,21 @@ namespace linuxdeploy {
                     lddLines.end()
                 );
 
+                auto trimmed = [](std::string value) {
+                    util::trim(value);
+                    util::trim(value, '\t');
+                    return value;
+                };
+
+                // musl's libc is also its loader, which its ldd lists by the name it was run as (e.g.,
+                // /lib/ld-musl-x86_64.so.1, or "ldd" for shared objects), and as the target of the libraries it
+                // provides itself (e.g., libc.so), which must not be deployed; ordinary libraries are listed only once
+                std::set<std::string> listedWithoutArrow;
+                for (const auto& line : lddLines) {
+                    if (!util::stringContains(line, "=>") && std::regex_match(line, what, loadedObjectExpr))
+                        listedWithoutArrow.insert(trimmed(what[1].str()));
+                }
+
                 for (const auto& line : lddLines) {
                     if (std::regex_match(line, what, missingLibraryExpr)) {
                         checkMissingLibrary(what[1].str());
@@ -379,6 +397,12 @@ namespace linuxdeploy {
                     if (std::regex_search(line, what, expr)) {
                         auto libraryPath = what[2].str();
                         util::trim(libraryPath);
+
+                        if (listedWithoutArrow.count(libraryPath) != 0) {
+                            ldLog() << LD_DEBUG << "skipping runtime object" << line << std::endl;
+                            continue;
+                        }
+
                         paths.push_back(fs::absolute(libraryPath));
                     } else {
                         ldLog() << LD_DEBUG << "Invalid ldd output: " << line << std::endl;

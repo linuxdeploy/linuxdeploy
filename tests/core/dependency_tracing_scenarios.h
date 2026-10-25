@@ -88,6 +88,45 @@ namespace dependency_tracing_test {
         using testing::Contains;
         using testing::Not;
 
+        inline void LibraryDependencies_FindDirectAndTransitive(Tracer& t) {
+            const auto dependencies = t.trace(t.executable);
+            EXPECT_THAT(dependencies, Contains(t.simple));
+            EXPECT_THAT(dependencies, Contains(t.parent));
+            EXPECT_THAT(dependencies, Contains(t.leaf));
+            EXPECT_THAT(t.trace(t.parent), Contains(t.leaf));
+        }
+
+        inline void RuntimeDependencies_FilterRuntimeObjects(Tracer& t) {
+            for (const auto& path : {t.executable, t.parent}) {
+                SCOPED_TRACE(path);
+                const auto dependencies = t.trace(path);
+                EXPECT_THAT(dependencies, Contains(t.leaf));
+                for (const auto& dependency : dependencies) {
+                    const auto name = dependency.filename().string();
+                    EXPECT_NE(name, "ldd");
+                    EXPECT_NE(name, "libc.so");
+                    EXPECT_NE(name, "libc_musl.so");
+                    EXPECT_NE(name.find("ld-musl-"), 0u);
+                    EXPECT_NE(name.find("ld-linux-"), 0u);
+                }
+            }
+        }
+
+        // the real test adds glibc's sonames of libraries which musl provides itself (e.g., libm.so.6) to
+        // libdependency_parent.so
+        // musl's ldd lists them as itself (by its loader's name, "ldd" or libc.so), glibc's ldd as separate libraries
+        inline void RuntimeDependencies_FilterMuslAliases(Tracer& t) {
+            RuntimeDependencies_FilterRuntimeObjects(t);
+        }
+
+        // the real test runs only with glibc, and adds the same sonames to libdependency_parent.so
+        // glibc provides them as libraries of their own, which must be deployed like any other library
+        inline void LibraryNames_PreserveOrdinaryMuslAliases(Tracer& t) {
+            const auto dependencies = t.trace(t.parent);
+            for (const auto* name : {"libm.so.6", "libpthread.so.0", "libdl.so.2", "librt.so.1", "libutil.so.1"})
+                EXPECT_THAT(dependencies, Contains(testing::Property(&fs::path::filename, fs::path(name))));
+        }
+
         // the real test moves libdependency_leaf.so to ld-musl-testing/ and renames libdependency_parent.so
         inline void LibraryNames_PreserveMuslLikeNames(Tracer& t) {
             const auto dependencies = t.trace(t.executable);
@@ -101,7 +140,7 @@ namespace dependency_tracing_test {
             EXPECT_THAT(t.trace(t.executable), Contains(t.directory / "not found" / t.leaf.filename()));
         }
 
-        // the real test renames libsimple_library.so to ldd
+        // the real test renames libsimple_library.so to ldd, which musl's ldd may also list itself as
         inline void LibraryNames_PreserveLibraryNamedLdd(Tracer& t) {
             EXPECT_THAT(t.trace(t.executable), Contains(t.directory / "ldd"));
         }

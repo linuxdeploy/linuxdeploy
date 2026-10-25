@@ -153,6 +153,46 @@ namespace {
         }
     };
 
+    // === Dependency discovery and runtime filtering ===
+
+    TEST_F(DependencyTracingTestReal, LibraryDependencies_FindDirectAndTransitive) {
+        const auto result = linuxdeploy::subprocess::subprocess({executable.string()}).run();
+        ASSERT_EQ(result.exit_code(), 0) << result.stderr_string();
+        runScenario(scenarios::LibraryDependencies_FindDirectAndTransitive);
+    }
+
+    TEST_F(DependencyTracingTestReal, RuntimeDependencies_FilterRuntimeObjects) {
+        runScenario(scenarios::RuntimeDependencies_FilterRuntimeObjects);
+    }
+
+    // add glibc's sonames of libraries which musl provides itself (e.g., libm.so.6)
+    void addMuslAliases(const fs::path& path) {
+        const auto patch = linuxdeploy::subprocess::subprocess({TEST_PATCHELF_PATH,
+            "--add-needed", "libm.so.6",
+            "--add-needed", "libpthread.so.0",
+            "--add-needed", "libdl.so.2",
+            "--add-needed", "librt.so.1",
+            "--add-needed", "libutil.so.1",
+            path.string()}).run();
+        ASSERT_EQ(patch.exit_code(), 0) << patch.stderr_string();
+    }
+
+    TEST_F(DependencyTracingTestReal, RuntimeDependencies_FilterMuslAliases) {
+#ifndef __linux__
+        GTEST_SKIP() << "the aliases are sonames of glibc's libraries";
+#else
+        ASSERT_NO_FATAL_FAILURE(addMuslAliases(parent));
+        runScenario(scenarios::RuntimeDependencies_FilterMuslAliases);
+#endif
+    }
+
+    TEST_F(DependencyTracingTestReal, LibraryNames_PreserveOrdinaryMuslAliases) {
+        if (!usesGlibc)
+            GTEST_SKIP() << "only glibc provides the aliases as libraries of their own";
+        ASSERT_NO_FATAL_FAILURE(addMuslAliases(parent));
+        runScenario(scenarios::LibraryNames_PreserveOrdinaryMuslAliases);
+    }
+
     // === Library names ===
 
     TEST_F(DependencyTracingTestReal, LibraryNames_PreserveMuslLikeNames) {
