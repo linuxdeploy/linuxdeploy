@@ -62,8 +62,9 @@ ninja -j"$nprocs" -v
 ctest -V
 
 # args are used more than once
-patchelf_path="$(which patchelf)"
-strip_path="$(which strip)"
+# bundle the patchelf and strip linuxdeploy uses, which $PATCHELF and $STRIP may select (e.g., STRIP=llvm-strip)
+patchelf_path="$(which "${PATCHELF:-patchelf}")"
+strip_path="$(which "${STRIP:-strip}")"
 linuxdeploy_args=(
     --appdir AppDir
     -e bin/linuxdeploy
@@ -75,6 +76,15 @@ linuxdeploy_args=(
 
 # deploy patchelf which is a dependency of linuxdeploy
 bin/linuxdeploy "${linuxdeploy_args[@]}"
+
+# linuxdeploy looks for the bundled tools by their default names (llvm-strip works when called strip)
+for tool in patchelf strip; do
+    tool_path_var="${tool}_path"
+    tool_name="$(basename "${!tool_path_var}")"
+    if [[ "$tool_name" != "$tool" ]]; then
+        ln -sf "$tool_name" AppDir/usr/bin/"$tool"
+    fi
+done
 
 # bundle AppImage plugin
 mkdir -p AppDir/plugins
