@@ -4,3 +4,6 @@ cmake-build-*/
 squashfs-root/
 *.AppImage
 *.swp
+
+# wget's HSTS database, saved in $HOME (the working tree) by builds in rootless Podman
+.wget-hsts

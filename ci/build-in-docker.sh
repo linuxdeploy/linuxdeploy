@@ -108,6 +108,13 @@ fi
 #   a) make sure root is not required for builds
 #   b) allow the build scripts to "mv" the binaries into the /out directory
 uid="${UID:-"$(id -u)"}"
+
+# rootless Podman maps the user to a subordinate uid, which cannot write to the mounted working tree
+# docker info has no .Host.Security.Rootless, so this is only true for rootless Podman
+if [[ "$(docker info --format '{{.Host.Security.Rootless}}' 2>/dev/null)" == "true" ]]; then
+    docker_args+=("--userns=keep-id")
+fi
+
 info "Running build with uid $uid"
 docker run \
     --rm \
