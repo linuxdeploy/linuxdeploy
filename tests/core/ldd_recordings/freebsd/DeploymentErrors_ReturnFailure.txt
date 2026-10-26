@@ -1,0 +1,11 @@
+# ldd /fixture/AppDir/usr/lib/libdependency_parent.so
+# exit status 0
+# stdout
+/fixture/AppDir/usr/lib/libdependency_parent.so:
+	libdependency_leaf.so => not found (0)
+	libc++.so.1 => /lib/libc++.so.1 (0x1000)
+	libcxxrt.so.1 => /lib/libcxxrt.so.1 (0x1000)
+	libm.so.5 => /lib/libm.so.5 (0x1000)
+	libc.so.7 => /lib/libc.so.7 (0x1000)
+	libgcc_s.so.1 => /lib/libgcc_s.so.1 (0x1000)
+# stderr

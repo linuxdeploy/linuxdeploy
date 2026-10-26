@@ -2,6 +2,18 @@
 
 set -euo pipefail
 
+# usage: [BUILD_DIR=<dir>] test-dependency-tracing.sh [--record <platform>], run it from the repository root
+# --record runs only the real tests, and saves the ldd calls they make for the mock tests, see
+# tests/core/ldd_recordings/README.md
+record_platform=
+if [ "$#" -gt 0 ]; then
+    if [ "$#" -ne 2 ] || [ "$1" != "--record" ] || [ -z "$2" ]; then
+        echo "Usage: $0 [--record <platform>] (e.g., debian, alpine-musl or freebsd)" >&2
+        exit 2
+    fi
+    record_platform="$2"
+fi
+
 # reuse and keep $BUILD_DIR if set (e.g., between local runs), otherwise use a temporary directory
 if [ -n "${BUILD_DIR:-}" ]; then
     mkdir -p "$BUILD_DIR"
@@ -30,6 +42,50 @@ cmake \
     -DSTATIC_BUILD=OFF \
     -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
     ${FORCE_BUILD_GTEST:+"-DFORCE_BUILD_GTEST=$FORCE_BUILD_GTEST"}
+
+if [ -n "$record_platform" ]; then
+    cmake --build "$build_dir" --target test_dependency_tracing_real
+
+    echo "## record $record_platform"
+
+    recordings_dir="tests/core/ldd_recordings/$record_platform"
+    # inside the build directory, so that it is removed with it, and emptied in case the directory is reused
+    recording_dir="$build_dir/recordings"
+    rm -rf "$recording_dir"
+
+    status=0
+    LINUXDEPLOY_LDD_RECORD_DIR="$recording_dir" "$build_dir/tests/core/test_dependency_tracing_real" || status=$?
+
+    if ! compgen -G "$recording_dir/*.txt" > /dev/null; then
+        echo "No recordings were saved" >&2
+        exit 1
+    fi
+
+    mkdir -p "$recordings_dir"
+
+    # GoogleTest runs only some scenarios if filtered or sharded through the environment
+    partial_run=
+    if [ -n "${GTEST_FILTER:-}" ] || [ -n "${GTEST_TOTAL_SHARDS:-}" ] || [ -n "${GTEST_SHARD_INDEX:-}" ]; then
+        partial_run=1
+    fi
+
+    if [ "$status" -eq 0 ] && [ -z "$partial_run" ]; then
+        # replace all recordings, so those of removed or renamed scenarios do not remain
+        rm -f "${recordings_dir:?}"/*.txt
+        cp "$recording_dir"/*.txt "$recordings_dir"/
+        echo "## recordings saved to $recordings_dir"
+    elif [ "$status" -eq 0 ]; then
+        # keep the recordings of the scenarios which did not run
+        cp "$recording_dir"/*.txt "$recordings_dir"/
+        echo "## filtered or sharded run, recordings of the scenarios which ran saved to $recordings_dir"
+    else
+        # the tests may have stopped early, so keep the recordings of the scenarios which did not run
+        cp "$recording_dir"/*.txt "$recordings_dir"/
+        echo "## the real tests failed, recordings of the scenarios which ran saved to $recordings_dir" >&2
+    fi
+
+    exit "$status"
+fi
 
 cmake --build "$build_dir"
 

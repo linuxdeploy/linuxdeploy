@@ -136,6 +136,7 @@ fi
 case "${BUILD_TYPE:-}" in
     coverage)           build_script="ci/test-coverage.sh" ;;
     dependency-tracing) build_script="ci/test-dependency-tracing.sh" ;;
+    record-ldd-calls)   build_script="ci/test-dependency-tracing.sh --record $target${toolchain:+-$toolchain}" ;;
     *)                  build_script="ci/build.sh" ;;
 esac
 
@@ -164,6 +165,13 @@ uid="${UID:-"$(id -u)"}"
 if [[ "$(docker info --format '{{.Host.Security.Rootless}}' 2>/dev/null)" == "true" ]]; then
     docker_args+=("--userns=keep-id")
 fi
+
+# pass GoogleTest's filter and sharding on, e.g., to record only some scenarios
+for gtest_var in GTEST_FILTER GTEST_TOTAL_SHARDS GTEST_SHARD_INDEX; do
+    if [[ -n "${!gtest_var:-}" ]]; then
+        docker_args+=("-e" "$gtest_var")
+    fi
+done
 
 # other distributions' /etc/profile would reset the $PATH set up by their Dockerfiles
 bash_args=(-xc)

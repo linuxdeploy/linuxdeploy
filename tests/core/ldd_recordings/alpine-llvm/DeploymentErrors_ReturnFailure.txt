@@ -1,0 +1,8 @@
+# ldd /fixture/AppDir/usr/lib/libdependency_parent.so
+# exit status 127
+# stdout
+	/lib/ld-musl-x86_64.so.1 (0x1000)
+	libc.musl-x86_64.so.1 => /lib/ld-musl-x86_64.so.1 (0x1000)
+# stderr
+Error loading shared library libdependency_leaf.so: Exec format error (needed by /fixture/AppDir/usr/lib/libdependency_parent.so)
+Error relocating /fixture/AppDir/usr/lib/libdependency_parent.so: _Z21dependency_leaf_valuev: symbol not found

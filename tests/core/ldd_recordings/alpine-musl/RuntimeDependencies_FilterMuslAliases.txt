@@ -1,0 +1,27 @@
+# ldd /fixture/simple_executable
+# exit status 0
+# stdout
+	/lib/ld-musl-x86_64.so.1 (0x1000)
+	libsimple_library.so => /fixture/libsimple_library.so (0x1000)
+	libdependency_parent.so => /fixture/libdependency_parent.so (0x1000)
+	libc.musl-x86_64.so.1 => /lib/ld-musl-x86_64.so.1 (0x1000)
+	libstdc++.so.6 => /usr/lib/libstdc++.so.6 (0x1000)
+	libgcc_s.so.1 => /usr/lib/libgcc_s.so.1 (0x1000)
+	libdl.so.2 => /lib/ld-musl-x86_64.so.1 (0x1000)
+	libm.so.6 => /lib/ld-musl-x86_64.so.1 (0x1000)
+	libpthread.so.0 => /lib/ld-musl-x86_64.so.1 (0x1000)
+	librt.so.1 => /lib/ld-musl-x86_64.so.1 (0x1000)
+	libutil.so.1 => /lib/ld-musl-x86_64.so.1 (0x1000)
+	libdependency_leaf.so => /fixture/libdependency_leaf.so (0x1000)
+# stderr
+# ldd /fixture/libdependency_parent.so
+# exit status 0
+# stdout
+	/lib/ld-musl-x86_64.so.1 (0x1000)
+	libdl.so.2 => /lib/ld-musl-x86_64.so.1 (0x1000)
+	libm.so.6 => /lib/ld-musl-x86_64.so.1 (0x1000)
+	libpthread.so.0 => /lib/ld-musl-x86_64.so.1 (0x1000)
+	librt.so.1 => /lib/ld-musl-x86_64.so.1 (0x1000)
+	libutil.so.1 => /lib/ld-musl-x86_64.so.1 (0x1000)
+	libdependency_leaf.so => /fixture/libdependency_leaf.so (0x1000)
+# stderr

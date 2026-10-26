@@ -1,0 +1,16 @@
+# ldd /fixture/simple_executable
+# exit status 0
+# stdout
+	/lib/ld-musl-x86_64.so.1 (0x1000)
+	libsimple_library_no_dependencies.so => /fixture/libsimple_library_no_dependencies.so (0x1000)
+	libsimple_library.so => /fixture/libsimple_library.so (0x1000)
+	libdependency_parent.so => /fixture/libdependency_parent.so (0x1000)
+	libpng16.so.16 => /lib/libpng16.so.16 (0x1000)
+	libjpeg.so.62 => /lib/libjpeg.so.62 (0x1000)
+	libc++.so.1 => /lib/libc++.so.1 (0x1000)
+	libc++abi.so.1 => /lib/libc++abi.so.1 (0x1000)
+	libc.so => /lib/ld-musl-x86_64.so.1 (0x1000)
+	libunwind.so.1 => /lib/libunwind.so.1 (0x1000)
+	libdependency_leaf.so => /fixture/libdependency_leaf.so (0x1000)
+	libz.so.1 => /lib/libz.so.1 (0x1000)
+# stderr

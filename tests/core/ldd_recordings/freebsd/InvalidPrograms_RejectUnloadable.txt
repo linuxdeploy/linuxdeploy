@@ -1,0 +1,7 @@
+# ldd /fixture/unloadable/libdependency_leaf.so
+# exit status 1
+# stdout
+/fixture/unloadable/libdependency_leaf.so:
+# stderr
+ld-elf.so.1: /fixture/unloadable/libdependency_leaf.so: unsupported file type
+/fixture/unloadable/libdependency_leaf.so: exit status 1
