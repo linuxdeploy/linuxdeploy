@@ -307,7 +307,7 @@ namespace linuxdeploy {
                             setElfRPathOperations.erase(setElfRPathOperations.begin());
                         }
 
-                        return true;
+                        return success;
                     }
 
                     // search for copyright file for file and deploy it to AppDir
