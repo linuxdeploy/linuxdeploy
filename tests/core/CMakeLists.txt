@@ -80,3 +80,12 @@ set_target_properties(test_strip PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CUR
 target_compile_definitions(test_strip PRIVATE -DLINUXDEPLOY_PATH="$<TARGET_FILE:linuxdeploy>")
 add_dependencies(test_strip linuxdeploy)
 ld_add_test(test_strip)
+
+ld_core_add_test_executable(test_patchelf test_patchelf.cpp)
+target_link_libraries(test_patchelf PRIVATE gtest_main gmock)
+# the test places a bundled patchelf next to the binary, which must not affect the other tests
+set_target_properties(test_patchelf PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/test_patchelf)
+# runs linuxdeploy to check the errors it reports
+target_compile_definitions(test_patchelf PRIVATE -DLINUXDEPLOY_PATH="$<TARGET_FILE:linuxdeploy>")
+add_dependencies(test_patchelf linuxdeploy)
+ld_add_test(test_patchelf)

@@ -39,44 +39,10 @@ namespace linuxdeploy {
 
                 public:
                     static std::string getPatchelfPath() {
-                        // by default, try to use a patchelf next to the linuxdeploy binary
-                        // if that isn't available, fall back to searching for patchelf in the PATH
-                        std::string patchelfPath;
-
-                        const auto envPatchelf = getenv("PATCHELF");
-
-                        // allows users to use a custom patchelf instead of the bundled one
-                        if (envPatchelf != nullptr) {
-                            ldLog() << LD_DEBUG << "Using patchelf specified in $PATCHELF:" << envPatchelf << std::endl;
-                            patchelfPath = envPatchelf;
-                        } else {
-                            auto binDirPath = fs::path(util::getOwnExecutablePath());
-                            auto localPatchelfPath = binDirPath.parent_path() / "patchelf";
-
-                            if (fs::exists(localPatchelfPath)) {
-                                patchelfPath = localPatchelfPath.string();
-                            } else {
-                                for (const fs::path directory : util::split(getenv("PATH"), ':')) {
-                                    if (!fs::is_directory(directory))
-                                        continue;
-
-                                    auto path = directory / "patchelf";
-
-                                    if (fs::is_regular_file(path)) {
-                                        patchelfPath = path.string();
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-
-                        if (!fs::is_regular_file(patchelfPath)) {
-                            ldLog() << LD_ERROR << "Could not find patchelf: no such file:" << patchelfPath << std::endl;
-                            throw std::runtime_error("Could not find patchelf");
-                        }
-
-                        ldLog() << LD_DEBUG << "Using patchelf:" << patchelfPath << std::endl;
-                        return patchelfPath;
+                        const auto patchelf = util::findTool("PATCHELF", "patchelf");
+                        ldLog() << LD_DEBUG << "Using patchelf (" << LD_NO_SPACE << patchelf.source << LD_NO_SPACE << "):"
+                                << patchelf.path << std::endl;
+                        return patchelf.path;
                     }
 
                     // throws a PatchelfError if patchelf cannot be started or run, which fails the deployment; the

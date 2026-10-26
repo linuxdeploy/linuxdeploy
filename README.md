@@ -69,6 +69,16 @@ linuxdeploy does not fall back to another strip if the one set in `$STRIP` canno
 To disable stripping, set `$NO_STRIP` to any value.
 
 
+## Setting rpaths
+
+linuxdeploy calls `patchelf` to read and set the rpaths of the executables and libraries it deploys, so that they find the libraries in the AppDir. If `$PATCHELF` is set, linuxdeploy runs that program, which may be a name to search for in the `$PATH` or a path (e.g., `PATCHELF=patchelf-0.18` or `PATCHELF=./tools/patchelf`). Otherwise, it uses the first patchelf it finds in the following places:
+
+  - the directory containing the linuxdeploy binary (the AppImage ships a patchelf there)
+  - the directories in the user's `$PATH`
+
+linuxdeploy does not fall back to another patchelf if the one set in `$PATCHELF` cannot be run, but fails the deployment. It also fails the deployment if it cannot read an rpath, as it would otherwise replace it, or cannot set one.
+
+
 ## Troubleshooting
 
 > I bundled additional resources, but when I try to run them, either the system binary is called or the file is not found.
