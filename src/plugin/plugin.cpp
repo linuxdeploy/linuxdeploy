@@ -32,9 +32,8 @@ namespace linuxdeploy {
         std::map<std::string, IPlugin*> findPlugins() {
             std::map<std::string, IPlugin*> foundPlugins;
 
-            const auto PATH = getenv("PATH");
-
-            auto paths = util::split(PATH, ':');
+            // $PATH may be unset
+            auto paths = util::misc::splitEnv("PATH", ':');
 
             auto currentExeDir = fs::path(util::getOwnExecutablePath()).parent_path();
             paths.insert(paths.begin(), currentExeDir.string());
