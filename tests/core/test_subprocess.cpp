@@ -1,15 +1,34 @@
 #include <algorithm>
+#include <csignal>
+#include <string>
 #include <fcntl.h>
 #include <sys/resource.h>
 
 #include "gtest/gtest.h"
+#include "gmock/gmock.h"
 
 #include "linuxdeploy/subprocess/process.h"
 #include "linuxdeploy/subprocess/subprocess.h"
 
 using namespace linuxdeploy::subprocess;
+using testing::HasSubstr;
 
 namespace {
+    TEST(SubprocessTest, ReportExitCode) {
+        const auto result = subprocess({"sh", "-c", "echo output; exit 9"}).run();
+        EXPECT_EQ(result.exit_code(), 9);
+        EXPECT_EQ(result.term_signal(), 0);
+        EXPECT_EQ(result.stdout_string(), "output\n");
+    }
+
+    TEST(SubprocessTest, ReportTerminationBySignal) {
+        // a signal must not look like an exit, even if the process printed something before
+        const auto result = subprocess({"sh", "-c", "echo partial; kill -KILL $$"}).run();
+        EXPECT_EQ(result.term_signal(), SIGKILL);
+        EXPECT_NE(result.exit_code(), 0);
+        EXPECT_EQ(result.stdout_string(), "partial\n");
+    }
+
     TEST(SubprocessTest, ExecFailureExitsChild) {
         // the forked child must exit instead of throwing, otherwise it would continue to run the caller's code
         const auto result = subprocess({"/nonexistent/program"}).run();
@@ -55,5 +74,21 @@ namespace {
             EXPECT_TRUE(threw);
             EXPECT_EQ(openDescriptors(), openBefore);
         }
+    }
+
+    TEST(SubprocessTest, DescribeExit) {
+        EXPECT_EQ(subprocess({"sh", "-c", "exit 3"}).run().exit_description(), "exited with code 3");
+        EXPECT_EQ(subprocess({"sh", "-c", "kill -KILL $$"}).run().exit_description(),
+                  "terminated by signal " + std::to_string(SIGKILL));
+    }
+
+    TEST(SubprocessTest, CheckOutputRejectsTerminationBySignal) {
+        EXPECT_THAT([] { subprocess({"sh", "-c", "kill -KILL $$"}).check_output(); },
+                    testing::ThrowsMessage<std::logic_error>(HasSubstr("failed (terminated by signal")));
+    }
+
+    TEST(SubprocessTest, CheckOutputRejectsNonZeroExit) {
+        EXPECT_THAT([] { subprocess({"sh", "-c", "exit 3"}).check_output(); },
+                    testing::ThrowsMessage<std::logic_error>(HasSubstr("failed (exited with code 3)")));
     }
 }

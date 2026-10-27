@@ -102,7 +102,7 @@ namespace linuxdeploy {
 
             auto exit_code = proc.close();
 
-            return subprocess_result{exit_code, buffers[0].buffer, buffers[1].buffer};
+            return subprocess_result{exit_code, proc.term_signal(), buffers[0].buffer, buffers[1].buffer};
         }
 
         std::string subprocess::check_output() const {
@@ -115,7 +115,7 @@ namespace linuxdeploy {
                 for (const auto& arg: args_) {
                     out << arg << " ";
                 }
-                out << "failed with exit code " << std::to_string(result.exit_code());
+                out << "failed (" << result.exit_description() << ")";
 
                 auto stdoutString = result.stdout_string();
                 if (stdoutString.empty()) {

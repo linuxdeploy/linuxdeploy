@@ -86,11 +86,13 @@ namespace {
         }
     };
 
-    int check_waitpid_status(int status) {
+    // sets term_signal to the signal which terminated the child, or 0; returns the exit code, or the signal's number
+    int check_waitpid_status(int status, int& term_signal) {
         if (WIFSIGNALED(status) != 0) {
-            // TODO: consider treating child exit caused by signals separately
-            return WTERMSIG(status);
+            term_signal = WTERMSIG(status);
+            return term_signal;
         } else if (WIFEXITED(status) != 0) {
+            term_signal = 0;
             return WEXITSTATUS(status);
         }
 
@@ -238,7 +240,7 @@ int process::close() {
         }
 
         exited_ = true;
-        exit_code_ = check_waitpid_status(status);
+        exit_code_ = check_waitpid_status(status, term_signal_);
     }
 
     close_pipe_fd(stdout_fd_, true);
@@ -248,6 +250,10 @@ int process::close() {
     stderr_fd_ = -1;
 
     return exit_code_;
+}
+
+int process::term_signal() const {
+    return term_signal_;
 }
 
 process::~process() {
@@ -279,7 +285,7 @@ bool process::is_running() {
 
     if (result == child_pid_) {
         exited_ = true;
-        exit_code_ = check_waitpid_status(status);
+        exit_code_ = check_waitpid_status(status, term_signal_);
 
         return false;
     }
