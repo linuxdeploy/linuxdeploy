@@ -1,11 +1,13 @@
 // system headers
 #include <algorithm>
+#include <cstdlib>
+#include <cstring>
 #include <stdexcept>
 #include <utility>
 #include <unistd.h>
 #include <memory.h>
+#include <new>
 #include <sys/wait.h>
-#include <sstream>
 
 // local headers
 #include "linuxdeploy/subprocess/process.h"
@@ -16,8 +18,7 @@
 using namespace linuxdeploy::subprocess;
 
 namespace {
-    // the constructor may throw before it hands its file descriptors over, so they need an owner, which closes them
-    // unless they were released
+    // owners which close or free what the constructor has not handed over yet if it throws
 
     class fd_owner {
     private:
@@ -57,19 +58,33 @@ namespace {
         fd_owner write_end;
     };
 
-    std::vector<char*> make_args_vector(const std::vector<std::string>& args) {
-        std::vector<char*> rv{};
-        rv.reserve(args.size());
+    // nullptr-terminated array of strings, as exec* want them
+    class exec_vector {
+    private:
+        std::vector<char*> strings_{nullptr};
 
-        for (const auto& arg : args) {
-            rv.emplace_back(strdup(arg.c_str()));
+    public:
+        exec_vector() = default;
+        exec_vector(const exec_vector&) = delete;
+        exec_vector& operator=(const exec_vector&) = delete;
+
+        ~exec_vector() {
+            std::for_each(strings_.begin(), strings_.end(), free);
         }
 
-        // execv* want a nullptr-terminated array
-        rv.emplace_back(nullptr);
+        void add(const std::string& string) {
+            // insert an empty slot first, so that the copy cannot leak if inserting throws
+            const auto slot = strings_.insert(strings_.end() - 1, nullptr);
+            *slot = strdup(string.c_str());
+            if (*slot == nullptr) {
+                throw std::bad_alloc();
+            }
+        }
 
-        return rv;
-    }
+        char* const* data() const {
+            return strings_.data();
+        }
+    };
 
     int check_waitpid_status(int status) {
         if (WIFSIGNALED(status) != 0) {
@@ -93,28 +108,6 @@ namespace {
                 throw std::logic_error("failed to close pipe fd: " + std::string(strerror(error)));
             };
         }
-    }
-
-    using env_vector_t = std::vector<char*>;
-
-    /**
-     * Convert a map of environment variables to a vector usable within
-     * @param map
-     * @return
-     */
-    env_vector_t env_map_to_vector(const subprocess_env_map_t& map) {
-        env_vector_t out;
-
-        for (const auto& [name, value] : map) {
-            std::ostringstream oss;
-            oss << name << '=' << value;
-            out.emplace_back(strdup(oss.str().c_str()));
-        }
-
-        // must be null terminated, of course
-        out.emplace_back(nullptr);
-
-        return out;
     }
 }
 
@@ -165,6 +158,17 @@ process::process(const std::vector<std::string>& args, const subprocess_env_map_
     create_pipe(stdout_pipe);
     create_pipe(stderr_pipe);
 
+    // prepare arguments for exec* before forking, as the child may not allocate memory
+    exec_vector exec_args;
+    for (const auto& arg : args) {
+        exec_args.add(arg);
+    }
+
+    exec_vector exec_env;
+    for (const auto& [name, value] : env) {
+        exec_env.add(name + '=' + value);
+    }
+
     // create child process
     child_pid_ = fork();
 
@@ -175,16 +179,23 @@ process::process(const std::vector<std::string>& args, const subprocess_env_map_
     if (child_pid_ == 0) {
         // we're in the child process
 
-        // first step: close the read end of both pipes
-        close_pipe_fd(stdout_pipe.read_end.get());
-        close_pipe_fd(stderr_pipe.read_end.get());
+        // the parent may be multithreaded, so do not allocate or throw until exec*, and use only async-signal-safe
+        // functions (POSIX does not list execvpe, but it does not allocate in glibc, musl or FreeBSD)
+        // exit with 127 like shells do if the program cannot be run
+        auto fail = [] {
+            _exit(127);
+        };
 
-        auto connect_fd = [](int fd, int fileno) {
+        // first step: close the read end of both pipes
+        ::close(stdout_pipe.read_end.get());
+        ::close(stderr_pipe.read_end.get());
+
+        auto connect_fd = [&fail](int fd, int fileno) {
             for (;;) {
                 if (dup2(fd, fileno) == -1) {
                     const auto error = errno;
                     if (error != EINTR) {
-                        throw std::logic_error{"failed to connect pipes: " + std::string(strerror(error))};
+                        fail();
                     }
                     continue;
                 }
@@ -197,29 +208,14 @@ process::process(const std::vector<std::string>& args, const subprocess_env_map_
         connect_fd(stderr_pipe.write_end.get(), STDERR_FILENO);
 
         // now, we also have to close the write end of both pipes
-        close_pipe_fd(stdout_pipe.write_end.get());
-        close_pipe_fd(stderr_pipe.write_end.get());
-
-        // prepare arguments for exec*
-        auto exec_args = make_args_vector(args);
-        auto exec_env = env_map_to_vector(env);
+        ::close(stdout_pipe.write_end.get());
+        ::close(stderr_pipe.write_end.get());
 
         // call subprocess
         execvpe(args.front().c_str(), exec_args.data(), exec_env.data());
 
         // only reached if exec* fails
-
-        // clean up memory if exec should ever return
-        // prevents memleaks if the exception below would be handled by a caller
-        auto deleter = [](char* ptr) {
-            free(ptr);
-            ptr = nullptr;
-        };
-
-        std::for_each(exec_args.begin(), exec_args.end(), deleter);
-        std::for_each(exec_env.begin(), exec_env.end(), deleter);
-
-        throw std::runtime_error{"exec() failed: " + std::string(strerror(errno))};
+        fail();
     }
 
     // parent code

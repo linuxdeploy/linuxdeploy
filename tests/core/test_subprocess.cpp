@@ -5,10 +5,17 @@
 #include "gtest/gtest.h"
 
 #include "linuxdeploy/subprocess/process.h"
+#include "linuxdeploy/subprocess/subprocess.h"
 
 using namespace linuxdeploy::subprocess;
 
 namespace {
+    TEST(SubprocessTest, ExecFailureExitsChild) {
+        // the forked child must exit instead of throwing, otherwise it would continue to run the caller's code
+        const auto result = subprocess({"/nonexistent/program"}).run();
+        EXPECT_EQ(result.exit_code(), 127);
+    }
+
     TEST(SubprocessTest, CloseDescriptorsIfPipesCannotBeCreated) {
         rlimit oldLimit{};
         ASSERT_EQ(getrlimit(RLIMIT_NOFILE, &oldLimit), 0);
