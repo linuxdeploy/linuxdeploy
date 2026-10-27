@@ -68,3 +68,6 @@ target_include_directories(test_elf_file PRIVATE ${PROJECT_SOURCE_DIR}/src)
 # register in CTest
 ld_add_test(test_elf_file)
 
+ld_core_add_test_executable(test_subprocess test_subprocess.cpp)
+target_link_libraries(test_subprocess PRIVATE gtest_main gmock)
+ld_add_test(test_subprocess)

@@ -16,6 +16,47 @@
 using namespace linuxdeploy::subprocess;
 
 namespace {
+    // the constructor may throw before it hands its file descriptors over, so they need an owner, which closes them
+    // unless they were released
+
+    class fd_owner {
+    private:
+        int fd_ = -1;
+
+    public:
+        fd_owner() = default;
+        fd_owner(const fd_owner&) = delete;
+        fd_owner& operator=(const fd_owner&) = delete;
+
+        ~fd_owner() {
+            if (fd_ != -1) {
+                ::close(fd_);
+            }
+        }
+
+        int get() const {
+            return fd_;
+        }
+
+        void reset(int fd) {
+            if (fd_ != -1) {
+                ::close(fd_);
+            }
+            fd_ = fd;
+        }
+
+        int release() {
+            const auto fd = fd_;
+            fd_ = -1;
+            return fd;
+        }
+    };
+
+    struct pipe_fds {
+        fd_owner read_end;
+        fd_owner write_end;
+    };
+
     std::vector<char*> make_args_vector(const std::vector<std::string>& args) {
         std::vector<char*> rv{};
         rv.reserve(args.size());
@@ -103,23 +144,26 @@ process::process(const std::vector<std::string>& args, const subprocess_env_map_
     util::assert::assert_not_empty(args);
 
     // pipes for both stdout and stderr
-    // the order is, as seen from the child: [read, write]
-    int stdout_pipe_fds[2];
-    int stderr_pipe_fds[2];
+    pipe_fds stdout_pipe;
+    pipe_fds stderr_pipe;
 
     // FIXME: for debugging of #150
-    auto create_pipe = [](int fds[]) {
+    auto create_pipe = [](pipe_fds& ends) {
+        int fds[2];
         const auto rv = pipe(fds);
 
         if (rv != 0) {
             const auto error = errno;
             throw std::logic_error("failed to create pipe: " + std::string(strerror(error)));
         }
+
+        ends.read_end.reset(fds[READ_END_]);
+        ends.write_end.reset(fds[WRITE_END_]);
     };
 
     // create actual pipes
-    create_pipe(stdout_pipe_fds);
-    create_pipe(stderr_pipe_fds);
+    create_pipe(stdout_pipe);
+    create_pipe(stderr_pipe);
 
     // create child process
     child_pid_ = fork();
@@ -132,8 +176,8 @@ process::process(const std::vector<std::string>& args, const subprocess_env_map_
         // we're in the child process
 
         // first step: close the read end of both pipes
-        close_pipe_fd(stdout_pipe_fds[READ_END_]);
-        close_pipe_fd(stderr_pipe_fds[READ_END_]);
+        close_pipe_fd(stdout_pipe.read_end.get());
+        close_pipe_fd(stderr_pipe.read_end.get());
 
         auto connect_fd = [](int fd, int fileno) {
             for (;;) {
@@ -149,12 +193,12 @@ process::process(const std::vector<std::string>& args, const subprocess_env_map_
             }
         };
 
-        connect_fd(stdout_pipe_fds[WRITE_END_], STDOUT_FILENO);
-        connect_fd(stderr_pipe_fds[WRITE_END_], STDERR_FILENO);
+        connect_fd(stdout_pipe.write_end.get(), STDOUT_FILENO);
+        connect_fd(stderr_pipe.write_end.get(), STDERR_FILENO);
 
         // now, we also have to close the write end of both pipes
-        close_pipe_fd(stdout_pipe_fds[WRITE_END_]);
-        close_pipe_fd(stderr_pipe_fds[WRITE_END_]);
+        close_pipe_fd(stdout_pipe.write_end.get());
+        close_pipe_fd(stderr_pipe.write_end.get());
 
         // prepare arguments for exec*
         auto exec_args = make_args_vector(args);
@@ -181,12 +225,12 @@ process::process(const std::vector<std::string>& args, const subprocess_env_map_
     // parent code
 
     // we do not intend to write to these pipes from this end
-    close_pipe_fd(stdout_pipe_fds[WRITE_END_]);
-    close_pipe_fd(stderr_pipe_fds[WRITE_END_]);
+    close_pipe_fd(stdout_pipe.write_end.release());
+    close_pipe_fd(stderr_pipe.write_end.release());
 
-    // store file descriptors
-    stdout_fd_ = stdout_pipe_fds[READ_END_];
-    stderr_fd_ = stderr_pipe_fds[READ_END_];
+    // store the file descriptors last, as the destructor only closes them once the constructor has completed
+    stdout_fd_ = stdout_pipe.read_end.release();
+    stderr_fd_ = stderr_pipe.read_end.release();
 }
 
 int process::close() {
