@@ -1,0 +1,26 @@
+From 2536d34609c0be4dc89003e22480da7f13a25db7 Mon Sep 17 00:00:00 2001
+From: Pepper Gray <hello@peppergray.xyz>
+Date: Tue, 27 Oct 2026 04:35:10 +0100
+Subject: [PATCH] append to C/CXX-flags to keep toolchain flags
+
+Signed-off-by: Pepper Gray <hello@peppergray.xyz>
+---
+ CMakeLists.txt | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 5b1af77..d73453c 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -7,8 +7,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
+ # can be enabled globally, we do not expose any libraries
+ set(flags "-Wall -Wextra -Werror")
+ mark_as_advanced(flags)
+-set(CMAKE_C_FLAGS ${flags})
+-set(CMAKE_CXX_FLAGS ${flags})
++# append to keep toolchain flags
++string(APPEND CMAKE_C_FLAGS " ${flags}")
++string(APPEND CMAKE_CXX_FLAGS " ${flags}")
+ 
+ add_subdirectory(lib)
+ 

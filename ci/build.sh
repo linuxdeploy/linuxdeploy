@@ -102,6 +102,7 @@ fi
 # this prevents a circular dependency
 # the other repository provides a script for this purpose that builds a bundle we can use
 git clone --recursive https://github.com/linuxdeploy/linuxdeploy-plugin-appimage
+bash "$repo_root"/ci/apply-patches.sh linuxdeploy-plugin-appimage
 bash linuxdeploy-plugin-appimage/ci/build-bundle.sh
 mv linuxdeploy-plugin-appimage-bundle AppDir/plugins/linuxdeploy-plugin-appimage
 

@@ -1,0 +1,30 @@
+From a01312d82b86816eb205ac0e01cd1bcfb470489f Mon Sep 17 00:00:00 2001
+From: Pepper Gray <hello@peppergray.xyz>
+Date: Tue, 27 Oct 2026 05:49:57 +0100
+Subject: [PATCH] add missing <climits> include
+
+building on gentoo/musl fails with error:
+```
+FAILED: [code=1] src/CMakeFiles/linuxdeploy-plugin-appimage.dir/main.cpp.o
+/docker-ramdisk/linuxdeploy-build-S2cK5w/linuxdeploy-plugin-appimage/src/main.cpp: In function 'std::string findAppimagetool()':
+/docker-ramdisk/linuxdeploy-build-S2cK5w/linuxdeploy-plugin-appimage/src/main.cpp:21:27: error: 'PATH_MAX' was not declared in this scope
+   21 |     std::vector<char> buf(PATH_MAX, '\0');
+      |                           ^~~~~~~~
+```
+
+Signed-off-by: Pepper Gray <hello@peppergray.xyz>
+---
+ src/main.cpp | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/src/main.cpp b/src/main.cpp
+index 8897c36..a24d362 100644
+--- a/src/main.cpp
++++ b/src/main.cpp
+@@ -1,5 +1,6 @@
+ // system includes
+ #include <cassert>
++#include <climits>
+ #include <cstring>
+ #include <dirent.h>
+ #include <functional>

@@ -1,0 +1,43 @@
+From 0ebdfc34b9ede9145137f465afc7d180a46635b2 Mon Sep 17 00:00:00 2001
+From: Pepper Gray <hello@peppergray.xyz>
+Date: Sun, 25 Oct 2026 19:52:34 +0100
+Subject: [PATCH] add option to force gtest build from source
+
+When testing a libc++ app on a libstdc++ system, the system provided
+gtest is incompatible. FORCE_BUILD_GTEST builds it from source.
+
+Signed-off-by: Pepper Gray <hello@peppergray.xyz>
+---
+ include-or-build-gtest.cmake | 11 +++++++++--
+ 1 file changed, 9 insertions(+), 2 deletions(-)
+
+diff --git a/include-or-build-gtest.cmake b/include-or-build-gtest.cmake
+index e6934f3..fa37ed0 100644
+--- a/include-or-build-gtest.cmake
++++ b/include-or-build-gtest.cmake
+@@ -9,16 +9,23 @@ set(prefix __ld_gtest)
+ # 1.11.0 introduced various matchers that can be used with EXPECT_THAT (e.g., ThrowsMessage)
+ set(required_version 1.11.0)
+ 
++# Allow caller to force building googletest from source
++option(FORCE_BUILD_GTEST "Force building googletest instead of using the system version" OFF)
++
+ if(TARGET gtest)
+     __cmake_scripts_log("target gtest found, not setting up again")
+ else()
+     pkg_check_modules(${prefix} gtest>=${required_version} IMPORTED_TARGET)
+ 
+-    if(${prefix}_FOUND)
++    if(${prefix}_FOUND AND NOT FORCE_BUILD_GTEST)
+         __cmake_scripts_log("Using system gtest")
+         add_library(gtest ALIAS PkgConfig::${prefix})
+     else()
+-        __cmake_scripts_log("googletest not found or too old on system, fetching from GitHub")
++        if(FORCE_BUILD_GTEST)
++            __cmake_scripts_log("FORCE_BUILD_GTEST enabled, building googletest from source")
++        else()
++            __cmake_scripts_log("googletest not found or too old on system, fetching from GitHub")
++        endif()
+ 
+         include(FetchContent)
+ 

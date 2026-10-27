@@ -48,6 +48,9 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Apply patches of unmerged PRs
+        run: bash ci/apply-patches.sh linuxdeploy
+
       - name: Build
         run: bash ci/build-in-docker.sh debian
 
@@ -83,6 +86,9 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Apply patches of unmerged PRs
+        run: bash ci/apply-patches.sh linuxdeploy
+
       - name: Build and test on ${{ matrix.target.distro }}
         env:
           ARCH: ${{ matrix.platform.arch }}
@@ -98,6 +104,8 @@ jobs:
         uses: actions/checkout@v6
         with:
           submodules: recursive
+      - name: Apply patches of unmerged PRs
+        run: bash ci/apply-patches.sh linuxdeploy
       - uses: cross-platform-actions/action@v0.32.0
         with:
           operating_system: 'freebsd'
