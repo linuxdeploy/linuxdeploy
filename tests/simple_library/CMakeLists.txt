@@ -21,6 +21,18 @@ add_custom_command(
 )
 add_custom_target(simple_library_stripped ALL DEPENDS libsimple_library.so.stripped)
 
+# shared libraries which need no other libraries must still be considered dynamically linked
+add_library(simple_library_no_dependencies SHARED no_dependencies.c)
+# without the runtime libraries, clang warns about runtime options a toolchain may pass in $LDFLAGS (e.g., -rtlib)
+target_link_options(simple_library_no_dependencies PRIVATE
+    -nostdlib
+    $<$<C_COMPILER_ID:Clang>:-Wno-unused-command-line-argument>
+)
+# the coverage runtime needs the C library, so do not instrument the fixture
+if(ENABLE_COVERAGE)
+    target_compile_options(simple_library_no_dependencies PRIVATE -fprofile-exclude-files=.*)
+endif()
+
 # add a static version, too
 add_library(simple_library_static STATIC simple_library.cpp simple_library.h)
 target_link_libraries(simple_library_static PUBLIC CImg)

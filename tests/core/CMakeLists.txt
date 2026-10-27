@@ -10,6 +10,7 @@ function(ld_core_add_test_executable NAME)
         -DSIMPLE_LIBRARY_PATH="$<TARGET_FILE:simple_library>"
         -DSIMPLE_LIBRARY_DEBUG_PATH="$<TARGET_FILE:simple_library>.debug"
         -DSIMPLE_LIBRARY_STRIPPED_PATH="$<TARGET_FILE:simple_library>.stripped"
+        -DSIMPLE_LIBRARY_NO_DEPENDENCIES_PATH="$<TARGET_FILE:simple_library_no_dependencies>"
 
         -DSIMPLE_EXECUTABLE_PATH="$<TARGET_FILE:simple_executable>"
         -DSIMPLE_EXECUTABLE_STATIC_PATH="$<TARGET_FILE:simple_executable_static>"
@@ -28,6 +29,7 @@ function(ld_core_add_test_executable NAME)
         simple_library
         simple_library_stripped
         simple_library_debug
+        simple_library_no_dependencies
     )
 endfunction()
 
