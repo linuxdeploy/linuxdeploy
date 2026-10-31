@@ -213,7 +213,12 @@ namespace linuxdeploy {
                         return {};
                     }
 
-                    throw std::runtime_error{"Failed to run ldd: exited with code " + std::to_string(result.exit_code())};
+                    throw std::runtime_error{
+                        "Failed to run ldd on '" + resolvedPath.string() +
+                        "' (exit code " + std::to_string(result.exit_code()) + "):\n" +
+                        "stderr:\n" + result.stderr_string() +
+                        "\nstdout:\n" + result.stdout_string()
+                    };
                 }
 
                 const std::regex expr(R"(\s*(.+)\s+\=>\s+(.+)\s+\((.+)\)\s*)");
