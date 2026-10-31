@@ -49,13 +49,14 @@ namespace linuxdeploy {
                     // size remains zero
                 }
 
-                // Preference takes values from 0 to 100, with the highest value reached for 64x64 icons, going down
-                // as width goes from 64 either way. For "equally remote" sizes (32x32 and 128x128, e.g.) the larger
-                // icons are preferred (preference value for 32x32 is 49 while 128x128 are at 50).
-                // For other examples, 96x96 yields 66, 48x48 gets 73, and so on.
+                // Preference takes values from 0 to 100, with the highest value reached for 256x256 icons (the size
+                // recommended for the AppImage's .DirIcon), going down as width goes from 256 either way. For
+                // "equally remote" sizes (128x128 and 512x512, e.g.) the larger icons are preferred (preference value
+                // for 128x128 is 49 while 512x512 are at 50). For other examples, 192x192 yields 74, 64x64 gets 24,
+                // and so on.
                 // Also, since size cannot be determined for icons in pixmaps/, preference for these is 0; in other
                 // words, icons in /usr/share/icons/hicolor are preferred, in alignment with the icon naming spec
-                return iconWidth < 64 ? 100 * iconWidth / 65 : 6400 / iconWidth;
+                return iconWidth < 256 ? 100 * iconWidth / 257 : 25600 / iconWidth;
             }
 
         public:
@@ -87,8 +88,10 @@ namespace linuxdeploy {
 
                 // There's no way of knowing the target environment where an AppImage icon will be shown
                 // therefore:
-                // - SVG is prefered over raster icons
-                // - 64x64 is picked as a reasonable best size for raster icons;
+                // - PNG is preferred over SVG and XPM: appimagetool creates the AppImage's .DirIcon from the PNG (or
+                //   XPM) icon in the AppDir root, and refuses to build when .DirIcon is an SVG; SVG is next best
+                // - 256x256 is picked as the best size for PNG icons (the size recommended for .DirIcon by the
+                //   AppImage specification);
                 //   the farther the icon dimensions are from that, the less preferred the icon is
                 auto bestIcon = foundIconPaths.end();
                 for (auto iconPath = foundIconPaths.begin(); iconPath != foundIconPaths.end(); ++iconPath) {
@@ -125,22 +128,30 @@ namespace linuxdeploy {
 
                     const auto currentExtension = util::strLower(iconPath->extension().string());
                     const auto bestIconExtension = util::strLower(bestIcon->extension().string());
-                    // SVGs are preferred, and (normally) only come in scalable/apps/; process them early
+                    // SVGs (normally) only come in scalable/apps/; process them early
                     if (currentExtension == ".svg") {
                         // There's only one spec-compliant place for an SVG icon (icons/scalable/apps); but if
                         // a full filename is used in the desktop file (Icon=a.svg) then two SVG icons can
-                        // match it: scalable/apps/a.svg and scalable/apps/a.svg.svg; in this case a.svg wins
-                        if (matchesFilenameWithExtension || bestIconExtension != ".svg")
+                        // match it: scalable/apps/a.svg and scalable/apps/a.svg.svg; in this case a.svg wins.
+                        // Otherwise, SVG only wins over XPM, never over PNG.
+                        if (matchesFilenameWithExtension
+                            || (bestIcon->filename() != iconName && bestIconExtension != ".svg" && bestIconExtension != ".png"))
                             bestIcon = iconPath;
 
-                        break; // Further icons can't be better than what bestIcon has now.
+                        continue;
                     }
 
                     // As of here, the _current_ icon is a raster one (PNG or XPM)
 
-                    if (bestIconExtension == ".svg" // SVG is always better
-                        || (!matchesFilenameWithExtension && bestIcon->filename() == iconName)) // Better filename match
+                    if (!matchesFilenameWithExtension && bestIcon->filename() == iconName) // Better filename match
                         continue;
+
+                    // PNG is better than SVG, SVG is better than XPM
+                    if (bestIconExtension == ".svg") {
+                        if (currentExtension == ".png")
+                            bestIcon = iconPath;
+                        continue;
+                    }
 
                     // Both icons are raster
 
@@ -153,7 +164,7 @@ namespace linuxdeploy {
                     //
                     // The code diverts from Icon Naming Spec here, since the spec relies on reading
                     // index.theme data and taking Threshold and MinSize/MaxSize values from there. Instead,
-                    // merely figure which size is "logarithmically further" from the sweet spot of 64,
+                    // merely figure which size is "logarithmically further" from the sweet spot of 256,
                     // preferring larger icons in case of a tie (see getIconPreference() implementation);
                     // as a last resort, if the preference is the same (e.g. two icons deployed to pixmaps/),
                     // PNGs win over XPMs.
@@ -172,6 +183,33 @@ namespace linuxdeploy {
 
                 if (!appDir.createRelativeSymlink(*bestIcon, appDir.path())) {
                     ldLog() << LD_ERROR << "Failed to create symlink for icon in AppDir root:" << *bestIcon << std::endl;
+                    return false;
+                }
+
+                // The AppImage specification requires a .DirIcon (a PNG, 256x256 recommended) in the AppDir root;
+                // point it to the icon just chosen. A regular file put there by the user wins; symlinks are
+                // replaced (also dangling ones, which createRelativeSymlink could not handle).
+                const auto dirIconPath = appDir.path() / ".DirIcon";
+                const auto dirIconStatus = fs::symlink_status(dirIconPath);
+
+                if (fs::is_regular_file(dirIconStatus)) {
+                    ldLog() << "Keeping existing .DirIcon file in AppDir root" << std::endl;
+                    return true;
+                }
+
+                if (fs::exists(dirIconStatus))
+                    fs::remove_all(dirIconPath); // symlink, or something else that cannot be a valid .DirIcon
+
+                if (util::strLower(bestIcon->extension().string()) != ".png") {
+                    ldLog() << LD_WARNING << "No PNG icon named" << iconName << "has been deployed, .DirIcon will not be a PNG."
+                            << "The AppImage specification requires a PNG .DirIcon, and appimagetool refuses SVG ones."
+                            << "Please deploy a PNG icon, e.g., with --icon-file" << std::endl;
+                }
+
+                ldLog() << "Deploying .DirIcon to AppDir root:" << *bestIcon << std::endl;
+
+                if (!appDir.createRelativeSymlink(*bestIcon, dirIconPath)) {
+                    ldLog() << LD_ERROR << "Failed to create .DirIcon symlink in AppDir root:" << *bestIcon << std::endl;
                     return false;
                 }
 
