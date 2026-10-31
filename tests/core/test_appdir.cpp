@@ -1,3 +1,6 @@
+// system headers
+#include <fstream>
+
 // library headers
 #include "gtest/gtest.h"
 
@@ -135,6 +138,67 @@ namespace AppDirTest {
         const auto targetPath2 = tmpAppDir / "usr/share/icons/hicolor/scalable/apps" / path(SIMPLE_ICON_PATH2).filename();
         assertIsRegularFile(targetPath);
         assertIsRegularFile(targetPath2);
+    }
+
+    TEST_F(AppDirUnitTestsFixture, setUpAppDirRootPrefersPngOverSvg) {
+        const DesktopFile desktopFile{SIMPLE_DESKTOP_ENTRY_PATH};
+        ASSERT_TRUE(appDir.deployExecutable(SIMPLE_EXECUTABLE_PATH));
+        appDir.deployDesktopFile(desktopFile);
+        appDir.deployIcon(SIMPLE_ICON_PATH);
+        appDir.deployIcon(SIMPLE_ICON_PATH2);
+        ASSERT_TRUE(appDir.executeDeferredOperations());
+
+        ASSERT_TRUE(appDir.setUpAppDirRoot(desktopFile));
+
+        // appimagetool creates .DirIcon from the PNG in the AppDir root, and cannot use an SVG
+        assertIsSymlink("usr/share/icons/hicolor/16x16/apps/simple_icon.png", tmpAppDir / "simple_icon.png");
+        EXPECT_FALSE(exists(symlink_status(tmpAppDir / "simple_icon.svg")));
+        assertIsSymlink("usr/share/icons/hicolor/16x16/apps/simple_icon.png", tmpAppDir / ".DirIcon");
+        EXPECT_TRUE(is_regular_file(tmpAppDir / ".DirIcon"));
+    }
+
+    TEST_F(AppDirUnitTestsFixture, setUpAppDirRootUsesSvgIfThereIsNoPng) {
+        const DesktopFile desktopFile{SIMPLE_DESKTOP_ENTRY_PATH};
+        ASSERT_TRUE(appDir.deployExecutable(SIMPLE_EXECUTABLE_PATH));
+        appDir.deployDesktopFile(desktopFile);
+        appDir.deployIcon(SIMPLE_ICON_PATH2);
+        ASSERT_TRUE(appDir.executeDeferredOperations());
+
+        ASSERT_TRUE(appDir.setUpAppDirRoot(desktopFile));
+
+        assertIsSymlink("usr/share/icons/hicolor/scalable/apps/simple_icon.svg", tmpAppDir / "simple_icon.svg");
+        // still a working .DirIcon, but not a PNG (a warning is shown)
+        assertIsSymlink("usr/share/icons/hicolor/scalable/apps/simple_icon.svg", tmpAppDir / ".DirIcon");
+    }
+
+    TEST_F(AppDirUnitTestsFixture, setUpAppDirRootKeepsExistingDirIconFile) {
+        const DesktopFile desktopFile{SIMPLE_DESKTOP_ENTRY_PATH};
+        ASSERT_TRUE(appDir.deployExecutable(SIMPLE_EXECUTABLE_PATH));
+        appDir.deployDesktopFile(desktopFile);
+        appDir.deployIcon(SIMPLE_ICON_PATH);
+        ASSERT_TRUE(appDir.executeDeferredOperations());
+
+        std::ofstream(tmpAppDir / ".DirIcon") << "custom";
+
+        ASSERT_TRUE(appDir.setUpAppDirRoot(desktopFile));
+
+        EXPECT_FALSE(is_symlink(tmpAppDir / ".DirIcon"));
+        EXPECT_EQ(file_size(tmpAppDir / ".DirIcon"), 6u);
+    }
+
+    TEST_F(AppDirUnitTestsFixture, setUpAppDirRootReplacesDanglingDirIconSymlink) {
+        const DesktopFile desktopFile{SIMPLE_DESKTOP_ENTRY_PATH};
+        ASSERT_TRUE(appDir.deployExecutable(SIMPLE_EXECUTABLE_PATH));
+        appDir.deployDesktopFile(desktopFile);
+        appDir.deployIcon(SIMPLE_ICON_PATH);
+        ASSERT_TRUE(appDir.executeDeferredOperations());
+
+        create_symlink("does/not/exist.png", tmpAppDir / ".DirIcon");
+
+        ASSERT_TRUE(appDir.setUpAppDirRoot(desktopFile));
+
+        assertIsSymlink("usr/share/icons/hicolor/16x16/apps/simple_icon.png", tmpAppDir / ".DirIcon");
+        EXPECT_TRUE(is_regular_file(tmpAppDir / ".DirIcon"));
     }
 
     TEST_F(AppDirUnitTestsFixture, deployFileToDirectory) {
