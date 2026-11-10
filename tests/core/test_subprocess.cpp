@@ -66,7 +66,7 @@ namespace {
 
     TEST(SubprocessTest, CheckOutputRejectsExecError) {
         EXPECT_THAT([] { subprocess({"/nonexistent/program"}).check_output(); },
-                    testing::ThrowsMessage<std::logic_error>(HasSubstr("could not be run")));
+                    testing::ThrowsMessage<called_process_error>(HasSubstr("could not be run")));
     }
 
     TEST(SubprocessTest, CloseDescriptorsIfPipesCannotBeCreated) {
@@ -171,12 +171,45 @@ namespace {
 
     TEST(SubprocessTest, CheckOutputRejectsTerminationBySignal) {
         EXPECT_THAT([] { subprocess({"sh", "-c", "kill -KILL $$"}).check_output(); },
-                    testing::ThrowsMessage<std::logic_error>(HasSubstr("failed (terminated by signal")));
+                    testing::ThrowsMessage<called_process_error>(HasSubstr("failed (terminated by signal")));
     }
 
     TEST(SubprocessTest, CheckOutputRejectsNonZeroExit) {
         EXPECT_THAT([] { subprocess({"sh", "-c", "exit 3"}).check_output(); },
-                    testing::ThrowsMessage<std::logic_error>(HasSubstr("failed (exited with code 3)")));
+                    testing::ThrowsMessage<called_process_error>(HasSubstr("failed (exited with code 3)")));
+    }
+
+    // handlers written for the std::logic_error which check_output() threw before still catch it
+    TEST(SubprocessTest, CheckOutputFailureIsLogicError) {
+        EXPECT_THROW(subprocess({"sh", "-c", "exit 3"}).check_output(), std::logic_error);
+    }
+
+    // errors of starting any program (e.g., too many open files) are not failures of the program
+    TEST(SubprocessTest, CheckOutputDoesNotReportStartErrorsAsProgramFailures) {
+        rlimit oldLimit{};
+        ASSERT_EQ(getrlimit(RLIMIT_NOFILE, &oldLimit), 0);
+
+        // no descriptor is free below the lowest one which is not open, so no pipe can be created
+        int lowestFree = 0;
+        while (fcntl(lowestFree, F_GETFD) != -1)
+            ++lowestFree;
+        rlimit lowLimit = oldLimit;
+        lowLimit.rlim_cur = lowestFree;
+        ASSERT_EQ(setrlimit(RLIMIT_NOFILE, &lowLimit), 0);
+
+        bool reportedAsFailure = false;
+        bool threw = false;
+        try {
+            subprocess({"true"}).check_output();
+        } catch (const called_process_error&) {
+            reportedAsFailure = true;
+        } catch (const std::logic_error&) {
+            threw = true;
+        }
+        ASSERT_EQ(setrlimit(RLIMIT_NOFILE, &oldLimit), 0);
+
+        EXPECT_TRUE(threw);
+        EXPECT_FALSE(reportedAsFailure);
     }
 
     // programs are searched for like exec* does, which differs from a lookup in $PATH

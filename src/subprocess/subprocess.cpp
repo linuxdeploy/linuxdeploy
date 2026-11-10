@@ -130,7 +130,7 @@ namespace linuxdeploy {
                 ldLog() << LD_DEBUG << "stdout:" << stdoutString << std::endl;
                 ldLog() << LD_DEBUG << "stderr:" << stderrString << std::endl;
 
-                throw std::logic_error{out.str()};
+                throw called_process_error{out.str()};
             }
 
             return result.stdout_string();
