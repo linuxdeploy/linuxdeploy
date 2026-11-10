@@ -212,6 +212,19 @@ namespace {
         EXPECT_FALSE(reportedAsFailure);
     }
 
+    // a program may fill one pipe while the other one stays open, e.g., musl's ldd, which reports every unresolved
+    // symbol on stderr before it exits
+    TEST(SubprocessTest, ReadBothStreamsWhileRunning) {
+        // more than a pipe holds (up to 1 MiB with 64 KiB pages); timeout ends the program if a pipe is not read
+        const std::string line = "Error relocating program: symbol: symbol not found";
+        const size_t lines = 40960;
+        const auto result = subprocess({"timeout", "10", "sh", "-c", "yes \"$1\" | head -n \"$2\" >&2; echo done",
+            "sh", line, std::to_string(lines)}).run();
+        EXPECT_EQ(result.exit_code(), 0);
+        EXPECT_EQ(result.stdout_string(), "done\n");
+        EXPECT_EQ(result.stderr_string().size(), lines * (line.size() + 1));
+    }
+
     // programs are searched for like exec* does, which differs from a lookup in $PATH
     class SubprocessSearchTest : public testing::Test {
     protected:
