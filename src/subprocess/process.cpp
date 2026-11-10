@@ -150,7 +150,7 @@ process::process(const std::vector<std::string>& args, const subprocess_env_map_
             return;
         }
 
-        const auto fd = fcntl(end.get(), F_DUPFD, STDERR_FILENO + 1);
+        const auto fd = fcntl(end.get(), F_DUPFD_CLOEXEC, STDERR_FILENO + 1);
 
         if (fd == -1) {
             const auto error = errno;
@@ -160,10 +160,12 @@ process::process(const std::vector<std::string>& args, const subprocess_env_map_
         end.reset(fd);
     };
 
+    // close the pipes on exec*, so that programs which other threads of the parent start do not inherit them
+    // the child's standard streams are dup2() copies of its ends, which stay open
     // FIXME: for debugging of #150
     auto create_pipe = [&move_above_standard_streams](pipe_fds& ends) {
         int fds[2];
-        const auto rv = pipe(fds);
+        const auto rv = pipe2(fds, O_CLOEXEC);
 
         if (rv != 0) {
             const auto error = errno;

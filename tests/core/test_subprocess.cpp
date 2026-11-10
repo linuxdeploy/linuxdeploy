@@ -116,6 +116,13 @@ namespace {
         EXPECT_EQ(result->stderr_string(), "error\n");
     }
 
+    TEST(SubprocessTest, ClosePipesOnExec) {
+        // programs started by other threads must not keep the pipes open
+        process proc({"true"});
+        EXPECT_NE(fcntl(proc.stdout_fd(), F_GETFD) & FD_CLOEXEC, 0);
+        EXPECT_NE(fcntl(proc.stderr_fd(), F_GETFD) & FD_CLOEXEC, 0);
+    }
+
     TEST(SubprocessTest, DescribeExit) {
         EXPECT_EQ(subprocess({"sh", "-c", "exit 3"}).run().exit_description(), "exited with code 3");
         EXPECT_EQ(subprocess({"sh", "-c", "kill -KILL $$"}).run().exit_description(),
