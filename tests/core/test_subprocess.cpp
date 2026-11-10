@@ -1,6 +1,9 @@
 #include <algorithm>
 #include <csignal>
+#include <exception>
+#include <optional>
 #include <string>
+#include <vector>
 #include <fcntl.h>
 #include <sys/resource.h>
 
@@ -74,6 +77,43 @@ namespace {
             EXPECT_TRUE(threw);
             EXPECT_EQ(openDescriptors(), openBefore);
         }
+    }
+
+    // runs a program while the standard streams of the test are closed, so the pipes may get their numbers
+    std::optional<subprocess_result> runWithoutStandardStreams(const std::vector<std::string>& args) {
+        int saved[3];
+        for (int fd = 0; fd < 3; ++fd) {
+            saved[fd] = fcntl(fd, F_DUPFD_CLOEXEC, 3);
+            if (saved[fd] == -1)
+                return std::nullopt;
+        }
+
+        std::optional<subprocess_result> result;
+        std::exception_ptr error;
+        for (int fd = 0; fd < 3; ++fd)
+            ::close(fd);
+        try {
+            result = subprocess(args).run();
+        } catch (...) {
+            error = std::current_exception();
+        }
+        for (int fd = 0; fd < 3; ++fd) {
+            dup2(saved[fd], fd);
+            ::close(saved[fd]);
+        }
+
+        if (error)
+            std::rethrow_exception(error);
+        return result;
+    }
+
+    TEST(SubprocessTest, ConnectStreamsIfStandardStreamsAreClosed) {
+        // connecting one pipe must not replace another
+        const auto result = runWithoutStandardStreams({"sh", "-c", "echo output; echo error >&2; exit 3"});
+        ASSERT_TRUE(result);
+        EXPECT_EQ(result->exit_code(), 3);
+        EXPECT_EQ(result->stdout_string(), "output\n");
+        EXPECT_EQ(result->stderr_string(), "error\n");
     }
 
     TEST(SubprocessTest, DescribeExit) {

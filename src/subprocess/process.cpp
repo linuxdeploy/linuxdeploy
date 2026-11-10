@@ -5,6 +5,7 @@
 #include <stdexcept>
 #include <utility>
 #include <unistd.h>
+#include <fcntl.h>
 #include <memory.h>
 #include <new>
 #include <sys/wait.h>
@@ -142,8 +143,25 @@ process::process(const std::vector<std::string>& args, const subprocess_env_map_
     pipe_fds stdout_pipe;
     pipe_fds stderr_pipe;
 
+    // if the standard streams are closed, the pipes may get their numbers, and connecting one end in the child would
+    // replace another, so move the ends above them
+    auto move_above_standard_streams = [](fd_owner& end) {
+        if (end.get() > STDERR_FILENO) {
+            return;
+        }
+
+        const auto fd = fcntl(end.get(), F_DUPFD, STDERR_FILENO + 1);
+
+        if (fd == -1) {
+            const auto error = errno;
+            throw std::logic_error("failed to move pipe: " + std::string(strerror(error)));
+        }
+
+        end.reset(fd);
+    };
+
     // FIXME: for debugging of #150
-    auto create_pipe = [](pipe_fds& ends) {
+    auto create_pipe = [&move_above_standard_streams](pipe_fds& ends) {
         int fds[2];
         const auto rv = pipe(fds);
 
@@ -154,6 +172,9 @@ process::process(const std::vector<std::string>& args, const subprocess_env_map_
 
         ends.read_end.reset(fds[READ_END_]);
         ends.write_end.reset(fds[WRITE_END_]);
+
+        move_above_standard_streams(ends.read_end);
+        move_above_standard_streams(ends.write_end);
     };
 
     // create actual pipes
