@@ -230,6 +230,30 @@ namespace AppDirTest {
         appDir.deployLibrary(SIMPLE_LIBRARY_PATH);
         EXPECT_FALSE(appDir.executeDeferredOperations());
     }
+
+    TEST_F(AppDirUnitTestsFixture, testFailingToReadRPathBeforeStrippingFailsDeployment) {
+        // the rpath is read to decide whether to strip a file, which must fail the deployment instead of throwing
+        const ScopedPatchelf patchelf(tmpAppDir.parent_path() / (tmpAppDir.filename().string() + "-failing-patchelf"),
+                                      "#!/bin/sh\nexit 1\n");
+
+        appDir.deployLibrary(SIMPLE_LIBRARY_NO_DEPENDENCIES_PATH);
+        bool success = true;
+        EXPECT_NO_THROW(success = appDir.executeDeferredOperations());
+        EXPECT_FALSE(success);
+    }
+
+    TEST_F(AppDirUnitTestsFixture, testFailingToReadRPathOfExistingLibraryFailsDeployment) {
+        // the rpath of a library already in the AppDir is extended, so it must be read, but a failure must fail the
+        // deployment instead of throwing
+        appDir.createBasicStructure();
+        copy_file(SIMPLE_LIBRARY_NO_DEPENDENCIES_PATH, tmpAppDir / "usr/lib" / path(SIMPLE_LIBRARY_NO_DEPENDENCIES_PATH).filename());
+        const ScopedPatchelf patchelf(tmpAppDir.parent_path() / (tmpAppDir.filename().string() + "-failing-patchelf"),
+                                      "#!/bin/sh\nexit 1\n");
+
+        bool success = true;
+        EXPECT_NO_THROW(success = appDir.deployDependenciesForExistingFiles());
+        EXPECT_FALSE(success);
+    }
 }
 
 int main(int argc, char **argv) {

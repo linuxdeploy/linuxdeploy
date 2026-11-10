@@ -22,6 +22,12 @@ namespace linuxdeploy {
                     explicit DependencyNotFoundError(const std::string& msg) : std::runtime_error(msg) {}
             };
 
+            // thrown by getRPath() if patchelf fails to read the rpath
+            class PatchelfError : public std::runtime_error {
+                public:
+                    explicit PatchelfError(const std::string& msg) : std::runtime_error(msg) {}
+            };
+
             class ElfFile {
                 private:
                     class PrivateData;
@@ -52,6 +58,8 @@ namespace linuxdeploy {
                     // fetch rpath stored in binary
                     // it appears that according to the ELF standard, the rpath is ignored in libraries, therefore if the path
                     // points to an executable, an empty string is returned
+                    // static and debug symbols files have no rpath, so an empty string is returned for them, too
+                    // throws PatchelfError if patchelf cannot be run or fails, as an empty rpath would replace the existing one
                     std::string getRPath();
 
                     // set rpath in ELF file

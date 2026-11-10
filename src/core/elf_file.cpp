@@ -307,33 +307,36 @@ namespace linuxdeploy {
             }
 
             std::string ElfFile::getRPath() {
-                // don't try to fetch patchelf path in a catchall to make sure the process exists when the tool cannot be found
+                // only the dynamic section can contain an rpath, and patchelf fails on files without a dynamic section,
+                // e.g., static executables, or debug symbols files, whose dynamic section has been stripped
+                if (!isDynamicallyLinked() || isDebugSymbolsFile())
+                    return "";
+
                 const auto patchelfPath = PrivateData::getPatchelfPath();
 
-                try {
-                    subprocess::subprocess patchelfProc({patchelfPath, "--print-rpath", d->path.string()});
+                subprocess::subprocess patchelfProc({patchelfPath, "--print-rpath", d->path.string()});
 
-                    const auto result = patchelfProc.run();
+                const auto result = patchelfProc.run();
 
-                    if (result.exit_code() != 0) {
-                        // if file is not an ELF executable, there is no need for a detailed error message
-                        if (result.exit_code() == 1 && result.stderr_string().find("not an ELF executable") != std::string::npos) {
-                            return "";
-                        } else {
-                            ldLog() << LD_ERROR << "Call to patchelf failed:" << std::endl << result.stderr_string();
-                            return "";
-                        }
-                    }
+                if (result.exit_code() != 0) {
+                    // if file is not an ELF executable, there is no need for a detailed error message
+                    if (result.exit_code() == 1 && result.stderr_string().find("not an ELF executable") != std::string::npos)
+                        return "";
 
-                    auto stdoutContents = result.stdout_string();
-
-                    util::trim(stdoutContents, '\n');
-                    util::trim(stdoutContents);
-
-                    return stdoutContents;
-                } catch (const std::exception&) {
-                    return "";
+                    // throw instead of returning an empty rpath, which would replace the existing one
+                    auto message = "Call to patchelf failed (" + result.exit_description() +
+                                   "): could not read the rpath of " + d->path.string();
+                    if (!result.stderr_string().empty())
+                        message += "\n" + result.stderr_string();
+                    throw PatchelfError(message);
                 }
+
+                auto stdoutContents = result.stdout_string();
+
+                util::trim(stdoutContents, '\n');
+                util::trim(stdoutContents);
+
+                return stdoutContents;
             }
 
             bool ElfFile::setRPath(const std::string& value) {

@@ -253,7 +253,22 @@ namespace linuxdeploy {
                             while (!stripOperations.empty()) {
                                 const auto& filePath = *(stripOperations.begin());
 
-                                if (util::stringStartsWith(elf_file::ElfFile(filePath).getRPath(), "$")) {
+                                // the rpath only decides whether to strip the file, so if it cannot be read, skip
+                                // just this file, but fail the deployment
+                                std::string rpath;
+                                bool rpathRead = true;
+                                try {
+                                    rpath = elf_file::ElfFile(filePath).getRPath();
+                                } catch (const elf_file::PatchelfError& e) {
+                                    ldLog() << LD_ERROR << e.what() << std::endl;
+                                    rpathRead = false;
+                                    success = false;
+                                }
+
+                                if (!rpathRead) {
+                                    ldLog() << LD_ERROR << "Not calling strip on binary" << filePath << LD_NO_SPACE
+                                            << ": could not read its rpath" << std::endl;
+                                } else if (util::stringStartsWith(rpath, "$")) {
                                     ldLog() << LD_WARNING << "Not calling strip on binary" << filePath << LD_NO_SPACE
                                             << ": rpath starts with $" << std::endl;
                                 } else {
@@ -850,7 +865,15 @@ namespace linuxdeploy {
                     if (!d->deployElfDependencies(sharedLibrary))
                         return false;
 
-                    const auto rpath = elf_file::ElfFile(sharedLibrary).getRPath();
+                    // the rpath is extended, so it must be read, or the existing one would be replaced
+                    std::string rpath;
+                    try {
+                        rpath = elf_file::ElfFile(sharedLibrary).getRPath();
+                    } catch (const elf_file::PatchelfError& e) {
+                        ldLog() << LD_ERROR << e.what() << std::endl;
+                        return false;
+                    }
+
                     auto rpathList = util::split(rpath, ':');
                     if (std::find(rpathList.begin(), rpathList.end(), "$ORIGIN") == rpathList.end()) {
                         rpathList.push_back("$ORIGIN");
