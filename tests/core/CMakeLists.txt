@@ -89,3 +89,10 @@ set_target_properties(test_patchelf PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_
 target_compile_definitions(test_patchelf PRIVATE -DLINUXDEPLOY_PATH="$<TARGET_FILE:linuxdeploy>")
 add_dependencies(test_patchelf linuxdeploy)
 ld_add_test(test_patchelf)
+
+ld_core_add_test_executable(test_plugin test_plugin.cpp)
+target_link_libraries(test_plugin PRIVATE gtest_main gmock)
+# runs linuxdeploy, which searches for plugins on every start
+target_compile_definitions(test_plugin PRIVATE -DLINUXDEPLOY_PATH="$<TARGET_FILE:linuxdeploy>")
+add_dependencies(test_plugin linuxdeploy)
+ld_add_test(test_plugin)

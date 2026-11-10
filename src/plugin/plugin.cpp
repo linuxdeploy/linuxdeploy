@@ -7,6 +7,7 @@
 // local headers
 #include "linuxdeploy/log/log.h"
 #include "linuxdeploy/plugin/plugin.h"
+#include "linuxdeploy/subprocess/subprocess.h"
 #include "linuxdeploy/util/util.h"
 #include "plugin_type0.h"
 
@@ -62,7 +63,9 @@ namespace linuxdeploy {
 
                 bool extendedDebugLoggingEnabled = (getenv("DEBUG_PLUGIN_DETECTION") != nullptr);
 
-                for (fs::directory_iterator i(dir); i != fs::directory_iterator(); ++i) {
+                // skip directories which cannot be listed (searchable, but not readable) instead of stopping
+                std::error_code listError;
+                for (fs::directory_iterator i(dir, listError); i != fs::directory_iterator(); i.increment(listError)) {
                     // must be a file, and not a directory
                     try {
                         if (fs::is_directory(fs::absolute(*i))) {
@@ -100,6 +103,13 @@ namespace linuxdeploy {
                         continue;
                     }
 
+                    // skip this plugin if only it fails, but stop on errors which affect any program (e.g., fork()
+                    // failing)
+                    auto skipPlugin = [&i](const std::exception& e) {
+                        ldLog() << LD_WARNING << "Could not load plugin" << i->path() << LD_NO_SPACE << ":" << e.what()
+                                << std::endl;
+                    };
+
                     try {
                         auto name = res[1].str();
                         auto* plugin = createPluginInstance(*i);
@@ -115,8 +125,19 @@ namespace linuxdeploy {
                             }
                         }
                     } catch (const PluginError& e) {
-                        ldLog() << LD_WARNING << "Could not load plugin" << i->path() << LD_NO_SPACE << ": " << e.what();
+                        skipPlugin(e);
+                    } catch (const fs::filesystem_error& e) {
+                        // e.g., a symlink loop
+                        skipPlugin(e);
+                    } catch (const subprocess::called_process_error& e) {
+                        // a plugin which cannot be run, or whose query fails
+                        skipPlugin(e);
                     }
+                }
+
+                if (listError) {
+                    ldLog() << LD_DEBUG << "Could not search for plugins in directory" << dir << LD_NO_SPACE << ":"
+                            << listError.message() << std::endl;
                 }
             }
             return foundPlugins;
