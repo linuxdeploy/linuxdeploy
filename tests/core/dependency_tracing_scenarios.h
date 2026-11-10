@@ -134,6 +134,19 @@ namespace dependency_tracing_test {
             EXPECT_THAT(dependencies, Contains(t.directory / "ld-musl-testing" / t.leaf.filename()));
         }
 
+        // the real test moves libdependency_leaf.so to build-linux-test/, whose name contains "ld-linux-"
+        // only the file names of glibc's loaders identify them, not their names in other paths
+        inline void LibraryNames_PreserveGlibcLoaderLikeNames(Tracer& t) {
+            EXPECT_THAT(t.trace(t.executable), Contains(t.directory / "build-linux-test" / t.leaf.filename()));
+        }
+
+        // the real test renames libsimple_library.so to ld.so.1, the file name of a loader on some Linux architectures
+        // (not on the CI platforms)
+        inline void LibraryNames_PreserveLoaderLikeFileNames(Tracer& t) {
+            const auto dependencies = t.trace(t.executable);
+            EXPECT_THAT(dependencies, Contains(t.directory / "ld.so.1"));
+        }
+
         // the real test moves libdependency_leaf.so to "not found/"
         // FreeBSD's ldd appends an address to missing libraries, which must not match paths containing "not found"
         inline void LibraryNames_PreserveNotFoundInPath(Tracer& t) {

@@ -357,21 +357,7 @@ namespace linuxdeploy {
                 static const std::regex loadedObjectExpr(R"(\s*(.+)\s+\(([^)]+)\)\s*)");
                 std::smatch what;
 
-                auto lddLines = util::splitLines(result.stdout_string());
-
-                // filter known-problematic, known-unneeded lines
-                // see https://github.com/linuxdeploy/linuxdeploy/issues/210
-                lddLines.erase(
-                    std::remove_if(lddLines.begin(), lddLines.end(), [&lddLines](auto line) {
-                        if (util::stringContains(line, "linux-vdso.so") || util::stringContains(line, "ld-linux-")) {
-                            ldLog() << LD_DEBUG << "skipping linker related object" << line << std::endl;
-                            return true;
-                        }
-
-                        return false;
-                    }),
-                    lddLines.end()
-                );
+                const auto lddLines = util::splitLines(result.stdout_string());
 
                 auto trimmed = [](std::string value) {
                     util::trim(value);
@@ -388,6 +374,17 @@ namespace linuxdeploy {
                         listedWithoutArrow.insert(trimmed(what[1].str()));
                 }
 
+                // in ldd's output, names without a slash are not loaded files (e.g., the vDSO, or musl's "ldd")
+                // recognize loaders by their file name, not by substrings, which other paths may contain (e.g.,
+                // build-linux-x86_64/), also if they are listed with "=>", like glibc 2.36 did (see #210)
+                // musl's loaders are named ld-musl-<arch>.so.1, and no arch contains a dot
+                auto isRuntimeFile = [](const std::string& path) {
+                    static const std::regex loaderFileNameExpr(
+                        R"(ld-linux(-.+)?\.so\..+|ld(64)?\.so\..+|ld-musl-[^.]+\.so\.1)");
+                    return !util::stringContains(path, "/") ||
+                           std::regex_match(fs::path(path).filename().string(), loaderFileNameExpr);
+                };
+
                 for (const auto& line : lddLines) {
                     if (std::regex_match(line, what, missingLibraryExpr)) {
                         checkMissingLibrary(what[1].str());
@@ -395,10 +392,15 @@ namespace linuxdeploy {
                     }
 
                     if (std::regex_search(line, what, expr)) {
-                        auto libraryPath = what[2].str();
-                        util::trim(libraryPath);
+                        const auto name = trimmed(what[1].str());
+                        const auto libraryPath = trimmed(what[2].str());
 
-                        if (listedWithoutArrow.count(libraryPath) != 0) {
+                        // ldd lists loaders by their path, also with "=>" (glibc 2.36), so a name without a slash
+                        // was searched for, and is a library even if it is named like a loader (e.g., ld.so.1, a
+                        // loader only on some Linux architectures)
+                        if (!util::stringContains(libraryPath, "/") ||
+                            (util::stringContains(name, "/") && isRuntimeFile(name)) ||
+                            listedWithoutArrow.count(libraryPath) != 0) {
                             ldLog() << LD_DEBUG << "skipping runtime object" << line << std::endl;
                             continue;
                         }

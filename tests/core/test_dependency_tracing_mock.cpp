@@ -70,6 +70,22 @@ namespace {
         }
     }
 
+    // hand-written, as no CI platform produces them: glibc 2.36 on Arch Linux listed the vDSO and the loader with "=>"
+    // (see #210), and the vDSOs and loaders of other architectures have other names
+    // their names in other paths must not hide libraries (see LibraryNames_PreserveGlibcLoaderLikeNames)
+    TEST_F(DependencyTracingTestMock, RuntimeDependencies_FilterRuntimeObjects_GlibcLoaderNames) {
+        setLddOutput("\tlinux-vdso.so.1 => linux-vdso.so.1 (0x1000)\n"
+                     "\t/lib64/ld-linux-x86-64.so.2 => /usr/lib64/ld-linux-x86-64.so.2 (0x1000)\n"
+                     "\tlinux-gate.so.1 (0x1000)\n"
+                     "\t/lib/ld-linux.so.2 (0x1000)\n"
+                     "\t/lib/ld-linux-armhf.so.3 (0x1000)\n"
+                     "\t/lib64/ld64.so.2 (0x1000)\n"
+                     "\t/lib/ld.so.1 (0x1000)\n"
+                     "\tlibdependency_leaf.so => /build-linux-x86_64/libdependency_leaf.so (0x2000)\n");
+        EXPECT_THAT(trace(DEPENDENCY_PARENT_LIBRARY_PATH),
+                    ElementsAre(fs::path("/build-linux-x86_64/libdependency_leaf.so")));
+    }
+
     // === Library names ===
 
     // ldd lists a library by the name it was opened by, so no platform lists it under another library's file name
@@ -273,6 +289,14 @@ namespace {
 
     TEST_P(DependencyTracingTestRecorded, LibraryNames_PreserveMuslLikeNames) {
         LibraryNames_PreserveMuslLikeNames(*this);
+    }
+
+    TEST_P(DependencyTracingTestRecorded, LibraryNames_PreserveGlibcLoaderLikeNames) {
+        LibraryNames_PreserveGlibcLoaderLikeNames(*this);
+    }
+
+    TEST_P(DependencyTracingTestRecorded, LibraryNames_PreserveLoaderLikeFileNames) {
+        LibraryNames_PreserveLoaderLikeFileNames(*this);
     }
 
     TEST_P(DependencyTracingTestRecorded, LibraryNames_PreserveNotFoundInPath) {

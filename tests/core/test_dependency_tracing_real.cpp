@@ -208,6 +208,23 @@ namespace {
         runScenario(scenarios::LibraryNames_PreserveMuslLikeNames);
     }
 
+    TEST_F(DependencyTracingTestReal, LibraryNames_PreserveGlibcLoaderLikeNames) {
+        const auto libraryDir = directory / "build-linux-test";
+        fs::create_directory(libraryDir);
+        fs::rename(leaf, libraryDir / leaf.filename());
+        ASSERT_TRUE(ElfFile(parent).setRPath("$ORIGIN/build-linux-test"));
+        runScenario(scenarios::LibraryNames_PreserveGlibcLoaderLikeNames);
+    }
+
+    TEST_F(DependencyTracingTestReal, LibraryNames_PreserveLoaderLikeFileNames) {
+        fs::rename(simple, directory / "ld.so.1");
+        const auto patchExecutable = linuxdeploy::subprocess::subprocess({TEST_PATCHELF_PATH,
+            "--replace-needed", simple.filename().string(), "ld.so.1", executable.string()}).run();
+        ASSERT_EQ(patchExecutable.exit_code(), 0) << patchExecutable.stderr_string();
+
+        runScenario(scenarios::LibraryNames_PreserveLoaderLikeFileNames);
+    }
+
     TEST_F(DependencyTracingTestReal, LibraryNames_PreserveLibraryNamedLdd) {
         fs::rename(simple, directory / "ldd");
         const auto patch = linuxdeploy::subprocess::subprocess({TEST_PATCHELF_PATH,
