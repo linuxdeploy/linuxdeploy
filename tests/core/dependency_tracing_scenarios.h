@@ -1,12 +1,15 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdlib>
 #include <elf.h>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <optional>
 #include <sstream>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "gtest/gtest.h"
@@ -83,6 +86,26 @@ namespace dependency_tracing_test {
         return log.str();
     }
 
+    // sets an environment variable, and restores it when destroyed
+    class ScopedEnvironmentVariable {
+        const std::string name_;
+        std::optional<std::string> old_;
+
+    public:
+        ScopedEnvironmentVariable(std::string name, const std::string& value) : name_(std::move(name)) {
+            if (const auto* old = getenv(name_.c_str()))
+                old_ = old;
+            EXPECT_EQ(setenv(name_.c_str(), value.c_str(), 1), 0);
+        }
+
+        ~ScopedEnvironmentVariable() {
+            if (old_)
+                setenv(name_.c_str(), old_->c_str(), 1);
+            else
+                unsetenv(name_.c_str());
+        }
+    };
+
     namespace scenarios {
         using namespace linuxdeploy::core::elf_file;
         using testing::Contains;
@@ -135,6 +158,31 @@ namespace dependency_tracing_test {
         // musl's ldd lists them as itself (by its loader's name, "ldd" or libc.so), glibc's ldd as separate libraries
         inline void RuntimeDependencies_FilterMuslAliases(Tracer& t) {
             RuntimeDependencies_FilterRuntimeObjects(t);
+        }
+
+        // the real test copies a library which none of the fixtures needs to preload it
+        // ldd lists it like a dependency, glibc's without "=>", as ldd runs with $LD_PRELOAD (e.g., for fakechroot)
+        inline void RuntimeDependencies_SkipPreloadedLibraries(Tracer& t) {
+            const auto preloaded = t.directory / fs::path(SIMPLE_LIBRARY_NO_DEPENDENCIES_PATH).filename();
+            ScopedEnvironmentVariable preload("LD_PRELOAD", preloaded.string());
+
+            std::vector<fs::path> dependencies;
+            const auto log = captureLog([&] { dependencies = t.trace(t.executable); });
+            EXPECT_THAT(dependencies, Contains(t.leaf));
+            EXPECT_THAT(dependencies, Not(Contains(preloaded)));
+            EXPECT_THAT(log, Not(testing::HasSubstr("by its path")));
+        }
+
+        // the real test copies the same library, and preloads it by its name from $LD_LIBRARY_PATH, like fakeroot
+        // ldd lists it like a needed library, but all entries of $LD_PRELOAD are left out
+        inline void RuntimeDependencies_SkipLibrariesPreloadedByName(Tracer& t) {
+            const auto preloaded = fs::path(SIMPLE_LIBRARY_NO_DEPENDENCIES_PATH).filename();
+            ScopedEnvironmentVariable libraryPath("LD_LIBRARY_PATH", t.directory.string());
+            ScopedEnvironmentVariable preload("LD_PRELOAD", preloaded.string());
+
+            const auto dependencies = t.trace(t.executable);
+            EXPECT_THAT(dependencies, Contains(t.leaf));
+            EXPECT_THAT(dependencies, Not(Contains(t.directory / preloaded)));
         }
 
         // the real test runs only with glibc, and adds the same sonames to libdependency_parent.so

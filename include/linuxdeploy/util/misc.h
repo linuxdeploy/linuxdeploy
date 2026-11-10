@@ -2,10 +2,12 @@
 
 // system headers
 #include <algorithm>
+#include <cctype>
 #include <climits>
 #include <cstring>
 #include <filesystem>
 #include <fnmatch.h>
+#include <fstream>
 #include <sstream>
 #include <string>
 #include <unistd.h>
@@ -191,6 +193,37 @@ namespace linuxdeploy {
                 }
 
                 return false;
+            }
+
+            // splits a list of preloaded libraries (e.g., $LD_PRELOAD) at whitespace and colons, like the loaders do
+            static std::vector<std::string> splitPreloadList(std::string list) {
+                std::replace_if(list.begin(), list.end(), [](unsigned char c) {
+                    return c == ':' || std::isspace(c);
+                }, ' ');
+
+                std::vector<std::string> entries;
+                std::istringstream stream(list);
+                for (std::string entry; stream >> entry;)
+                    entries.push_back(entry);
+
+                return entries;
+            }
+
+            // returns the entries of file (e.g., /etc/ld.so.preload) as written there (e.g., with $LIB), as glibc's ldd
+            // lists them like that, followed by "=>" and the path if they are names or contain tokens
+            static std::vector<std::string> readPreloadEntries(const std::filesystem::path& file) {
+                std::vector<std::string> entries;
+                std::ifstream stream(file);
+
+                for (std::string line; std::getline(stream, line);) {
+                    // comments start with #
+                    line.erase(std::min(line.find('#'), line.size()));
+
+                    const auto lineEntries = splitPreloadList(line);
+                    entries.insert(entries.end(), lineEntries.begin(), lineEntries.end());
+                }
+
+                return entries;
             }
         }
     }

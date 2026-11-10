@@ -232,7 +232,9 @@ namespace linuxdeploy {
                 delete d;
             }
 
-            std::vector<fs::path> ElfFile::traceDynamicDependencies(const std::vector<std::string>& excludeLibraryPatterns) {
+            std::vector<fs::path> ElfFile::traceDynamicDependencies(const std::vector<std::string>& excludeLibraryPatterns,
+                                                                    const fs::path& preloadFile,
+                                                                    std::set<fs::path>* warnedPreloads) {
                 // this method's purpose is to abstract this process
                 // the caller doesn't care _how_ it's done, after all
 
@@ -426,6 +428,44 @@ namespace linuxdeploy {
                                "$ORIGIN and the copy is deployed there" << std::endl;
                 };
 
+                // ldd lists the libraries $LD_PRELOAD and /etc/ld.so.preload preload by their entry there, followed by
+                // "=>" and the path if it is a name or contains tokens (e.g., /usr/$LIB/libfoo.so)
+                // $LD_PRELOAD is kept for ldd, as wrappers rely on it (e.g., fakechroot redirects the file system), but
+                // all entries of both are left out, also names (e.g., fakeroot's library)
+                // the preloaded libraries' own dependencies are still deployed, as ldd lists them like the program's
+                const auto preloadVariable = env.find("LD_PRELOAD");
+                const auto preloadVariableEntries = preloadVariable == env.end()
+                                                    ? std::vector<std::string>{}
+                                                    : util::splitPreloadList(preloadVariable->second);
+                const auto preloadFileEntries = util::readPreloadEntries(preloadFile);
+                // returns what preloads the library listed as name and found at libraryPath, or an empty string
+                auto preloadedBy = [&](const std::string& name, const std::string& libraryPath) -> std::string {
+                    auto lists = [&](const std::vector<std::string>& entries) {
+                        return std::find(entries.begin(), entries.end(), name) != entries.end() ||
+                               std::find(entries.begin(), entries.end(), libraryPath) != entries.end();
+                    };
+                    if (lists(preloadVariableEntries))
+                        return "$LD_PRELOAD";
+                    if (lists(preloadFileEntries))
+                        return preloadFile.string();
+                    return {};
+                };
+                // a library which is preloaded and needed, too, is only listed as preloaded, so warn about each
+                // name the user can pass to --library, and the entry if it differs (e.g., contains $LIB)
+                // callers which pass no set (e.g., plugins tracing every file in the AppDir) do not deploy what they
+                // trace, so they only get a debug message
+                auto skipPreloaded = [&](const std::string& entry, const fs::path& libraryPath,
+                                         const std::string& preloader) {
+                    if (warnedPreloads == nullptr || !warnedPreloads->insert(libraryPath).second) {
+                        ldLog() << LD_DEBUG << "skipping preloaded library" << libraryPath << std::endl;
+                        return;
+                    }
+                    const auto listedAs = entry == libraryPath.string() ? "" : " (" + entry + ")";
+                    ldLog() << LD_WARNING << "Not deploying" << libraryPath.string() + listedAs << LD_NO_SPACE
+                            << ", which" << preloader
+                            << "preloads, deploy it with --library if the program needs it, too" << std::endl;
+                };
+
                 for (const auto& line : lddLines) {
                     if (std::regex_match(line, what, missingLibraryExpr)) {
                         checkMissingLibrary(what[1].str());
@@ -442,6 +482,8 @@ namespace linuxdeploy {
                         const auto name = trimmed(what[1].str());
                         if (isRuntimeFile(name) || resolvedPaths.count(name) != 0) {
                             ldLog() << LD_DEBUG << "skipping runtime object" << line << std::endl;
+                        } else if (const auto preloader = preloadedBy(name, name); !preloader.empty()) {
+                            skipPreloaded(name, name, preloader);
                         } else {
                             warnNeededByPath(name, name);
                             paths.push_back(fs::absolute(name));
@@ -461,6 +503,11 @@ namespace linuxdeploy {
                             (util::stringContains(name, "/") && isRuntimeFile(name)) ||
                             listedWithoutArrow.count(libraryPath) != 0) {
                             ldLog() << LD_DEBUG << "skipping runtime object" << line << std::endl;
+                            continue;
+                        }
+
+                        if (const auto preloader = preloadedBy(name, libraryPath); !preloader.empty()) {
+                            skipPreloaded(name, libraryPath, preloader);
                             continue;
                         }
 

@@ -1,5 +1,6 @@
 // system includes
 #include <filesystem>
+#include <set>
 #include <vector>
 #include <string>
 // including system elf header, which allows for interpretation of the return values of the methods
@@ -54,12 +55,21 @@ namespace linuxdeploy {
                     static uint8_t getSystemElfEndianness();
 
                 public:
+                    // glibc's system-wide list of preloaded libraries, see ld.so(8)
+                    static constexpr const char* defaultPreloadFile = "/etc/ld.so.preload";
+
                     // recursively trace dynamic library dependencies of a given ELF file
                     // this works for both libraries and executables
                     // static ELF files return an empty vector
                     // the resulting vector consists of absolute paths to the libraries determined by the same methods a system's
                     // linker would use
-                    std::vector<std::filesystem::path> traceDynamicDependencies(const std::vector<std::string>& excludeLibraryPatterns={});
+                    // preloaded libraries are left out: all libraries $LD_PRELOAD and preloadFile list (see ld.so(8));
+                    // each one left out is warned about once per warnedPreloads set, and only logged at debug level
+                    // without one
+                    std::vector<std::filesystem::path> traceDynamicDependencies(
+                        const std::vector<std::string>& excludeLibraryPatterns = {},
+                        const std::filesystem::path& preloadFile = defaultPreloadFile,
+                        std::set<std::filesystem::path>* warnedPreloads = nullptr);
 
                     // fetch rpath stored in binary
                     // it appears that according to the ELF standard, the rpath is ignored in libraries, therefore if the path

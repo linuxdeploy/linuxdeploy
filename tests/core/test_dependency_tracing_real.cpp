@@ -193,6 +193,18 @@ namespace {
 #endif
     }
 
+    TEST_F(DependencyTracingTestReal, RuntimeDependencies_SkipPreloadedLibraries) {
+        fs::copy_file(SIMPLE_LIBRARY_NO_DEPENDENCIES_PATH,
+                      directory / fs::path(SIMPLE_LIBRARY_NO_DEPENDENCIES_PATH).filename());
+        runScenario(scenarios::RuntimeDependencies_SkipPreloadedLibraries);
+    }
+
+    TEST_F(DependencyTracingTestReal, RuntimeDependencies_SkipLibrariesPreloadedByName) {
+        fs::copy_file(SIMPLE_LIBRARY_NO_DEPENDENCIES_PATH,
+                      directory / fs::path(SIMPLE_LIBRARY_NO_DEPENDENCIES_PATH).filename());
+        runScenario(scenarios::RuntimeDependencies_SkipLibrariesPreloadedByName);
+    }
+
     TEST_F(DependencyTracingTestReal, LibraryNames_PreserveOrdinaryMuslAliases) {
         if (!usesGlibc)
             GTEST_SKIP() << "only glibc provides the aliases as libraries of their own";

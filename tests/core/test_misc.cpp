@@ -124,3 +124,37 @@ namespace {
         EXPECT_TRUE(which("tools/program").empty());
     }
 }
+
+namespace {
+    using linuxdeploy::util::readPreloadEntries;
+    using linuxdeploy::util::splitPreloadList;
+
+    TEST(SplitPreloadListTest, SplitAtWhitespaceAndColons) {
+        EXPECT_EQ(splitPreloadList(" libfakeroot.so:/opt/lib/libfoo.so\t/usr/$LIB/libbar.so::"),
+                  (std::vector<std::string>{"libfakeroot.so", "/opt/lib/libfoo.so", "/usr/$LIB/libbar.so"}));
+        EXPECT_TRUE(splitPreloadList("").empty());
+    }
+
+    TEST(ReadPreloadEntriesTest, ReadEntriesAsWritten) {
+        const auto directory = fs::path(make_temporary_directory());
+        const auto file = directory / "ld.so.preload";
+        std::ofstream(file) << "# preloaded by the system\n"
+                               "/usr/lib/arm-linux-gnueabihf/libarmmem-${PLATFORM}.so\n"
+                               "/opt/lib/libfoo.so:/usr/$LIB/libbar.so\tlibname.so # by name\n";
+
+        const auto entries = readPreloadEntries(file);
+        fs::remove_all(directory);
+
+        // glibc's ldd lists them as written, e.g., with their tokens
+        EXPECT_EQ(entries, (std::vector<std::string>{
+            "/usr/lib/arm-linux-gnueabihf/libarmmem-${PLATFORM}.so",
+            "/opt/lib/libfoo.so",
+            "/usr/$LIB/libbar.so",
+            "libname.so",
+        }));
+    }
+
+    TEST(ReadPreloadEntriesTest, AcceptMissingFile) {
+        EXPECT_TRUE(readPreloadEntries("/nonexistent/ld.so.preload").empty());
+    }
+}

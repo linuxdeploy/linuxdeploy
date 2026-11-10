@@ -6,6 +6,7 @@
 #include <filesystem>
 #include <fstream>
 #include <optional>
+#include <set>
 #include <string>
 
 #include "gtest/gtest.h"
@@ -108,6 +109,58 @@ namespace {
         const auto log = dependency_tracing_test::captureLog([&] { dependencies = trace(executable); });
         EXPECT_THAT(dependencies, ElementsAre(fs::path("/fixture/libdependency_leaf.so")));
         EXPECT_THAT(log, testing::Not(HasSubstr("by its path")));
+    }
+
+    // hand-written after glibc 2.39's ldd, as the real tests cannot change /etc/ld.so.preload
+    // ldd lists an entry with tokens (e.g., $LIB), and one which is a name, with "=>" and its path; all of them are
+    // left out, like those of $LD_PRELOAD
+    TEST_F(DependencyTracingTestMock, RuntimeDependencies_SkipPreloadedLibraries_LdSoPreload) {
+        const auto preloadFile = directory / "ld.so.preload";
+        std::ofstream(preloadFile) << "/usr/$LIB/libjpeg.so.8\n/opt/lib/libpreloaded.so libbyname.so\n";
+
+        const std::string lddOutput =
+            "\tlinux-vdso.so.1 (0x1000)\n"
+            "\t/usr/$LIB/libjpeg.so.8 => /usr/lib/x86_64-linux-gnu/libjpeg.so.8 (0x1000)\n"
+            "\t/opt/lib/libpreloaded.so (0x1000)\n"
+            "\tlibbyname.so => /usr/lib/libbyname.so (0x1000)\n"
+            "\tlibdependency_leaf.so => /fixture/libdependency_leaf.so (0x1000)\n"
+            "\t/lib64/ld-linux-x86-64.so.2 (0x1000)\n";
+        setLddOutput(lddOutput);
+        std::vector<fs::path> dependencies;
+        std::set<fs::path> warnedPreloads;
+        auto trace = [&] {
+            return dependency_tracing_test::captureLog([&] {
+                dependencies = ElfFile(DEPENDENCY_PARENT_LIBRARY_PATH).traceDynamicDependencies({}, preloadFile,
+                                                                                               &warnedPreloads);
+            });
+        };
+        const auto log = trace();
+        EXPECT_THAT(dependencies, ElementsAre(fs::path("/fixture/libdependency_leaf.so")));
+        EXPECT_THAT(log, testing::Not(HasSubstr("by its path")));
+        // the program may need them, too, which ldd does not show
+        // name the path --library accepts, and the entry if it differs
+        EXPECT_THAT(log, HasSubstr("Not deploying /usr/lib/x86_64-linux-gnu/libjpeg.so.8 (/usr/$LIB/libjpeg.so.8), "
+                                   "which"));
+        EXPECT_THAT(log, HasSubstr("Not deploying /opt/lib/libpreloaded.so, which"));
+        EXPECT_THAT(log, HasSubstr("Not deploying /usr/lib/libbyname.so (libbyname.so), which"));
+        EXPECT_THAT(log, HasSubstr("deploy it with --library"));
+
+        // once for each library with the same set, as every deployed library is traced again
+        setLddOutput(lddOutput);
+        EXPECT_THAT(trace(), testing::Not(HasSubstr("Not deploying")));
+
+        // again with a new set, as another deployment has
+        warnedPreloads.clear();
+        setLddOutput(lddOutput);
+        EXPECT_THAT(trace(), HasSubstr("Not deploying /opt/lib/libpreloaded.so"));
+
+        // not at all without a set, as such callers (e.g., plugins) do not deploy what they trace
+        setLddOutput(lddOutput);
+        const auto logWithoutSet = dependency_tracing_test::captureLog([&] {
+            dependencies = ElfFile(DEPENDENCY_PARENT_LIBRARY_PATH).traceDynamicDependencies({}, preloadFile);
+        });
+        EXPECT_THAT(dependencies, ElementsAre(fs::path("/fixture/libdependency_leaf.so")));
+        EXPECT_THAT(logWithoutSet, testing::Not(HasSubstr("Not deploying")));
     }
 
     // === Library names ===
@@ -228,6 +281,9 @@ namespace {
 #ifdef SIMPLE_EXECUTABLE_STATIC_PIE_PATH
             fs::copy_file(SIMPLE_EXECUTABLE_STATIC_PIE_PATH, copy(staticPie));
 #endif
+            // which the scenarios preload
+            fs::copy_file(SIMPLE_LIBRARY_NO_DEPENDENCIES_PATH,
+                          copiesDirectory / fs::path(SIMPLE_LIBRARY_NO_DEPENDENCIES_PATH).filename());
             dependency_tracing_test::writeReplayingLdd(fakeLddDirectory, calls, copiesDirectory);
 
             ASSERT_EQ(setenv("PATH", fakeLddDirectory.c_str(), 1), 0);
@@ -240,8 +296,17 @@ namespace {
 
         // the mock ldd checks that the copy is the file the recording expects
         // its output names the copies, so the dependencies are mapped back to fixtureDirectory
+        // the variables ldd runs with must name the copies, too (e.g., to preload them)
         std::vector<fs::path> trace(const fs::path& path, const std::vector<std::string>& exclusions = {}) override {
+            using dependency_tracing_test::replaceFixtureDirectory;
+            using dependency_tracing_test::ScopedEnvironmentVariable;
+
             const auto copies = fs::canonical(copiesDirectory).string();
+            std::optional<ScopedEnvironmentVariable> preload, libraryPath;
+            if (const auto* value = getenv("LD_PRELOAD"))
+                preload.emplace("LD_PRELOAD", replaceFixtureDirectory(value, copies));
+            if (const auto* value = getenv("LD_LIBRARY_PATH"))
+                libraryPath.emplace("LD_LIBRARY_PATH", replaceFixtureDirectory(value, copies));
 
             auto dependencies = ElfFile(copy(path)).traceDynamicDependencies(exclusions);
             for (auto& dependency : dependencies) {
@@ -309,6 +374,14 @@ namespace {
 
     TEST_P(DependencyTracingTestRecorded, RuntimeDependencies_FilterMuslAliases) {
         RuntimeDependencies_FilterMuslAliases(*this);
+    }
+
+    TEST_P(DependencyTracingTestRecorded, RuntimeDependencies_SkipPreloadedLibraries) {
+        RuntimeDependencies_SkipPreloadedLibraries(*this);
+    }
+
+    TEST_P(DependencyTracingTestRecorded, RuntimeDependencies_SkipLibrariesPreloadedByName) {
+        RuntimeDependencies_SkipLibrariesPreloadedByName(*this);
     }
 
     TEST_P(DependencyTracingTestRecorded, LibraryNames_PreserveOrdinaryMuslAliases) {

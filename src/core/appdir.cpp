@@ -114,6 +114,9 @@ namespace linuxdeploy {
                     // the little amount of additional memory is worth it, considering the improved performance
                     std::set<fs::path> visitedFiles;
 
+                    // preloaded libraries which have been warned about, as every deployed library is traced again
+                    std::set<fs::path> warnedPreloads;
+
                     // used to automatically rename resources to improve the UX, e.g. icons
                     std::string appName;
 
@@ -404,7 +407,8 @@ namespace linuxdeploy {
 
                         ldLog() << "Deploying dependencies for ELF file" << path << std::endl;
                         try {
-                            for (const auto &dependencyPath : elfFile.traceDynamicDependencies(excludeLibraryPatterns))
+                            for (const auto &dependencyPath : elfFile.traceDynamicDependencies(
+                                     excludeLibraryPatterns, elf_file::ElfFile::defaultPreloadFile, &warnedPreloads))
                                 if (!deployLibrary(dependencyPath, false, false))
                                     return false;
                         } catch (const elf_file::DependencyTraceError& e) {
