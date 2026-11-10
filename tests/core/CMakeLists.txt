@@ -78,6 +78,7 @@ target_link_libraries(test_dependency_tracing_mock PRIVATE gtest_main gmock)
 target_compile_definitions(test_dependency_tracing_mock PRIVATE
     -DLDD_RECORDINGS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/ldd_recordings"
     -DMOCK_LDD_PATH="${CMAKE_CURRENT_SOURCE_DIR}/mock_ldd.sh"
+    -DTEST_PATCHELF_PATH="${PATCHELF}"
 )
 ld_add_test(test_dependency_tracing_mock)
 

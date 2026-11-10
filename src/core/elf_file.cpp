@@ -17,6 +17,7 @@
 #include "linuxdeploy/log/log.h"
 #include "linuxdeploy/util/util.h"
 #include "linuxdeploy/subprocess/subprocess.h"
+#include "excludelist.h"
 
 // DT_FLAGS_1 flag of position-independent executables (PIEs), missing in older C libraries' headers
 #ifndef DF_1_PIE
@@ -37,6 +38,8 @@ namespace linuxdeploy {
                     uint8_t elfABI = 0;
                     bool isDebugSymbolsFile = false;
                     bool isDynamicallyLinked = false;
+                    // PT_INTERP, empty if there is none
+                    std::string interpreter;
 
                 public:
                     explicit PrivateData(fs::path path) : path(std::move(path)) {}
@@ -119,6 +122,12 @@ namespace linuxdeploy {
                             switch (nextPhdr->p_type) {
                                 case PT_INTERP:
                                     isDynamicallyLinked = true;
+                                    if (nextPhdr->p_offset < dataSize) {
+                                        const auto* value =
+                                            reinterpret_cast<const char*>(data.get() + nextPhdr->p_offset);
+                                        interpreter.assign(value, strnlen(value, std::min<uint64_t>(
+                                            nextPhdr->p_filesz, dataSize - nextPhdr->p_offset)));
+                                    }
                                     break;
                                 case PT_DYNAMIC:
                                     dynamicPhdr = nextPhdr;
@@ -280,7 +289,9 @@ namespace linuxdeploy {
                 auto checkMissingLibrary = [&](std::string library) {
                     util::trim(library);
                     util::trim(library, '\t');
-                    if (!util::isInExcludelist(library, excludeLibraryPatterns))
+                    // libraries needed by their path are excluded by their file name, too, like when they are found
+                    if (!util::isInExcludelist(library, excludeLibraryPatterns) &&
+                        !util::isInExcludelist(fs::path(library).filename(), excludeLibraryPatterns))
                         throw DependencyNotFoundError("Could not find dependency: " + library);
                     ldLog() << LD_WARNING << resolvedPath.string() << "depends on excluded library:" << library << std::endl;
                 };
@@ -365,29 +376,76 @@ namespace linuxdeploy {
                     return value;
                 };
 
+                // entries without "=>" are the loader, the vDSO or, on glibc, libraries needed by their path
                 // musl's libc is also its loader, which its ldd lists by the name it was run as (e.g.,
                 // /lib/ld-musl-x86_64.so.1, or "ldd" for shared objects), and as the target of the libraries it
                 // provides itself (e.g., libc.so), which must not be deployed; ordinary libraries are listed only once
                 std::set<std::string> listedWithoutArrow;
+                std::set<std::string> resolvedPaths;
                 for (const auto& line : lddLines) {
-                    if (!util::stringContains(line, "=>") && std::regex_match(line, what, loadedObjectExpr))
-                        listedWithoutArrow.insert(trimmed(what[1].str()));
+                    if (std::regex_match(line, missingLibraryExpr))
+                        continue;
+
+                    if (!util::stringContains(line, "=>")) {
+                        if (std::regex_match(line, what, loadedObjectExpr))
+                            listedWithoutArrow.insert(trimmed(what[1].str()));
+                    } else if (std::regex_search(line, what, expr)) {
+                        resolvedPaths.insert(trimmed(what[2].str()));
+                    }
                 }
 
                 // in ldd's output, names without a slash are not loaded files (e.g., the vDSO, or musl's "ldd")
                 // recognize loaders by their file name, not by substrings, which other paths may contain (e.g.,
                 // build-linux-x86_64/), also if they are listed with "=>", like glibc 2.36 did (see #210)
+                // recognize the traced file's PT_INTERP by its path, too (e.g., LSB's ld-lsb-x86-64.so.3)
                 // musl's loaders are named ld-musl-<arch>.so.1, and no arch contains a dot
-                auto isRuntimeFile = [](const std::string& path) {
+                auto isInterpreter = [this](const std::string& path) {
+                    return !d->interpreter.empty() && path == d->interpreter;
+                };
+                auto isRuntimeFile = [&](const std::string& path) {
                     static const std::regex loaderFileNameExpr(
                         R"(ld-linux(-.+)?\.so\..+|ld(64)?\.so\..+|ld-musl-[^.]+\.so\.1)");
-                    return !util::stringContains(path, "/") ||
+                    return !util::stringContains(path, "/") || isInterpreter(path) ||
                            std::regex_match(fs::path(path).filename().string(), loaderFileNameExpr);
+                };
+
+                // loaders open libraries needed by their path (e.g., an absolute DT_NEEDED) only at that path, and use
+                // a deployed copy only if the path is relative to $ORIGIN (which glibc's ldd lists expanded), so
+                // deploy them, but warn; ldd lists the needs of all loaded files, so the file needing it is unknown
+                auto warnNeededByPath = [&](const std::string& name, const fs::path& libraryPath) {
+                    const auto fileName = libraryPath.filename();
+                    if (util::isInExcludelist(fileName, excludeLibraryPatterns) ||
+                        util::isInExcludelist(fileName, generatedExcludelist)) {
+                        ldLog() << LD_DEBUG << resolvedPath.string() << "(or one of its dependencies) needs excluded "
+                                   "library" << name << "by its path" << std::endl;
+                        return;
+                    }
+
+                    ldLog() << LD_WARNING << resolvedPath.string() << "(or one of its dependencies) needs" << name
+                            << "by its path, so it must exist at that path at runtime, unless the path is relative to "
+                               "$ORIGIN and the copy is deployed there" << std::endl;
                 };
 
                 for (const auto& line : lddLines) {
                     if (std::regex_match(line, what, missingLibraryExpr)) {
                         checkMissingLibrary(what[1].str());
+                        continue;
+                    }
+
+                    if (!util::stringContains(line, "=>")) {
+                        if (!std::regex_match(line, what, loadedObjectExpr)) {
+                            ldLog() << LD_DEBUG << "Invalid ldd output: " << line << std::endl;
+                            continue;
+                        }
+
+                        // musl's loader may have any name, but its libc aliases resolve to it
+                        const auto name = trimmed(what[1].str());
+                        if (isRuntimeFile(name) || resolvedPaths.count(name) != 0) {
+                            ldLog() << LD_DEBUG << "skipping runtime object" << line << std::endl;
+                        } else {
+                            warnNeededByPath(name, name);
+                            paths.push_back(fs::absolute(name));
+                        }
                         continue;
                     }
 
@@ -398,12 +456,17 @@ namespace linuxdeploy {
                         // ldd lists loaders by their path, also with "=>" (glibc 2.36), so a name without a slash
                         // was searched for, and is a library even if it is named like a loader (e.g., ld.so.1, a
                         // loader only on some Linux architectures)
+                        // glibc lists a renamed PT_INTERP with "=>" and the loader's path
                         if (!util::stringContains(libraryPath, "/") ||
                             (util::stringContains(name, "/") && isRuntimeFile(name)) ||
                             listedWithoutArrow.count(libraryPath) != 0) {
                             ldLog() << LD_DEBUG << "skipping runtime object" << line << std::endl;
                             continue;
                         }
+
+                        // musl's and FreeBSD's ldd list libraries needed by their path with "=>"
+                        if (util::stringContains(name, "/"))
+                            warnNeededByPath(name, libraryPath);
 
                         paths.push_back(fs::absolute(libraryPath));
                     } else {

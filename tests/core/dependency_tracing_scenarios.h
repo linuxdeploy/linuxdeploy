@@ -96,6 +96,24 @@ namespace dependency_tracing_test {
             EXPECT_THAT(t.trace(t.parent), Contains(t.leaf));
         }
 
+        // the real test makes libdependency_parent.so need libdependency_leaf.so by its path
+        // glibc's ldd lists it without "=>", musl's and FreeBSD's with "=>", and it is deployed with a warning on all
+        inline void LibraryDependencies_DeployNeededByPath(Tracer& t) {
+            std::vector<fs::path> dependencies;
+            auto log = captureLog([&] { dependencies = t.trace(t.executable); });
+            EXPECT_THAT(dependencies, Contains(t.simple));
+            EXPECT_THAT(dependencies, Contains(t.parent));
+            EXPECT_THAT(dependencies, Contains(t.leaf));
+            // ldd lists what all loaded files need, so the warning cannot name libdependency_parent.so
+            EXPECT_THAT(log, testing::AllOf(testing::HasSubstr("(or one of its dependencies) needs"),
+                                            testing::HasSubstr(t.leaf.filename().string() + " by its path")));
+
+            // excluded libraries are still traced, but not deployed, so they get no warning
+            log = captureLog([&] { dependencies = t.trace(t.parent, {"libdependency_leaf.so"}); });
+            EXPECT_THAT(dependencies, Contains(t.leaf));
+            EXPECT_THAT(log, Not(testing::HasSubstr("by its path")));
+        }
+
         inline void RuntimeDependencies_FilterRuntimeObjects(Tracer& t) {
             for (const auto& path : {t.executable, t.parent}) {
                 SCOPED_TRACE(path);
@@ -142,9 +160,12 @@ namespace dependency_tracing_test {
 
         // the real test renames libsimple_library.so to ld.so.1, the file name of a loader on some Linux architectures
         // (not on the CI platforms)
+        // it also makes libdependency_parent.so need libdependency_leaf.so by its path, renamed to ld-musl-helper.so,
+        // whose name only starts like musl's loader's
         inline void LibraryNames_PreserveLoaderLikeFileNames(Tracer& t) {
             const auto dependencies = t.trace(t.executable);
             EXPECT_THAT(dependencies, Contains(t.directory / "ld.so.1"));
+            EXPECT_THAT(dependencies, Contains(t.directory / "ld-musl-helper.so"));
         }
 
         // the real test moves libdependency_leaf.so to "not found/"
@@ -196,6 +217,15 @@ namespace dependency_tracing_test {
         // the real test deletes libdependency_leaf.so
         inline void MissingDependencies_AllowWildcardExclusion(Tracer& t) {
             const auto dependencies = t.trace(t.executable, {"libdependency_leaf.so*"});
+            EXPECT_THAT(dependencies, Contains(t.parent));
+            EXPECT_THAT(dependencies, Not(Contains(t.leaf)));
+        }
+
+        // the real test makes libdependency_parent.so need libdependency_leaf.so by its path, and deletes it
+        // it is excluded by its file name, like when it is found (see LibraryDependencies_DeployNeededByPath)
+        inline void MissingDependencies_AllowExcludedNeededByPath(Tracer& t) {
+            EXPECT_THROW(t.trace(t.executable), DependencyNotFoundError);
+            const auto dependencies = t.trace(t.executable, {"libdependency_leaf.so"});
             EXPECT_THAT(dependencies, Contains(t.parent));
             EXPECT_THAT(dependencies, Not(Contains(t.leaf)));
         }

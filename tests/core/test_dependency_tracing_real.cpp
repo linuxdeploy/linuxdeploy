@@ -161,6 +161,13 @@ namespace {
         runScenario(scenarios::LibraryDependencies_FindDirectAndTransitive);
     }
 
+    TEST_F(DependencyTracingTestReal, LibraryDependencies_DeployNeededByPath) {
+        const auto patch = linuxdeploy::subprocess::subprocess({TEST_PATCHELF_PATH,
+            "--replace-needed", leaf.filename().string(), fs::canonical(leaf).string(), parent.string()}).run();
+        ASSERT_EQ(patch.exit_code(), 0) << patch.stderr_string();
+        runScenario(scenarios::LibraryDependencies_DeployNeededByPath);
+    }
+
     TEST_F(DependencyTracingTestReal, RuntimeDependencies_FilterRuntimeObjects) {
         runScenario(scenarios::RuntimeDependencies_FilterRuntimeObjects);
     }
@@ -222,6 +229,12 @@ namespace {
             "--replace-needed", simple.filename().string(), "ld.so.1", executable.string()}).run();
         ASSERT_EQ(patchExecutable.exit_code(), 0) << patchExecutable.stderr_string();
 
+        const auto helper = directory / "ld-musl-helper.so";
+        fs::rename(leaf, helper);
+        const auto patchParent = linuxdeploy::subprocess::subprocess({TEST_PATCHELF_PATH,
+            "--replace-needed", leaf.filename().string(), fs::canonical(helper).string(), parent.string()}).run();
+        ASSERT_EQ(patchParent.exit_code(), 0) << patchParent.stderr_string();
+
         runScenario(scenarios::LibraryNames_PreserveLoaderLikeFileNames);
     }
 
@@ -274,6 +287,14 @@ namespace {
     TEST_F(DependencyTracingTestReal, MissingDependencies_AllowWildcardExclusion) {
         ASSERT_TRUE(fs::remove(leaf));
         runScenario(scenarios::MissingDependencies_AllowWildcardExclusion);
+    }
+
+    TEST_F(DependencyTracingTestReal, MissingDependencies_AllowExcludedNeededByPath) {
+        const auto patch = linuxdeploy::subprocess::subprocess({TEST_PATCHELF_PATH,
+            "--replace-needed", leaf.filename().string(), fs::canonical(leaf).string(), parent.string()}).run();
+        ASSERT_EQ(patch.exit_code(), 0) << patch.stderr_string();
+        ASSERT_TRUE(fs::remove(leaf));
+        runScenario(scenarios::MissingDependencies_AllowExcludedNeededByPath);
     }
 
     TEST_F(DependencyTracingTestReal, MissingDependencies_RejectPartiallyExcluded) {

@@ -13,6 +13,7 @@
 
 #include "linuxdeploy/core/appdir.h"
 #include "linuxdeploy/core/elf_file.h"
+#include "linuxdeploy/subprocess/subprocess.h"
 #include "test_util.h"
 #include "dependency_tracing_recording.h"
 #include "dependency_tracing_scenarios.h"
@@ -82,8 +83,31 @@ namespace {
                      "\t/lib64/ld64.so.2 (0x1000)\n"
                      "\t/lib/ld.so.1 (0x1000)\n"
                      "\tlibdependency_leaf.so => /build-linux-x86_64/libdependency_leaf.so (0x2000)\n");
-        EXPECT_THAT(trace(DEPENDENCY_PARENT_LIBRARY_PATH),
-                    ElementsAre(fs::path("/build-linux-x86_64/libdependency_leaf.so")));
+        std::vector<fs::path> dependencies;
+        const auto log = dependency_tracing_test::captureLog([&] {
+            dependencies = trace(DEPENDENCY_PARENT_LIBRARY_PATH);
+        });
+        EXPECT_THAT(dependencies, ElementsAre(fs::path("/build-linux-x86_64/libdependency_leaf.so")));
+        EXPECT_THAT(log, testing::Not(HasSubstr("by its path")));
+    }
+
+    // hand-written, as no CI platform's loader has a name the file name pattern misses (e.g., LSB's)
+    // glibc lists the loader without "=>" if it is the program's PT_INTERP, and with "=>" and the loader's path if
+    // the PT_INTERP is renamed
+    TEST_F(DependencyTracingTestMock, RuntimeDependencies_FilterRuntimeObjects_ProgramInterpreter) {
+        const auto executable = directory / "simple_executable";
+        fs::copy_file(SIMPLE_EXECUTABLE_PATH, executable);
+        const auto patch = linuxdeploy::subprocess::subprocess({TEST_PATCHELF_PATH,
+            "--set-interpreter", "/lib64/ld-lsb-x86-64.so.3", executable.string()}).run();
+        ASSERT_EQ(patch.exit_code(), 0) << patch.stderr_string();
+
+        setLddOutput("\tlibdependency_leaf.so => /fixture/libdependency_leaf.so (0x1000)\n"
+                     "\t/lib64/ld-lsb-x86-64.so.3 (0x1000)\n"
+                     "\t/lib64/ld-lsb-x86-64.so.3 => /lib64/ld-linux-x86-64.so.2 (0x1000)\n");
+        std::vector<fs::path> dependencies;
+        const auto log = dependency_tracing_test::captureLog([&] { dependencies = trace(executable); });
+        EXPECT_THAT(dependencies, ElementsAre(fs::path("/fixture/libdependency_leaf.so")));
+        EXPECT_THAT(log, testing::Not(HasSubstr("by its path")));
     }
 
     // === Library names ===
@@ -275,6 +299,10 @@ namespace {
         LibraryDependencies_FindDirectAndTransitive(*this);
     }
 
+    TEST_P(DependencyTracingTestRecorded, LibraryDependencies_DeployNeededByPath) {
+        LibraryDependencies_DeployNeededByPath(*this);
+    }
+
     TEST_P(DependencyTracingTestRecorded, RuntimeDependencies_FilterRuntimeObjects) {
         RuntimeDependencies_FilterRuntimeObjects(*this);
     }
@@ -329,6 +357,10 @@ namespace {
 
     TEST_P(DependencyTracingTestRecorded, MissingDependencies_AllowWildcardExclusion) {
         MissingDependencies_AllowWildcardExclusion(*this);
+    }
+
+    TEST_P(DependencyTracingTestRecorded, MissingDependencies_AllowExcludedNeededByPath) {
+        MissingDependencies_AllowExcludedNeededByPath(*this);
     }
 
     TEST_P(DependencyTracingTestRecorded, MissingDependencies_RejectPartiallyExcluded) {
