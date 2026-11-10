@@ -1,3 +1,5 @@
+#include <cstdint>
+
 #include "CImg.h"
 using namespace cimg_library;
 

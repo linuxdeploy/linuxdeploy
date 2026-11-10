@@ -1,4 +1,5 @@
 // system headers
+#include <cstdint>
 #include <cstring>
 #include <filesystem>
 #include <iomanip>
