@@ -19,7 +19,7 @@ using namespace linuxdeploy::util;
 
 namespace fs = std::filesystem;
 
-int main(int argc, char** argv) {
+static int run(int argc, char** argv) {
     args::ArgumentParser parser(
         "linuxdeploy -- create AppDir bundles with ease"
     );
@@ -361,5 +361,15 @@ int main(int argc, char** argv) {
     }
 
     return 0;
+}
+
+int main(int argc, char** argv) {
+    // report errors which nothing else handles (e.g., a tool which cannot be run) instead of aborting
+    try {
+        return run(argc, argv);
+    } catch (const std::exception& e) {
+        ldLog() << LD_ERROR << e.what() << std::endl;
+        return 1;
+    }
 }
 
