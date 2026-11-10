@@ -5,6 +5,7 @@
 #include <fstream>
 #include <memory>
 #include <regex>
+#include <sstream>
 #include <sys/mman.h>
 #include <utility>
 
@@ -244,6 +245,24 @@ namespace linuxdeploy {
 
                 const auto result = lddProc.run();
 
+                auto lddError = [&](const std::string& reason) {
+                    std::ostringstream message;
+                    message << "Failed to run ldd on " << resolvedPath.string() << ": " << reason;
+                    if (!result.stdout_string().empty())
+                        message << "\nstdout:\n" << result.stdout_string();
+                    if (!result.stderr_string().empty())
+                        message << "\nstderr:\n" << result.stderr_string();
+                    return DependencyTraceError(message.str());
+                };
+
+                // the output of an ldd which could not be run or was terminated may be incomplete, even if all its
+                // diagnostics would be accepted otherwise
+                // strerror(), as exit_description() would repeat that ldd could not be run
+                if (result.exec_error() != 0)
+                    throw lddError(strerror(result.exec_error()));
+                if (result.term_signal() != 0)
+                    throw lddError(result.exit_description());
+
                 // missing libraries are rejected, unless they are excluded
                 auto checkMissingLibrary = [&](std::string library) {
                     util::trim(library);
@@ -254,12 +273,67 @@ namespace linuxdeploy {
                 };
 
                 if (result.exit_code() != 0) {
+                    // glibc's ldd reports files it cannot load (e.g., for another architecture) as not dynamic; musl's
+                    // and FreeBSD's diagnostics for them are rejected below
                     if (result.stdout_string().find("not a dynamic executable") != std::string::npos || result.stderr_string().find("not a dynamic executable") != std::string::npos) {
                         ldLog() << LD_WARNING << this->d->path << "is not linked dynamically" << std::endl;
                         return {};
                     }
 
-                    throw std::runtime_error{"Failed to run ldd: exited with code " + std::to_string(result.exit_code())};
+                    // musl's ldd exits non-zero for missing libraries, but still lists the resolved ones; unlike
+                    // glibc's ldd without -r, it also resolves symbols, which fails for plugins whose symbols the host
+                    // provides
+                    // accept excluded missing libraries and unresolved symbols, but reject all other errors, even for
+                    // excluded libraries (e.g., one which exists, but is not a loadable ELF file)
+                    static const std::regex muslMissingLibraryExpr(
+                        R"(^Error loading shared library ([^:]+): No such file or directory(?: \(needed by .+\))?$)");
+                    static const std::regex muslMissingSymbolExpr(
+                        R"(^Error relocating (.+): (.+): symbol not found$)");
+
+                    std::vector<std::string> missingLibraries;
+                    std::vector<std::pair<std::string, std::string>> missingSymbols;
+                    bool sawUnexpectedError = false;
+
+                    for (auto& line : util::splitLines(result.stderr_string())) {
+                        util::trim(line);
+
+                        if (line.empty())
+                            continue;
+
+                        std::smatch match;
+                        if (std::regex_match(line, match, muslMissingLibraryExpr)) {
+                            missingLibraries.push_back(match[1].str());
+                        } else if (std::regex_match(line, match, muslMissingSymbolExpr)) {
+                            missingSymbols.emplace_back(match[1].str(), match[2].str());
+                        } else {
+                            sawUnexpectedError = true;
+                        }
+                    }
+
+                    // musl reports every relocation, so count each symbol once per file
+                    std::sort(missingSymbols.begin(), missingSymbols.end());
+                    missingSymbols.erase(std::unique(missingSymbols.begin(), missingSymbols.end()),
+                                         missingSymbols.end());
+
+                    // check all diagnostics first, so a missing library cannot hide an unexpected error after it
+                    // a non-zero exit status without known diagnostics is a failure, too
+                    if (sawUnexpectedError || (missingLibraries.empty() && missingSymbols.empty()))
+                        throw lddError(result.exit_description());
+
+                    for (const auto& library : missingLibraries)
+                        checkMissingLibrary(library);
+
+                    // the symbols may be provided at runtime (e.g., by the program loading a plugin); as every deployed
+                    // library is traced again, warn once with a count, and list them at debug level
+                    if (!missingSymbols.empty()) {
+                        ldLog() << LD_WARNING << resolvedPath.string() << LD_NO_SPACE << ": ignoring"
+                                << missingSymbols.size()
+                                << (missingSymbols.size() == 1 ? "unresolved symbol" : "unresolved symbols")
+                                << "of it or its dependencies, which must be provided at runtime (e.g., by an excluded "
+                                   "library or the program loading this file)" << std::endl;
+                        ldLog() << LD_DEBUG << "ldd diagnostics for" << resolvedPath.string() << LD_NO_SPACE << ":"
+                                << std::endl << result.stderr_string();
+                    }
                 }
 
                 // FreeBSD's ldd appends an address to missing libraries, which the expression for resolved libraries

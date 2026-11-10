@@ -407,7 +407,7 @@ namespace linuxdeploy {
                             for (const auto &dependencyPath : elfFile.traceDynamicDependencies(excludeLibraryPatterns))
                                 if (!deployLibrary(dependencyPath, false, false))
                                     return false;
-                        } catch (const elf_file::DependencyNotFoundError& e) {
+                        } catch (const elf_file::DependencyTraceError& e) {
                             ldLog() << LD_ERROR << e.what() << std::endl;
                             return false;
                         }

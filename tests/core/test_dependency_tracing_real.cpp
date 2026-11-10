@@ -8,6 +8,7 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 
+#include "linuxdeploy/core/appdir.h"
 #include "linuxdeploy/core/elf_file.h"
 #include "linuxdeploy/subprocess/subprocess.h"
 #include "linuxdeploy/util/util.h"
@@ -25,6 +26,13 @@ namespace {
     constexpr bool usesGlibc = true;
 #else
     constexpr bool usesGlibc = false;
+#endif
+
+    // musl defines no macro to detect it, but is the only other C library on Linux the fixtures are built with
+#if defined(__linux__) && !defined(__GLIBC__)
+    constexpr bool usesMusl = true;
+#else
+    constexpr bool usesMusl = false;
 #endif
 
     // every ldd call is recorded, and printed if the test fails
@@ -73,6 +81,13 @@ namespace {
             for (const auto& dependency : dependencies)
                 EXPECT_TRUE(fs::exists(dependency)) << dependency;
             return dependencies;
+        }
+
+        bool deployDependencies(const fs::path& path) override {
+            const auto appDirPath = directory / "AppDir";
+            fs::create_directories(appDirPath / "usr/lib");
+            fs::copy_file(path, appDirPath / "usr/lib" / path.filename());
+            return linuxdeploy::core::appdir::AppDir(appDirPath).deployDependenciesForExistingFiles();
         }
 
         void runScenario(void (*scenario)(Tracer&)) {
@@ -146,12 +161,85 @@ namespace {
         runScenario(scenarios::LibraryNames_PreserveNotFoundInPath);
     }
 
+    // === Missing dependencies and exclusions ===
+
+    TEST_F(DependencyTracingTestReal, MissingDependencies_RejectDirect) {
+        ASSERT_TRUE(fs::remove(parent));
+        runScenario(scenarios::MissingDependencies_RejectDirect);
+    }
+
+    TEST_F(DependencyTracingTestReal, MissingDependencies_AllowExcludedDirect) {
+        ASSERT_TRUE(fs::remove(parent));
+        runScenario(scenarios::MissingDependencies_AllowExcludedDirect);
+    }
+
+    TEST_F(DependencyTracingTestReal, MissingDependencies_RejectTransitive) {
+        ASSERT_TRUE(fs::remove(leaf));
+        runScenario(scenarios::MissingDependencies_RejectTransitive);
+    }
+
+    TEST_F(DependencyTracingTestReal, MissingDependencies_AllowExcludedTransitive) {
+        ASSERT_TRUE(fs::remove(leaf));
+        runScenario(scenarios::MissingDependencies_AllowExcludedTransitive);
+    }
+
+    TEST_F(DependencyTracingTestReal, MissingDependencies_AllowWildcardExclusion) {
+        ASSERT_TRUE(fs::remove(leaf));
+        runScenario(scenarios::MissingDependencies_AllowWildcardExclusion);
+    }
+
+    TEST_F(DependencyTracingTestReal, MissingDependencies_RejectPartiallyExcluded) {
+        ASSERT_TRUE(fs::remove(parent));
+        ASSERT_TRUE(fs::remove(simple));
+        runScenario(scenarios::MissingDependencies_RejectPartiallyExcluded);
+    }
+
+    TEST_F(DependencyTracingTestReal, MissingDependencies_RejectUnrelatedExclusion) {
+        ASSERT_TRUE(fs::remove(leaf));
+        runScenario(scenarios::MissingDependencies_RejectUnrelatedExclusion);
+    }
+
+    TEST_F(DependencyTracingTestReal, MissingDependencies_RejectExcludedLoadError) {
+        if (!usesMusl)
+            GTEST_SKIP() << "glibc's and FreeBSD's ldd report libraries they cannot load as missing";
+        ASSERT_TRUE(ElfFile(parent).setRPath(unloadableLeaf.parent_path().string()));
+        runScenario(scenarios::MissingDependencies_RejectExcludedLoadError);
+    }
+
+    // === Relocation errors ===
+
+    TEST_F(DependencyTracingTestReal, RelocationErrors_Allow) {
+        fs::copy_file(MISSING_SYMBOL_LIBRARY_PATH, leaf, fs::copy_options::overwrite_existing);
+        // running the executable proves the symbol is really missing, on either libc
+        const auto run = linuxdeploy::subprocess::subprocess({executable.string()}).run();
+        EXPECT_NE(run.exit_code(), 0);
+        runScenario(scenarios::RelocationErrors_Allow);
+
+        // unlike glibc's ldd without -r, musl's ldd resolves symbols
+        if (usesMusl) {
+            const auto calls = readRecordedCalls(recordingDirectory, directory);
+            ASSERT_FALSE(calls.empty());
+            EXPECT_NE(calls.front().status, 0);
+            EXPECT_THAT(calls.front().out, testing::HasSubstr("libdependency_parent.so"));
+            EXPECT_THAT(calls.front().err, testing::HasSubstr("_Z21dependency_leaf_valuev: symbol not found"));
+            // like a plugin's, the symbols the traced library itself needs are unresolved
+            EXPECT_THAT(calls.back().err, testing::HasSubstr(
+                "Error relocating /fixture/libdependency_parent.so: _Z21dependency_leaf_valuev: symbol not found"));
+        }
+    }
+
     // === Invalid programs and loader diagnostics ===
 
     TEST_F(DependencyTracingTestReal, InvalidPrograms_AcceptNonDynamicDiagnostic) {
         if (!usesGlibc)
             GTEST_SKIP() << "only glibc's ldd reports files it cannot load as not dynamic";
         runScenario(scenarios::InvalidPrograms_AcceptNonDynamicDiagnostic);
+    }
+
+    TEST_F(DependencyTracingTestReal, InvalidPrograms_RejectUnloadable) {
+        if (usesGlibc)
+            GTEST_SKIP() << "glibc's ldd reports files it cannot load as not dynamic";
+        runScenario(scenarios::InvalidPrograms_RejectUnloadable);
     }
 
     // === Static programs ===
@@ -166,5 +254,12 @@ namespace {
         fs::copy_file(SIMPLE_EXECUTABLE_STATIC_PIE_PATH, staticPie);
 #endif
         runScenario(scenarios::StaticPrograms_StaticPie);
+    }
+
+    // === Deployment errors ===
+
+    TEST_F(DependencyTracingTestReal, DeploymentErrors_ReturnFailure) {
+        ASSERT_TRUE(ElfFile(parent).setRPath(unloadableLeaf.parent_path().string()));
+        runScenario(scenarios::DeploymentErrors_ReturnFailure);
     }
 }

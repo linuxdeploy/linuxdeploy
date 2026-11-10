@@ -9,6 +9,7 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 
+#include "linuxdeploy/core/appdir.h"
 #include "linuxdeploy/core/elf_file.h"
 #include "test_util.h"
 #include "dependency_tracing_recording.h"
@@ -16,8 +17,76 @@
 
 namespace fs = std::filesystem;
 using namespace linuxdeploy::core::elf_file;
+using testing::HasSubstr;
 
 namespace {
+    class DependencyTracingTestMock : public testing::Test {
+    protected:
+        fs::path directory;
+        std::optional<std::string> oldPath;
+
+        void SetUp() override {
+            if (const auto* path = getenv("PATH"))
+                oldPath = path;
+            directory = make_temporary_directory(
+                (fs::temp_directory_path() / "linuxdeploy-ldd-tests-mock-XXXXXX").string());
+            ASSERT_EQ(setenv("PATH", directory.c_str(), 1), 0);
+        }
+
+        std::vector<fs::path> trace(const fs::path& path,
+                                    const std::vector<std::string>& exclusions = {}) {
+            return ElfFile(path).traceDynamicDependencies(exclusions);
+        }
+
+        void TearDown() override {
+            if (oldPath)
+                EXPECT_EQ(setenv("PATH", oldPath->c_str(), 1), 0);
+            else
+                EXPECT_EQ(unsetenv("PATH"), 0);
+            fs::remove_all(directory);
+        }
+
+        void setLddOutput(const std::string& output, const std::string& error = "", int status = 0) {
+            dependency_tracing_test::writeReplayingLdd(directory, {{"", status, output, error}});
+        }
+    };
+
+    // === Invalid programs and loader diagnostics ===
+
+    // no platform's ldd fails without a diagnostic, but a non-zero exit status must not be ignored
+    TEST_F(DependencyTracingTestMock, InvalidPrograms_RejectNonzeroExitWithoutStderr) {
+        for (const std::string output : {"", "libdependency_leaf.so => /fixture/libdependency_leaf.so (0x1000)\n"}) {
+            SCOPED_TRACE(output);
+            setLddOutput(output, "", 127);
+            EXPECT_THROW(trace(DEPENDENCY_PARENT_LIBRARY_PATH), DependencyTraceError);
+        }
+    }
+
+    // hand-written, as no fixture needs a symbol through several relocations, which musl reports once each
+    TEST_F(DependencyTracingTestMock, RelocationErrors_CountEachSymbolOnce) {
+        setLddOutput("\tlibdependency_leaf.so => /fixture/libdependency_leaf.so (0x1000)\n",
+                     "Error relocating /fixture/libdependency_leaf.so: first: symbol not found\n"
+                     "Error relocating /fixture/libdependency_leaf.so: first: symbol not found\n"
+                     "Error relocating /fixture/libdependency_leaf.so: second: symbol not found\n"
+                     "Error relocating /fixture/libdependency_parent.so: first: symbol not found\n", 127);
+        const auto log = dependency_tracing_test::captureLog([&] { trace(DEPENDENCY_PARENT_LIBRARY_PATH); });
+        EXPECT_THAT(log, HasSubstr("ignoring 3 unresolved symbols"));
+    }
+
+    // no platform's ldd is terminated by a signal by itself, but its output may then be incomplete, even if it
+    // contains only diagnostics which are accepted otherwise, like musl's unresolved symbols
+    TEST_F(DependencyTracingTestMock, InvalidPrograms_RejectTerminationBySignal) {
+        std::ofstream(directory / "ldd")
+            << "#!/bin/sh\n"
+            << "printf '\\tlibdependency_leaf.so => /fixture/libdependency_leaf.so (0x1000)\\n'\n"
+            << "printf 'Error relocating %s: _Z21dependency_leaf_valuev: symbol not found\\n' \"$1\" >&2\n"
+            << "kill -KILL $$\n";
+        dependency_tracing_test::makeExecutable(directory / "ldd");
+
+        EXPECT_THAT([&] { trace(DEPENDENCY_PARENT_LIBRARY_PATH); },
+                    testing::ThrowsMessage<DependencyTraceError>(HasSubstr("terminated by signal")));
+    }
+
     // === Recorded scenarios ===
 
     // replays the ldd calls from ldd_recordings/<platform>/<scenario>.txt
@@ -82,6 +151,13 @@ namespace {
             return dependencies;
         }
 
+        bool deployDependencies(const fs::path& path) override {
+            const auto appDirPath = copy(directory / "AppDir");
+            fs::create_directories(appDirPath / "usr/lib");
+            fs::copy_file(copy(path), appDirPath / "usr/lib" / path.filename());
+            return linuxdeploy::core::appdir::AppDir(appDirPath).deployDependenciesForExistingFiles();
+        }
+
         void TearDown() override {
             if (fakeLddDirectory.empty())
                 return;
@@ -126,8 +202,48 @@ namespace {
         LibraryNames_PreserveNotFoundInPath(*this);
     }
 
+    TEST_P(DependencyTracingTestRecorded, MissingDependencies_RejectDirect) {
+        MissingDependencies_RejectDirect(*this);
+    }
+
+    TEST_P(DependencyTracingTestRecorded, MissingDependencies_AllowExcludedDirect) {
+        MissingDependencies_AllowExcludedDirect(*this);
+    }
+
+    TEST_P(DependencyTracingTestRecorded, MissingDependencies_RejectTransitive) {
+        MissingDependencies_RejectTransitive(*this);
+    }
+
+    TEST_P(DependencyTracingTestRecorded, MissingDependencies_AllowExcludedTransitive) {
+        MissingDependencies_AllowExcludedTransitive(*this);
+    }
+
+    TEST_P(DependencyTracingTestRecorded, MissingDependencies_AllowWildcardExclusion) {
+        MissingDependencies_AllowWildcardExclusion(*this);
+    }
+
+    TEST_P(DependencyTracingTestRecorded, MissingDependencies_RejectPartiallyExcluded) {
+        MissingDependencies_RejectPartiallyExcluded(*this);
+    }
+
+    TEST_P(DependencyTracingTestRecorded, MissingDependencies_RejectUnrelatedExclusion) {
+        MissingDependencies_RejectUnrelatedExclusion(*this);
+    }
+
+    TEST_P(DependencyTracingTestRecorded, MissingDependencies_RejectExcludedLoadError) {
+        MissingDependencies_RejectExcludedLoadError(*this);
+    }
+
+    TEST_P(DependencyTracingTestRecorded, RelocationErrors_Allow) {
+        RelocationErrors_Allow(*this);
+    }
+
     TEST_P(DependencyTracingTestRecorded, InvalidPrograms_AcceptNonDynamicDiagnostic) {
         InvalidPrograms_AcceptNonDynamicDiagnostic(*this);
+    }
+
+    TEST_P(DependencyTracingTestRecorded, InvalidPrograms_RejectUnloadable) {
+        InvalidPrograms_RejectUnloadable(*this);
     }
 
     TEST_P(DependencyTracingTestRecorded, StaticPrograms_SkipLdd) {
@@ -136,5 +252,9 @@ namespace {
 
     TEST_P(DependencyTracingTestRecorded, StaticPrograms_StaticPie) {
         StaticPrograms_StaticPie(*this);
+    }
+
+    TEST_P(DependencyTracingTestRecorded, DeploymentErrors_ReturnFailure) {
+        DeploymentErrors_ReturnFailure(*this);
     }
 }

@@ -16,10 +16,16 @@ namespace linuxdeploy {
                     explicit ElfFileParseError(const std::string& msg) : std::runtime_error(msg) {}
             };
 
-            // thrown by traceDynamicDependencies() if a dependency is missing
-            class DependencyNotFoundError : public std::runtime_error {
+            // thrown when dynamic dependencies cannot be determined
+            class DependencyTraceError : public std::runtime_error {
                 public:
-                    explicit DependencyNotFoundError(const std::string& msg) : std::runtime_error(msg) {}
+                    explicit DependencyTraceError(const std::string& msg) : std::runtime_error(msg) {}
+            };
+
+            // thrown by traceDynamicDependencies() if a dependency is missing
+            class DependencyNotFoundError : public DependencyTraceError {
+                public:
+                    explicit DependencyNotFoundError(const std::string& msg) : DependencyTraceError(msg) {}
             };
 
             // thrown by getRPath() and setRPath() if patchelf cannot be run, and by getRPath() if it fails to read the rpath

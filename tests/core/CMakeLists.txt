@@ -84,9 +84,11 @@ ld_add_test(test_dependency_tracing_mock)
 ld_core_add_test_executable(test_dependency_tracing_real test_dependency_tracing_real.cpp)
 target_link_libraries(test_dependency_tracing_real PRIVATE gtest_main gmock)
 target_compile_definitions(test_dependency_tracing_real PRIVATE
+    -DMISSING_SYMBOL_LIBRARY_PATH="$<TARGET_FILE:dependency_leaf_missing_symbol>"
     -DTEST_PATCHELF_PATH="${PATCHELF}"
     -DMOCK_LDD_PATH="${CMAKE_CURRENT_SOURCE_DIR}/mock_ldd.sh"
 )
+add_dependencies(test_dependency_tracing_real dependency_leaf_missing_symbol)
 ld_add_test(test_dependency_tracing_real)
 
 ld_core_add_test_executable(test_subprocess test_subprocess.cpp)
