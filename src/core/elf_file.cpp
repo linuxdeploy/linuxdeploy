@@ -79,6 +79,31 @@ namespace linuxdeploy {
                         return patchelfPath;
                     }
 
+                    // throws a PatchelfError if patchelf cannot be started or run, which fails the deployment; the
+                    // callers handle a patchelf which ran, but failed
+                    static subprocess::subprocess_result runPatchelf(std::vector<std::string> args) {
+                        const auto patchelfPath = getPatchelfPath();
+                        args.insert(args.begin(), patchelfPath);
+
+                        auto run = [&]() {
+                            try {
+                                return subprocess::subprocess(args).run();
+                            } catch (const std::exception& e) {
+                                throw PatchelfError("Failed to start patchelf \"" + patchelfPath + "\": " + e.what());
+                            }
+                        };
+
+                        auto result = run();
+
+                        if (result.exec_error() != 0) {
+                            // quoted, as the path may be just the name (e.g., "patchelf")
+                            throw PatchelfError("Failed to find or run patchelf \"" + patchelfPath + "\": " +
+                                                strerror(result.exec_error()));
+                        }
+
+                        return result;
+                    }
+
                 private:
                     template<typename Ehdr_T, typename Shdr_T, typename Phdr_T, typename Dyn_T>
                     void parseElfHeader(std::shared_ptr<uint8_t> data, size_t dataSize) {
@@ -312,11 +337,7 @@ namespace linuxdeploy {
                 if (!isDynamicallyLinked() || isDebugSymbolsFile())
                     return "";
 
-                const auto patchelfPath = PrivateData::getPatchelfPath();
-
-                subprocess::subprocess patchelfProc({patchelfPath, "--print-rpath", d->path.string()});
-
-                const auto result = patchelfProc.run();
+                const auto result = PrivateData::runPatchelf({"--print-rpath", d->path.string()});
 
                 if (result.exit_code() != 0) {
                     // if file is not an ELF executable, there is no need for a detailed error message
@@ -340,25 +361,17 @@ namespace linuxdeploy {
             }
 
             bool ElfFile::setRPath(const std::string& value) {
-                // don't try to fetch patchelf path in a catchall to make sure the process exists when the tool cannot be found
-                const auto patchelfPath = PrivateData::getPatchelfPath();
-
                 // calling (older versions of) patchelf on symlinks can lead to weird behavior, e.g., patchelf copying the
                 // original file and patching the copy instead of patching the symlink target
                 const auto canonicalPath = fs::canonical(d->path);
 
                 ldLog() << LD_DEBUG << "Calling patchelf on canonical path" << canonicalPath << "instead of original path" << d->path << std::endl;
 
-                try {
-                    subprocess::subprocess patchelfProc({patchelfPath.c_str(), "--set-rpath", value.c_str(), canonicalPath.c_str()});
+                const auto result = PrivateData::runPatchelf({"--set-rpath", value, canonicalPath.string()});
 
-                    const auto result = patchelfProc.run();
-
-                    if (result.exit_code() != 0) {
-                        ldLog() << LD_ERROR << "Call to patchelf failed:" << std::endl << result.stderr_string() << std::endl;
-                        return false;
-                    }
-                } catch (const std::exception&) {
+                if (result.exit_code() != 0) {
+                    ldLog() << LD_ERROR << "Call to patchelf failed (" << LD_NO_SPACE << result.exit_description()
+                            << LD_NO_SPACE << "):" << std::endl << result.stderr_string() << std::endl;
                     return false;
                 }
 

@@ -1,4 +1,5 @@
 // system headers
+#include <cstring>
 #include <filesystem>
 #include <iomanip>
 #include <map>
@@ -282,9 +283,21 @@ namespace linuxdeploy {
                                     const auto result = proc.run();
                                     const auto& err = result.stderr_string();
 
+                                    if (result.exec_error() != 0) {
+                                        // quoted, as the path may be just the name (e.g., "strip")
+                                        ldLog() << LD_ERROR << "Failed to find or run strip \"" << LD_NO_SPACE << stripPath
+                                                << LD_NO_SPACE << "\":" << strerror(result.exec_error()) << std::endl;
+
+                                        // the other files cannot be stripped either
+                                        stripOperations.clear();
+                                        success = false;
+                                        break;
+                                    }
+
                                     if (result.exit_code() != 0 &&
                                         !util::stringContains(err, "Not enough room for program headers")) {
-                                        ldLog() << LD_ERROR << "Strip call failed:" << err << std::endl;
+                                        ldLog() << LD_ERROR << "Strip call failed (" << LD_NO_SPACE << result.exit_description()
+                                                << LD_NO_SPACE << "):" << err << std::endl;
                                         success = false;
                                     }
                                 }
@@ -313,7 +326,17 @@ namespace linuxdeploy {
                                         << std::endl;
                             } else {
                                 ldLog() << "Setting rpath in ELF file" << filePath << "to" << rpath << std::endl;
-                                if (!elf_file::ElfFile(filePath).setRPath(rpath)) {
+
+                                // if patchelf cannot be run, it cannot set the other rpaths either, so stop
+                                bool rpathSet;
+                                try {
+                                    rpathSet = elf_file::ElfFile(filePath).setRPath(rpath);
+                                } catch (const elf_file::PatchelfError& e) {
+                                    ldLog() << LD_ERROR << e.what() << std::endl;
+                                    return false;
+                                }
+
+                                if (!rpathSet) {
                                     ldLog() << LD_ERROR << "Failed to set rpath in ELF file:" << filePath << std::endl;
                                     success = false;
                                 }

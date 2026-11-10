@@ -22,7 +22,7 @@ namespace linuxdeploy {
                     explicit DependencyNotFoundError(const std::string& msg) : std::runtime_error(msg) {}
             };
 
-            // thrown by getRPath() if patchelf fails to read the rpath
+            // thrown by getRPath() and setRPath() if patchelf cannot be run, and by getRPath() if it fails to read the rpath
             class PatchelfError : public std::runtime_error {
                 public:
                     explicit PatchelfError(const std::string& msg) : std::runtime_error(msg) {}
@@ -64,6 +64,7 @@ namespace linuxdeploy {
 
                     // set rpath in ELF file
                     // returns true on success, false otherwise
+                    // throws PatchelfError if patchelf cannot be run
                     bool setRPath(const std::string& value);
 
                     // return ELF class
