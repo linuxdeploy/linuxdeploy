@@ -48,22 +48,72 @@ case "$ARCH" in
         ;;
 esac
 
+target="${1:-${TARGET:-debian}}"
+toolchain="${TOOLCHAIN:-}"
+build_args=()
+login_shell=
+
+case "$target" in
+    debian)
+        # GNU is the only Debian toolchain, so it is left out of the image tag
+        case "$toolchain" in
+            ""|gnu) toolchain= ;;
+            *) error "Unsupported Debian toolchain: $toolchain"
+               exit 2
+            ;;
+        esac
+        dockerfile="$this_dir/docker/Dockerfile"
+        build_args+=("--build-arg" "ARCH=$ARCH")
+        ;;
+    alpine)
+        dockerfile="$this_dir/docker/Dockerfile.Alpine"
+        toolchain="${toolchain:-musl}"
+        case "$toolchain" in
+            musl|llvm) build_args+=("--target" "$toolchain") ;;
+            *) error "Unsupported Alpine toolchain: $toolchain"
+               exit 2
+            ;;
+        esac
+        ;;
+    gentoo)
+        toolchain="${toolchain:-llvm}"
+        case "$toolchain" in
+            gnu)  gentoo_flavor=latest ;;
+            musl) gentoo_flavor=musl ;;
+            llvm) gentoo_flavor=musl-llvm ;;
+            *) error "Unsupported Gentoo toolchain: $toolchain"
+               exit 2
+            ;;
+        esac
+        build_args+=("--build-arg" "GENTOO_FLAVOR=$gentoo_flavor")
+        dockerfile="$this_dir/docker/Dockerfile.Gentoo"
+        # Gentoo sets up the toolchain environment in /etc/profile.env
+        login_shell=1
+        ;;
+    *)
+        error "Unsupported target: $target"
+        exit 2
+        ;;
+esac
+
 # first, we need to build the image
 # we always attempt to build it, it will only be rebuilt if Docker detects changes
 # optionally, we'll pull the base image beforehand
-info "Building Docker image for $ARCH (Docker platform: $docker_platform)"
+info "Building $target Docker image for $ARCH (Docker platform: $docker_platform)"
 
-build_args=()
 if [[ "${UPDATE:-}" == "" ]]; then
     warning "\$UPDATE not set, base image will not be pulled!"
 else
     build_args+=("--pull")
 fi
 
-image_tag="linuxdeploy-build"
+image_tag="linuxdeploy-build-$target"
+if [[ -n "$toolchain" ]]; then
+    image_tag+="-$toolchain"
+fi
 
 docker build \
-    --build-arg ARCH="$ARCH" \
+    -f "$dockerfile" \
     --platform "$docker_platform" \
     "${build_args[@]}" \
     -t "$image_tag" \
@@ -115,6 +165,13 @@ if [[ "$(docker info --format '{{.Host.Security.Rootless}}' 2>/dev/null)" == "tr
     docker_args+=("--userns=keep-id")
 fi
 
+# other distributions' /etc/profile would reset the $PATH set up by their Dockerfiles
+bash_args=(-xc)
+if [[ -n "$login_shell" ]]; then
+    # no tracing in login shells, it would print every line of /etc/profile
+    bash_args=(--login -c)
+fi
+
 info "Running build with uid $uid"
 docker run \
     --rm \
@@ -128,4 +185,4 @@ docker run \
     -v "$(readlink -f "$this_dir"/..):/ws" \
     -w /ws \
     "$image_tag" \
-    bash -xc "$build_script"
+    bash "${bash_args[@]}" "$build_script"

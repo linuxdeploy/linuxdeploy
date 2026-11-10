@@ -35,6 +35,10 @@ old_cwd="$(readlink -f "$PWD")"
 
 pushd "$build_dir"
 
+# CMake 4 rejects projects which require CMake < 3.5, like the googletest cmake-scripts fetches and
+# linuxdeploy-plugin-appimage; as an environment variable, it also reaches the latter's build
+export CMAKE_POLICY_VERSION_MINIMUM=3.5
+
 # work around ninja colors bug
 extra_cmake_args=()
 if [ -t 0 ]; then
@@ -51,6 +55,7 @@ cmake \
     -DSTATIC_BUILD=ON \
     -DCMAKE_INSTALL_PREFIX=/usr \
     -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+    ${FORCE_BUILD_GTEST:+"-DFORCE_BUILD_GTEST=$FORCE_BUILD_GTEST"} \
     "${extra_cmake_args[@]}"
 
 nprocs="$(nproc)"
