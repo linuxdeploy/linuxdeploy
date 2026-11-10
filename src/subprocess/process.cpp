@@ -143,6 +143,10 @@ process::process(const std::vector<std::string>& args, const subprocess_env_map_
     pipe_fds stdout_pipe;
     pipe_fds stderr_pipe;
 
+    // the child reports why it could not run the program through this pipe
+    // exec* closes it, so the parent reads nothing if the program could be run
+    pipe_fds exec_error_pipe;
+
     // if the standard streams are closed, the pipes may get their numbers, and connecting one end in the child would
     // replace another, so move the ends above them
     auto move_above_standard_streams = [](fd_owner& end) {
@@ -182,6 +186,7 @@ process::process(const std::vector<std::string>& args, const subprocess_env_map_
     // create actual pipes
     create_pipe(stdout_pipe);
     create_pipe(stderr_pipe);
+    create_pipe(exec_error_pipe);
 
     // prepare arguments for exec* before forking, as the child may not allocate memory
     exec_vector exec_args;
@@ -206,21 +211,24 @@ process::process(const std::vector<std::string>& args, const subprocess_env_map_
 
         // the parent may be multithreaded, so do not allocate or throw until exec*, and use only async-signal-safe
         // functions (POSIX does not list execvpe, but it does not allocate in glibc, musl or FreeBSD)
-        // exit with 127 like shells do if the program cannot be run
-        auto fail = [] {
+        // report errors to the parent (exec_error()) instead, and exit with 127 like shells do
+        const auto exec_error_fd = exec_error_pipe.write_end.get();
+        auto fail = [exec_error_fd](int error) {
+            (void) !write(exec_error_fd, &error, sizeof(error));
             _exit(127);
         };
 
-        // first step: close the read end of both pipes
+        // first step: close the read end of all pipes
         ::close(stdout_pipe.read_end.get());
         ::close(stderr_pipe.read_end.get());
+        ::close(exec_error_pipe.read_end.get());
 
         auto connect_fd = [&fail](int fd, int fileno) {
             for (;;) {
                 if (dup2(fd, fileno) == -1) {
                     const auto error = errno;
                     if (error != EINTR) {
-                        fail();
+                        fail(error);
                     }
                     continue;
                 }
@@ -240,7 +248,7 @@ process::process(const std::vector<std::string>& args, const subprocess_env_map_
         execvpe(args.front().c_str(), exec_args.data(), exec_env.data());
 
         // only reached if exec* fails
-        fail();
+        fail(errno);
     }
 
     // parent code
@@ -248,6 +256,21 @@ process::process(const std::vector<std::string>& args, const subprocess_env_map_
     // we do not intend to write to these pipes from this end
     close_pipe_fd(stdout_pipe.write_end.release());
     close_pipe_fd(stderr_pipe.write_end.release());
+
+    // wait until the child has run the program, which closes the pipe, or has reported why it could not
+    close_pipe_fd(exec_error_pipe.write_end.release());
+
+    int exec_error = 0;
+    ssize_t bytes_read;
+    do {
+        bytes_read = read(exec_error_pipe.read_end.get(), &exec_error, sizeof(exec_error));
+    } while (bytes_read == -1 && errno == EINTR);
+
+    close_pipe_fd(exec_error_pipe.read_end.release());
+
+    if (bytes_read == sizeof(exec_error)) {
+        exec_error_ = exec_error;
+    }
 
     // store the file descriptors last, as the destructor only closes them once the constructor has completed
     stdout_fd_ = stdout_pipe.read_end.release();
@@ -277,6 +300,10 @@ int process::close() {
 
 int process::term_signal() const {
     return term_signal_;
+}
+
+int process::exec_error() const {
+    return exec_error_;
 }
 
 process::~process() {

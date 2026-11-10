@@ -102,7 +102,7 @@ namespace linuxdeploy {
 
             auto exit_code = proc.close();
 
-            return subprocess_result{exit_code, proc.term_signal(), buffers[0].buffer, buffers[1].buffer};
+            return subprocess_result{exit_code, proc.term_signal(), proc.exec_error(), buffers[0].buffer, buffers[1].buffer};
         }
 
         std::string subprocess::check_output() const {

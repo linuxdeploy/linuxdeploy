@@ -1,6 +1,11 @@
 #include <algorithm>
+#include <cerrno>
 #include <csignal>
+#include <cstdlib>
+#include <cstring>
 #include <exception>
+#include <filesystem>
+#include <fstream>
 #include <optional>
 #include <string>
 #include <vector>
@@ -12,7 +17,9 @@
 
 #include "linuxdeploy/subprocess/process.h"
 #include "linuxdeploy/subprocess/subprocess.h"
+#include "test_util.h"
 
+namespace fs = std::filesystem;
 using namespace linuxdeploy::subprocess;
 using testing::HasSubstr;
 
@@ -21,6 +28,7 @@ namespace {
         const auto result = subprocess({"sh", "-c", "echo output; exit 9"}).run();
         EXPECT_EQ(result.exit_code(), 9);
         EXPECT_EQ(result.term_signal(), 0);
+        EXPECT_EQ(result.exec_error(), 0);
         EXPECT_EQ(result.stdout_string(), "output\n");
     }
 
@@ -34,8 +42,31 @@ namespace {
 
     TEST(SubprocessTest, ExecFailureExitsChild) {
         // the forked child must exit instead of throwing, otherwise it would continue to run the caller's code
+        // it reports why only through exec_error()
         const auto result = subprocess({"/nonexistent/program"}).run();
+        EXPECT_EQ(result.exec_error(), ENOENT);
         EXPECT_EQ(result.exit_code(), 127);
+        EXPECT_EQ(result.term_signal(), 0);
+        EXPECT_EQ(result.stderr_string(), "");
+    }
+
+    TEST(SubprocessTest, ReportNoExecErrorForProgramExitingLikeMissingCommand) {
+        // a program may exit with the code a failed exec* leads to, but it was run
+        const auto result = subprocess({"sh", "-c", "exit 127"}).run();
+        EXPECT_EQ(result.exit_code(), 127);
+        EXPECT_EQ(result.exec_error(), 0);
+        EXPECT_EQ(result.term_signal(), 0);
+    }
+
+    TEST(SubprocessTest, ReportExecErrorOfProgramWhichCannotBeRun) {
+        // the directory exists, but cannot be run
+        const auto result = subprocess({"/"}).run();
+        EXPECT_EQ(result.exec_error(), EACCES);
+    }
+
+    TEST(SubprocessTest, CheckOutputRejectsExecError) {
+        EXPECT_THAT([] { subprocess({"/nonexistent/program"}).check_output(); },
+                    testing::ThrowsMessage<std::logic_error>(HasSubstr("could not be run")));
     }
 
     TEST(SubprocessTest, CloseDescriptorsIfPipesCannotBeCreated) {
@@ -53,8 +84,8 @@ namespace {
         };
         const auto openBefore = openDescriptors();
 
-        // the process needs two pipes, so with up to three free descriptors, each of them fails in turn
-        for (int freeDescriptors = 0; freeDescriptors < 4; ++freeDescriptors) {
+        // the process needs three pipes, so with up to five free descriptors, each of them fails in turn
+        for (int freeDescriptors = 0; freeDescriptors < 6; ++freeDescriptors) {
             SCOPED_TRACE(freeDescriptors);
 
             // the lowest limit below which exactly that many descriptors are free
@@ -112,8 +143,16 @@ namespace {
         const auto result = runWithoutStandardStreams({"sh", "-c", "echo output; echo error >&2; exit 3"});
         ASSERT_TRUE(result);
         EXPECT_EQ(result->exit_code(), 3);
+        EXPECT_EQ(result->exec_error(), 0);
         EXPECT_EQ(result->stdout_string(), "output\n");
         EXPECT_EQ(result->stderr_string(), "error\n");
+    }
+
+    TEST(SubprocessTest, ReportExecErrorIfStandardStreamsAreClosed) {
+        const auto result = runWithoutStandardStreams({"/nonexistent/program"});
+        ASSERT_TRUE(result);
+        EXPECT_EQ(result->exec_error(), ENOENT);
+        EXPECT_EQ(result->stderr_string(), "");
     }
 
     TEST(SubprocessTest, ClosePipesOnExec) {
@@ -127,6 +166,7 @@ namespace {
         EXPECT_EQ(subprocess({"sh", "-c", "exit 3"}).run().exit_description(), "exited with code 3");
         EXPECT_EQ(subprocess({"sh", "-c", "kill -KILL $$"}).run().exit_description(),
                   "terminated by signal " + std::to_string(SIGKILL));
+        EXPECT_EQ(subprocess({"/"}).run().exit_description(), "could not be run: " + std::string(strerror(EACCES)));
     }
 
     TEST(SubprocessTest, CheckOutputRejectsTerminationBySignal) {
@@ -137,5 +177,86 @@ namespace {
     TEST(SubprocessTest, CheckOutputRejectsNonZeroExit) {
         EXPECT_THAT([] { subprocess({"sh", "-c", "exit 3"}).check_output(); },
                     testing::ThrowsMessage<std::logic_error>(HasSubstr("failed (exited with code 3)")));
+    }
+
+    // programs are searched for like exec* does, which differs from a lookup in $PATH
+    class SubprocessSearchTest : public testing::Test {
+    protected:
+        fs::path directory;
+        fs::path oldWorkingDirectory;
+        std::optional<std::string> oldPath;
+
+        void SetUp() override {
+            if (const auto* path = getenv("PATH"))
+                oldPath = path;
+            oldWorkingDirectory = fs::current_path();
+            directory = make_temporary_directory();
+        }
+
+        void TearDown() override {
+            fs::current_path(oldWorkingDirectory);
+            if (oldPath)
+                EXPECT_EQ(setenv("PATH", oldPath->c_str(), 1), 0);
+            else
+                EXPECT_EQ(unsetenv("PATH"), 0);
+            fs::remove_all(directory);
+        }
+
+        static void setPath(const std::string& path) {
+            ASSERT_EQ(setenv("PATH", path.c_str(), 1), 0);
+        }
+
+        // writes a program which prints its name
+        static void writeProgram(const fs::path& path, const std::string& name) {
+            fs::create_directories(path.parent_path());
+            std::ofstream(path) << "#!/bin/sh\necho " << name << "\n";
+            fs::permissions(path, fs::perms::owner_exec, fs::perm_options::add);
+        }
+
+        // writes a script whose interpreter is missing
+        static void writeBrokenProgram(const fs::path& path) {
+            fs::create_directories(path.parent_path());
+            std::ofstream(path) << "#!/nonexistent/interpreter\n";
+            fs::permissions(path, fs::perms::owner_exec, fs::perm_options::add);
+        }
+    };
+
+    TEST_F(SubprocessSearchTest, SkipProgramWhichCannotBeRun) {
+        // like execvpe(), continue searching the $PATH if a program cannot be run
+        writeBrokenProgram(directory / "broken" / "program");
+        writeProgram(directory / "working" / "program", "working");
+        setPath((directory / "broken").string() + ":" + (directory / "working").string());
+
+        const auto result = subprocess({"program"}).run();
+        EXPECT_EQ(result.exec_error(), 0);
+        EXPECT_EQ(result.stdout_string(), "working\n");
+    }
+
+    TEST_F(SubprocessSearchTest, ReportMissingInterpreterLikeMissingProgram) {
+        // exec* reports ENOENT if the program was found, but its interpreter was not
+        writeBrokenProgram(directory / "broken" / "program");
+        setPath((directory / "broken").string());
+
+        EXPECT_EQ(subprocess({"program"}).run().exec_error(), ENOENT);
+    }
+
+    TEST_F(SubprocessSearchTest, SearchEmptyPathEntry) {
+        // an empty entry stands for the current directory
+        writeProgram(directory / "program", "current");
+        setPath((directory / "nonexistent").string() + ":");
+        fs::current_path(directory);
+
+        const auto result = subprocess({"program"}).run();
+        EXPECT_EQ(result.exec_error(), 0);
+        EXPECT_EQ(result.stdout_string(), "current\n");
+    }
+
+    TEST_F(SubprocessSearchTest, UseDefaultPathIfUnset) {
+        // without a $PATH, exec* falls back to the C library's default search path, which contains sh
+        ASSERT_EQ(unsetenv("PATH"), 0);
+
+        const auto result = subprocess({"sh", "-c", "echo found"}).run();
+        EXPECT_EQ(result.exec_error(), 0);
+        EXPECT_EQ(result.stdout_string(), "found\n");
     }
 }

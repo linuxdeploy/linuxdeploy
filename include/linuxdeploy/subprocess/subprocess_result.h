@@ -17,11 +17,12 @@ namespace linuxdeploy {
         private:
             int exit_code_;
             int term_signal_;
+            int exec_error_;
             subprocess_result_buffer_t stdout_contents_;
             subprocess_result_buffer_t stderr_contents_;
 
         public:
-            subprocess_result(int exit_code, int term_signal,
+            subprocess_result(int exit_code, int term_signal, int exec_error,
                               subprocess_result_buffer_t stdout_contents, subprocess_result_buffer_t stderr_contents);
 
             /**
@@ -35,7 +36,12 @@ namespace linuxdeploy {
             int term_signal() const;
 
             /**
-             * @return how the process ended for messages, e.g., "exited with code 1" or "terminated by signal 9"
+             * @return errno of the failed attempt to run the program (e.g., ENOENT), or 0 if it could be run
+             */
+            int exec_error() const;
+
+            /**
+             * @return how the process ended for messages, e.g., "exited with code 1" or "could not be run: ..."
              */
             std::string exit_description() const;
 
