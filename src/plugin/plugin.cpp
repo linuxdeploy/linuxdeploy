@@ -91,9 +91,11 @@ namespace linuxdeploy {
                     }
 
                     // entry name must match regular expression
-                    std::cmatch res;
+                    // res refers into fileName, so fileName must outlive res
+                    const auto fileName = i->path().filename().string();
+                    std::smatch res;
 
-                    if (!std::regex_match(i->path().filename().string().c_str(), res, PLUGIN_EXPR)) {
+                    if (!std::regex_match(fileName, res, PLUGIN_EXPR)) {
                         ldLog() << LD_DEBUG << "Doesn't match plugin regex, skipping:" << i->path() << std::endl;
                         continue;
                     }
