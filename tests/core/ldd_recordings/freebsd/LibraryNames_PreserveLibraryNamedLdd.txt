@@ -1,0 +1,19 @@
+# ldd /fixture/simple_executable
+# exit status 0
+# stdout
+/fixture/simple_executable:
+	ldd => /fixture/ldd (0x1000)
+	libdependency_parent.so => /fixture/libdependency_parent.so (0x1000)
+	libthr.so.3 => /lib/libthr.so.3 (0x1000)
+	libpng16.so.16 => /usr/local/lib/libpng16.so.16 (0x1000)
+	libjpeg.so.8 => /usr/local/lib/libjpeg.so.8 (0x1000)
+	libc++.so.1 => /lib/libc++.so.1 (0x1000)
+	libcxxrt.so.1 => /lib/libcxxrt.so.1 (0x1000)
+	libm.so.5 => /lib/libm.so.5 (0x1000)
+	libc.so.7 => /lib/libc.so.7 (0x1000)
+	libgcc_s.so.1 => /lib/libgcc_s.so.1 (0x1000)
+	libdependency_leaf.so => /fixture/libdependency_leaf.so (0x1000)
+	libsys.so.7 => /lib/libsys.so.7 (0x1000)
+	libz.so.6 => /lib/libz.so.6 (0x1000)
+	[vdso] => [vdso] (0x1000)
+# stderr

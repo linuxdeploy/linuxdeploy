@@ -1,0 +1,5 @@
+# ldd /fixture/unloadable/libdependency_leaf.so
+# exit status 1
+# stdout
+# stderr
+ldd: /fixture/unloadable/libdependency_leaf.so: Not a valid dynamic program

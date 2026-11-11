@@ -2,10 +2,12 @@
 
 // system headers
 #include <algorithm>
+#include <cctype>
 #include <climits>
 #include <cstring>
 #include <filesystem>
 #include <fnmatch.h>
+#include <fstream>
 #include <sstream>
 #include <string>
 #include <unistd.h>
@@ -103,17 +105,45 @@ namespace linuxdeploy {
                 return buf.data();
             }
 
-            // very simple but for our purposes good enough which like algorithm to find binaries in $PATH
+            // the tool findTool() selected, and where it came from for messages (e.g., "set in $STRIP")
+            struct FoundTool {
+                std::string path;
+                std::string source;
+            };
+
+            // returns the tool to run: envVar if it is not empty (a name or a path), otherwise name next to the
+            // linuxdeploy binary, otherwise name, for exec* to search in $PATH
+            static FoundTool findTool(const char* envVar, const std::string& name) {
+                // allows users to use a custom tool instead of the bundled one
+                const auto* envTool = getenv(envVar);
+                if (envTool != nullptr && *envTool != '\0')
+                    return {envTool, std::string("set in $") + envVar};
+
+                // without the binary's path, the bundled tool would be searched for in the current directory
+                const auto ownPath = getOwnExecutablePath();
+                if (!ownPath.empty()) {
+                    const auto bundledTool = std::filesystem::path(ownPath).parent_path() / name;
+                    if (std::filesystem::exists(bundledTool))
+                        return {bundledTool.string(), "bundled with linuxdeploy"};
+                }
+
+                return {name, "searched for in $PATH"};
+            }
+
+            // finds a program like exec* does, but skips empty $PATH entries and finds nothing if $PATH is unset, so
+            // run programs by name through subprocess rather than via the returned path
             static std::filesystem::path which(const std::string& name) {
                 namespace fs = std::filesystem;
 
-                // check if name is an absolute path and a valid binary to run
+                auto isExecutable = [](const fs::path& binary) {
+                    std::error_code ec;
+                    return access(binary.c_str(), X_OK) == 0 && fs::is_regular_file(binary, ec);
+                };
+
+                // like exec*, check a name which contains a slash directly instead of searching $PATH
                 const fs::path name_path(name);
-                if (name_path.is_absolute()
-                    && fs::exists(name_path)
-                    && (fs::status(name_path).permissions() & fs::perms::owner_exec) != fs::perms::none) {
-                        return name_path;
-                }
+                if (name.find('/') != std::string::npos)
+                    return isExecutable(name_path) ? name_path : fs::path{};
 
                 const auto* path = getenv("PATH");
 
@@ -121,18 +151,15 @@ namespace linuxdeploy {
                     return "";
 
                 for (const auto& binDir : split(path, ':')) {
-                    if (!fs::is_directory(binDir)) {
+                    // empty entries would search the current directory
+                    if (binDir.empty())
                         continue;
-                    }
 
-                    for (fs::directory_iterator it(binDir); it != fs::directory_iterator{}; ++it) {
-                        const auto binary = it->path();
+                    // check the candidate directly, as searchable but unreadable directories cannot be listed
+                    const auto binary = fs::path(binDir) / name;
 
-                        if (binary.filename() == name) {
-                            // TODO: check if file is executable (skip otherwise)
-                            return binary;
-                        }
-                    }
+                    if (isExecutable(binary))
+                        return binary;
                 }
 
                 return {};
@@ -166,6 +193,37 @@ namespace linuxdeploy {
                 }
 
                 return false;
+            }
+
+            // splits a list of preloaded libraries (e.g., $LD_PRELOAD) at whitespace and colons, like the loaders do
+            static std::vector<std::string> splitPreloadList(std::string list) {
+                std::replace_if(list.begin(), list.end(), [](unsigned char c) {
+                    return c == ':' || std::isspace(c);
+                }, ' ');
+
+                std::vector<std::string> entries;
+                std::istringstream stream(list);
+                for (std::string entry; stream >> entry;)
+                    entries.push_back(entry);
+
+                return entries;
+            }
+
+            // returns the entries of file (e.g., /etc/ld.so.preload) as written there (e.g., with $LIB), as glibc's ldd
+            // lists them like that, followed by "=>" and the path if they are names or contain tokens
+            static std::vector<std::string> readPreloadEntries(const std::filesystem::path& file) {
+                std::vector<std::string> entries;
+                std::ifstream stream(file);
+
+                for (std::string line; std::getline(stream, line);) {
+                    // comments start with #
+                    line.erase(std::min(line.find('#'), line.size()));
+
+                    const auto lineEntries = splitPreloadList(line);
+                    entries.insert(entries.end(), lineEntries.begin(), lineEntries.end());
+                }
+
+                return entries;
             }
         }
     }

@@ -1,0 +1,53 @@
+# shared dependencies of the Alpine (musl) builds
+FROM alpine:3.24 AS base
+
+RUN apk add --no-cache \
+        bash \
+        ca-certificates \
+        cmake \
+        ninja \
+        git \
+        file \
+        patchelf \
+        pkgconf \
+        file-dev \
+        libpng-dev \
+        libpng-static \
+        libjpeg-turbo-dev \
+        libjpeg-turbo-static \
+        zlib-dev \
+        zlib-static \
+        musl-utils
+
+# the containers have no FUSE to mount AppImages, e.g., the one ci/build.sh tests
+ENV APPIMAGE_EXTRACT_AND_RUN=1
+
+# no CImg: Alpine has it only in edge/testing, which is not reproducible, so CMake fetches the pinned version
+
+FROM base AS musl
+
+RUN apk add --no-cache build-base gtest-dev
+
+FROM base AS llvm
+
+RUN apk add --no-cache \
+        musl-dev \
+        clang \
+        lld \
+        compiler-rt \
+        libc++-dev \
+        libc++-static \
+        llvm-libunwind-dev \
+        llvm-libunwind-static \
+        llvm
+
+# Alpine's clang defaults to GNU ld, libgcc and libstdc++, so select the LLVM toolchain through LDFLAGS
+# (CMake finds llvm-ar etc. by itself); static programs need libc++abi and libunwind linked explicitly
+# $STRIP points linuxdeploy to llvm-strip
+# Alpine's gtest is built against libstdc++, so FORCE_BUILD_GTEST builds it from source with libc++
+ENV CC=clang \
+    CXX=clang++ \
+    CXXFLAGS="-stdlib=libc++" \
+    LDFLAGS="-fuse-ld=lld -rtlib=compiler-rt -unwindlib=libunwind -lc++abi -lunwind" \
+    STRIP=llvm-strip \
+    FORCE_BUILD_GTEST=ON

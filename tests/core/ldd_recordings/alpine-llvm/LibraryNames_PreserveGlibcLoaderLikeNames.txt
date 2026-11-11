@@ -1,0 +1,11 @@
+# ldd /fixture/simple_executable
+# exit status 0
+# stdout
+	/lib/ld-musl-x86_64.so.1 (0x1000)
+	libsimple_library.so => /fixture/libsimple_library.so (0x1000)
+	libdependency_parent.so => /fixture/libdependency_parent.so (0x1000)
+	libc.musl-x86_64.so.1 => /lib/ld-musl-x86_64.so.1 (0x1000)
+	libc++abi.so.1 => /usr/lib/libc++abi.so.1 (0x1000)
+	libunwind.so.1 => /usr/lib/libunwind.so.1 (0x1000)
+	libdependency_leaf.so => /fixture/build-linux-test/libdependency_leaf.so (0x1000)
+# stderr

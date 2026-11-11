@@ -21,6 +21,10 @@ namespace linuxdeploy {
             bool exited_ = false;
             // exit code -- will be initialized by close()
             int exit_code_ = -1;
+            // signal which terminated the process, 0 if it exited -- will be initialized by close()
+            int term_signal_ = 0;
+            // errno of the failed attempt to run the program, 0 if it could be run
+            int exec_error_ = 0;
 
             // these constants help make the pipe code more readable
             static constexpr int READ_END_ = 0, WRITE_END_ = 1;
@@ -78,6 +82,18 @@ namespace linuxdeploy {
              * @return child process's exit code
              */
             int close();
+
+            /**
+             * Use close() or is_running() to wait for the process first.
+             * @return signal which terminated the child process, or 0 if it exited
+             */
+            int term_signal() const;
+
+            /**
+             * If the program could not be run (e.g., it was not found in $PATH), the child process exits with code 127.
+             * @return errno of the failed attempt to run the program (e.g., ENOENT), or 0 if it could be run
+             */
+            int exec_error() const;
 
             /**
              * Kill underlying process with given signal. By default, SIGTERM is used to end the process.

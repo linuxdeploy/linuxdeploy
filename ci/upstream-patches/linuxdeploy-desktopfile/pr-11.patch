@@ -1,0 +1,25 @@
+From 70f17adad70f206f246ec953e6b5466f4ae1a65f Mon Sep 17 00:00:00 2001
+From: Pepper Gray <hello@peppergray.xyz>
+Date: Tue, 22 Sep 2026 01:15:14 +0200
+Subject: [PATCH] including missing header for musl build
+
+building on `musl` fails with errors due to missing header `<cstdint>`
+
+Closes: #10
+Signed-off-by: Pepper Gray <hello@peppergray.xyz>
+---
+ include/linuxdeploy/desktopfile/desktopfileentry.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/include/linuxdeploy/desktopfile/desktopfileentry.h b/include/linuxdeploy/desktopfile/desktopfileentry.h
+index 3940668..d822f85 100644
+--- a/include/linuxdeploy/desktopfile/desktopfileentry.h
++++ b/include/linuxdeploy/desktopfile/desktopfileentry.h
+@@ -4,6 +4,7 @@
+ #include <memory>
+ #include <string>
+ #include <vector>
++#include <cstdint>
+ 
+ namespace linuxdeploy {
+     namespace desktopfile {

@@ -1,0 +1,5 @@
+# ldd /fixture/AppDir/usr/lib/libdependency_parent.so
+# exit status 1
+# stdout
+/fixture/AppDir/usr/lib/libdependency_parent.so: error while loading shared libraries: /fixture/unloadable/libdependency_leaf.so: only ET_DYN and ET_EXEC can be loaded
+# stderr

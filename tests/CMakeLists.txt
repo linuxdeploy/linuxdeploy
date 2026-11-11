@@ -19,6 +19,8 @@ if(NOT COMMAND ld_add_test)
 endif()
 
 # first build dependencies for tests
+add_subdirectory(dependency_leaf)
+add_subdirectory(dependency_parent)
 add_subdirectory(simple_library)
 add_subdirectory(simple_executable)
 

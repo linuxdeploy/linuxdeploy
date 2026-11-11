@@ -103,7 +103,9 @@ namespace linuxdeploy {
                                 else if (firstLine == "output")
                                     type = OUTPUT_TYPE;
                             }
-                        } catch (const std::logic_error&) {}
+                        } catch (const subprocess::called_process_error&) {
+                            // plugins need not implement --plugin-type; other errors (e.g., fork() failing) propagate
+                        }
 
                         return type;
                     }

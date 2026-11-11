@@ -7,7 +7,6 @@
 #include <stdexcept>
 #include <utility>
 #include <unistd.h>
-#include <thread>
 #include <sstream>
 
 // local headers
@@ -61,10 +60,14 @@ namespace linuxdeploy {
                 for (auto& pipe_state: buffers) {
                     // read some bytes into smaller intermediate buffer to prevent either of the pipes to overflow
                     // the results are immediately appended to the main buffer
-                    subprocess_result_buffer_t intermediate_buffer(4096);
+                    subprocess_result_buffer_t intermediate_buffer;
 
-                    // (try to) read all available data from pipe
-                    for (; !pipe_state.eof;) {
+                    // read the data which is available, then turn to the other pipe, which the program may be blocked
+                    // writing to (e.g., musl's ldd reports every unresolved symbol on stderr before it exits)
+                    for (bool available = true; available && !pipe_state.eof;) {
+                        // read() shrinks the buffer to the bytes it read
+                        intermediate_buffer.resize(4096);
+
                         switch (pipe_state.reader.read(intermediate_buffer)) {
                             case pipe_reader::result::SUCCESS: {
                                 // append to main buffer
@@ -78,14 +81,10 @@ namespace linuxdeploy {
                                 break;
                             }
                             default:
+                                available = false;
                                 break;
                         }
                     }
-                }
-
-                if (proc.is_running()) {
-                    // reduce load on CPU until EOF
-                    std::this_thread::sleep_for(std::chrono::milliseconds(50));
                 }
 
                 // once all buffers are EOF, we can stop reading
@@ -102,7 +101,7 @@ namespace linuxdeploy {
 
             auto exit_code = proc.close();
 
-            return subprocess_result{exit_code, buffers[0].buffer, buffers[1].buffer};
+            return subprocess_result{exit_code, proc.term_signal(), proc.exec_error(), buffers[0].buffer, buffers[1].buffer};
         }
 
         std::string subprocess::check_output() const {
@@ -115,7 +114,7 @@ namespace linuxdeploy {
                 for (const auto& arg: args_) {
                     out << arg << " ";
                 }
-                out << "failed with exit code " << std::to_string(result.exit_code());
+                out << "failed (" << result.exit_description() << ")";
 
                 auto stdoutString = result.stdout_string();
                 if (stdoutString.empty()) {
@@ -130,7 +129,7 @@ namespace linuxdeploy {
                 ldLog() << LD_DEBUG << "stdout:" << stdoutString << std::endl;
                 ldLog() << LD_DEBUG << "stderr:" << stderrString << std::endl;
 
-                throw std::logic_error{out.str()};
+                throw called_process_error{out.str()};
             }
 
             return result.stdout_string();

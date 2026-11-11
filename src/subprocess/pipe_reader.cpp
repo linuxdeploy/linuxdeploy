@@ -1,5 +1,6 @@
 // system headers
 #include <algorithm>
+#include <cerrno>
 #include <cstring>
 #include <poll.h>
 #include <unistd.h>

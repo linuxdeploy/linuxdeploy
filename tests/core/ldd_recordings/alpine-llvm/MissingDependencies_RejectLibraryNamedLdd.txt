@@ -1,0 +1,10 @@
+# ldd /fixture/simple_executable
+# exit status 127
+# stdout
+	/lib/ld-musl-x86_64.so.1 (0x1000)
+	libdependency_parent.so => /fixture/libdependency_parent.so (0x1000)
+	libc.musl-x86_64.so.1 => /lib/ld-musl-x86_64.so.1 (0x1000)
+	libdependency_leaf.so => /fixture/libdependency_leaf.so (0x1000)
+# stderr
+Error loading shared library ldd: No such file or directory (needed by /fixture/simple_executable)
+Error relocating /fixture/simple_executable: _Z11hello_worldv: symbol not found

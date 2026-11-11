@@ -1,0 +1,8 @@
+add_library(dependency_parent SHARED dependency_parent.cpp dependency_parent.h)
+target_include_directories(dependency_parent PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+add_library(dependency_parent_static STATIC dependency_parent.cpp dependency_parent.h)
+target_include_directories(dependency_parent_static PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_link_libraries(dependency_parent PRIVATE dependency_leaf)
+target_link_libraries(dependency_parent_static PRIVATE dependency_leaf_static)

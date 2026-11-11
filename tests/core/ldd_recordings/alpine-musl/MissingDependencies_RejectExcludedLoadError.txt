@@ -1,0 +1,12 @@
+# ldd /fixture/simple_executable
+# exit status 127
+# stdout
+	/lib/ld-musl-x86_64.so.1 (0x1000)
+	libsimple_library.so => /fixture/libsimple_library.so (0x1000)
+	libdependency_parent.so => /fixture/libdependency_parent.so (0x1000)
+	libc.musl-x86_64.so.1 => /lib/ld-musl-x86_64.so.1 (0x1000)
+	libstdc++.so.6 => /usr/lib/libstdc++.so.6 (0x1000)
+	libgcc_s.so.1 => /usr/lib/libgcc_s.so.1 (0x1000)
+# stderr
+Error loading shared library libdependency_leaf.so: Exec format error (needed by /fixture/libdependency_parent.so)
+Error relocating /fixture/libdependency_parent.so: _Z21dependency_leaf_valuev: symbol not found

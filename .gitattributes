@@ -1,0 +1,2 @@
+# format-patch output has trailing spaces on blank context lines
+ci/upstream-patches/** -whitespace

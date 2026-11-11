@@ -1,0 +1,11 @@
+# ldd /fixture/simple_executable
+# exit status 127
+# stdout
+	/lib/ld-musl-x86_64.so.1 (0x1000)
+	libc.musl-x86_64.so.1 => /lib/ld-musl-x86_64.so.1 (0x1000)
+# stderr
+Error loading shared library libsimple_library.so: No such file or directory (needed by /fixture/simple_executable)
+Error loading shared library libdependency_parent.so: No such file or directory (needed by /fixture/simple_executable)
+Error relocating /fixture/simple_executable: _Z11hello_worldv: symbol not found
+Error relocating /fixture/simple_executable: _Z22dependency_parent_initv: symbol not found
+Error relocating /fixture/simple_executable: _Z25dependency_parent_destroyv: symbol not found

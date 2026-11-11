@@ -1,11 +1,14 @@
 // system headers
 #include <algorithm>
+#include <cstdlib>
+#include <cstring>
 #include <stdexcept>
 #include <utility>
 #include <unistd.h>
+#include <fcntl.h>
 #include <memory.h>
+#include <new>
 #include <sys/wait.h>
-#include <sstream>
 
 // local headers
 #include "linuxdeploy/subprocess/process.h"
@@ -16,25 +19,81 @@
 using namespace linuxdeploy::subprocess;
 
 namespace {
-    std::vector<char*> make_args_vector(const std::vector<std::string>& args) {
-        std::vector<char*> rv{};
-        rv.reserve(args.size());
+    // owners which close or free what the constructor has not handed over yet if it throws
 
-        for (const auto& arg : args) {
-            rv.emplace_back(strdup(arg.c_str()));
+    class fd_owner {
+    private:
+        int fd_ = -1;
+
+    public:
+        fd_owner() = default;
+        fd_owner(const fd_owner&) = delete;
+        fd_owner& operator=(const fd_owner&) = delete;
+
+        ~fd_owner() {
+            if (fd_ != -1) {
+                ::close(fd_);
+            }
         }
 
-        // execv* want a nullptr-terminated array
-        rv.emplace_back(nullptr);
+        int get() const {
+            return fd_;
+        }
 
-        return rv;
-    }
+        void reset(int fd) {
+            if (fd_ != -1) {
+                ::close(fd_);
+            }
+            fd_ = fd;
+        }
 
-    int check_waitpid_status(int status) {
+        int release() {
+            const auto fd = fd_;
+            fd_ = -1;
+            return fd;
+        }
+    };
+
+    struct pipe_fds {
+        fd_owner read_end;
+        fd_owner write_end;
+    };
+
+    // nullptr-terminated array of strings, as exec* want them
+    class exec_vector {
+    private:
+        std::vector<char*> strings_{nullptr};
+
+    public:
+        exec_vector() = default;
+        exec_vector(const exec_vector&) = delete;
+        exec_vector& operator=(const exec_vector&) = delete;
+
+        ~exec_vector() {
+            std::for_each(strings_.begin(), strings_.end(), free);
+        }
+
+        void add(const std::string& string) {
+            // insert an empty slot first, so that the copy cannot leak if inserting throws
+            const auto slot = strings_.insert(strings_.end() - 1, nullptr);
+            *slot = strdup(string.c_str());
+            if (*slot == nullptr) {
+                throw std::bad_alloc();
+            }
+        }
+
+        char* const* data() const {
+            return strings_.data();
+        }
+    };
+
+    // sets term_signal to the signal which terminated the child, or 0; returns the exit code, or the signal's number
+    int check_waitpid_status(int status, int& term_signal) {
         if (WIFSIGNALED(status) != 0) {
-            // TODO: consider treating child exit caused by signals separately
-            return WTERMSIG(status);
+            term_signal = WTERMSIG(status);
+            return term_signal;
         } else if (WIFEXITED(status) != 0) {
+            term_signal = 0;
             return WEXITSTATUS(status);
         }
 
@@ -52,28 +111,6 @@ namespace {
                 throw std::logic_error("failed to close pipe fd: " + std::string(strerror(error)));
             };
         }
-    }
-
-    using env_vector_t = std::vector<char*>;
-
-    /**
-     * Convert a map of environment variables to a vector usable within
-     * @param map
-     * @return
-     */
-    env_vector_t env_map_to_vector(const subprocess_env_map_t& map) {
-        env_vector_t out;
-
-        for (const auto& [name, value] : map) {
-            std::ostringstream oss;
-            oss << name << '=' << value;
-            out.emplace_back(strdup(oss.str().c_str()));
-        }
-
-        // must be null terminated, of course
-        out.emplace_back(nullptr);
-
-        return out;
     }
 }
 
@@ -103,23 +140,64 @@ process::process(const std::vector<std::string>& args, const subprocess_env_map_
     util::assert::assert_not_empty(args);
 
     // pipes for both stdout and stderr
-    // the order is, as seen from the child: [read, write]
-    int stdout_pipe_fds[2];
-    int stderr_pipe_fds[2];
+    pipe_fds stdout_pipe;
+    pipe_fds stderr_pipe;
 
+    // the child reports why it could not run the program through this pipe
+    // exec* closes it, so the parent reads nothing if the program could be run
+    pipe_fds exec_error_pipe;
+
+    // if the standard streams are closed, the pipes may get their numbers, and connecting one end in the child would
+    // replace another, so move the ends above them
+    auto move_above_standard_streams = [](fd_owner& end) {
+        if (end.get() > STDERR_FILENO) {
+            return;
+        }
+
+        const auto fd = fcntl(end.get(), F_DUPFD_CLOEXEC, STDERR_FILENO + 1);
+
+        if (fd == -1) {
+            const auto error = errno;
+            throw std::logic_error("failed to move pipe: " + std::string(strerror(error)));
+        }
+
+        end.reset(fd);
+    };
+
+    // close the pipes on exec*, so that programs which other threads of the parent start do not inherit them
+    // the child's standard streams are dup2() copies of its ends, which stay open
     // FIXME: for debugging of #150
-    auto create_pipe = [](int fds[]) {
-        const auto rv = pipe(fds);
+    auto create_pipe = [&move_above_standard_streams](pipe_fds& ends) {
+        int fds[2];
+        const auto rv = pipe2(fds, O_CLOEXEC);
 
         if (rv != 0) {
             const auto error = errno;
             throw std::logic_error("failed to create pipe: " + std::string(strerror(error)));
         }
+
+        ends.read_end.reset(fds[READ_END_]);
+        ends.write_end.reset(fds[WRITE_END_]);
+
+        move_above_standard_streams(ends.read_end);
+        move_above_standard_streams(ends.write_end);
     };
 
     // create actual pipes
-    create_pipe(stdout_pipe_fds);
-    create_pipe(stderr_pipe_fds);
+    create_pipe(stdout_pipe);
+    create_pipe(stderr_pipe);
+    create_pipe(exec_error_pipe);
+
+    // prepare arguments for exec* before forking, as the child may not allocate memory
+    exec_vector exec_args;
+    for (const auto& arg : args) {
+        exec_args.add(arg);
+    }
+
+    exec_vector exec_env;
+    for (const auto& [name, value] : env) {
+        exec_env.add(name + '=' + value);
+    }
 
     // create child process
     child_pid_ = fork();
@@ -131,16 +209,26 @@ process::process(const std::vector<std::string>& args, const subprocess_env_map_
     if (child_pid_ == 0) {
         // we're in the child process
 
-        // first step: close the read end of both pipes
-        close_pipe_fd(stdout_pipe_fds[READ_END_]);
-        close_pipe_fd(stderr_pipe_fds[READ_END_]);
+        // the parent may be multithreaded, so do not allocate or throw until exec*, and use only async-signal-safe
+        // functions (POSIX does not list execvpe, but it does not allocate in glibc, musl or FreeBSD)
+        // report errors to the parent (exec_error()) instead, and exit with 127 like shells do
+        const auto exec_error_fd = exec_error_pipe.write_end.get();
+        auto fail = [exec_error_fd](int error) {
+            (void) !write(exec_error_fd, &error, sizeof(error));
+            _exit(127);
+        };
 
-        auto connect_fd = [](int fd, int fileno) {
+        // first step: close the read end of all pipes
+        ::close(stdout_pipe.read_end.get());
+        ::close(stderr_pipe.read_end.get());
+        ::close(exec_error_pipe.read_end.get());
+
+        auto connect_fd = [&fail](int fd, int fileno) {
             for (;;) {
                 if (dup2(fd, fileno) == -1) {
                     const auto error = errno;
                     if (error != EINTR) {
-                        throw std::logic_error{"failed to connect pipes: " + std::string(strerror(error))};
+                        fail(error);
                     }
                     continue;
                 }
@@ -149,44 +237,44 @@ process::process(const std::vector<std::string>& args, const subprocess_env_map_
             }
         };
 
-        connect_fd(stdout_pipe_fds[WRITE_END_], STDOUT_FILENO);
-        connect_fd(stderr_pipe_fds[WRITE_END_], STDERR_FILENO);
+        connect_fd(stdout_pipe.write_end.get(), STDOUT_FILENO);
+        connect_fd(stderr_pipe.write_end.get(), STDERR_FILENO);
 
         // now, we also have to close the write end of both pipes
-        close_pipe_fd(stdout_pipe_fds[WRITE_END_]);
-        close_pipe_fd(stderr_pipe_fds[WRITE_END_]);
-
-        // prepare arguments for exec*
-        auto exec_args = make_args_vector(args);
-        auto exec_env = env_map_to_vector(env);
+        ::close(stdout_pipe.write_end.get());
+        ::close(stderr_pipe.write_end.get());
 
         // call subprocess
         execvpe(args.front().c_str(), exec_args.data(), exec_env.data());
 
         // only reached if exec* fails
-
-        // clean up memory if exec should ever return
-        // prevents memleaks if the exception below would be handled by a caller
-        auto deleter = [](char* ptr) {
-            free(ptr);
-            ptr = nullptr;
-        };
-
-        std::for_each(exec_args.begin(), exec_args.end(), deleter);
-        std::for_each(exec_env.begin(), exec_env.end(), deleter);
-
-        throw std::runtime_error{"exec() failed: " + std::string(strerror(errno))};
+        fail(errno);
     }
 
     // parent code
 
     // we do not intend to write to these pipes from this end
-    close_pipe_fd(stdout_pipe_fds[WRITE_END_]);
-    close_pipe_fd(stderr_pipe_fds[WRITE_END_]);
+    close_pipe_fd(stdout_pipe.write_end.release());
+    close_pipe_fd(stderr_pipe.write_end.release());
 
-    // store file descriptors
-    stdout_fd_ = stdout_pipe_fds[READ_END_];
-    stderr_fd_ = stderr_pipe_fds[READ_END_];
+    // wait until the child has run the program, which closes the pipe, or has reported why it could not
+    close_pipe_fd(exec_error_pipe.write_end.release());
+
+    int exec_error = 0;
+    ssize_t bytes_read;
+    do {
+        bytes_read = read(exec_error_pipe.read_end.get(), &exec_error, sizeof(exec_error));
+    } while (bytes_read == -1 && errno == EINTR);
+
+    close_pipe_fd(exec_error_pipe.read_end.release());
+
+    if (bytes_read == sizeof(exec_error)) {
+        exec_error_ = exec_error;
+    }
+
+    // store the file descriptors last, as the destructor only closes them once the constructor has completed
+    stdout_fd_ = stdout_pipe.read_end.release();
+    stderr_fd_ = stderr_pipe.read_end.release();
 }
 
 int process::close() {
@@ -198,7 +286,7 @@ int process::close() {
         }
 
         exited_ = true;
-        exit_code_ = check_waitpid_status(status);
+        exit_code_ = check_waitpid_status(status, term_signal_);
     }
 
     close_pipe_fd(stdout_fd_, true);
@@ -208,6 +296,14 @@ int process::close() {
     stderr_fd_ = -1;
 
     return exit_code_;
+}
+
+int process::term_signal() const {
+    return term_signal_;
+}
+
+int process::exec_error() const {
+    return exec_error_;
 }
 
 process::~process() {
@@ -239,7 +335,7 @@ bool process::is_running() {
 
     if (result == child_pid_) {
         exited_ = true;
-        exit_code_ = check_waitpid_status(status);
+        exit_code_ = check_waitpid_status(status, term_signal_);
 
         return false;
     }

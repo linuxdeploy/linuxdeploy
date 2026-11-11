@@ -1,5 +1,6 @@
 // system headers
 #include <array>
+#include <cstring>
 #include <filesystem>
 #include <thread>
 #include <utility>
@@ -130,7 +131,15 @@ namespace linuxdeploy {
                 }
             }
 
-            return proc.close();
+            const auto exit_code = proc.close();
+
+            // the plugin's output does not say why it could not be run
+            if (proc.exec_error() != 0) {
+                ldLog() << LD_ERROR << "Failed to run plugin" << path_ << LD_NO_SPACE << ":"
+                        << strerror(proc.exec_error()) << std::endl;
+            }
+
+            return exit_code;
         }
 
     }

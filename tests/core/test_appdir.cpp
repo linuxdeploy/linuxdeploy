@@ -1,3 +1,9 @@
+// system headers
+#include <cstdlib>
+#include <fstream>
+#include <optional>
+#include <string>
+
 // library headers
 #include "gtest/gtest.h"
 
@@ -24,6 +30,35 @@ namespace {
         const auto resolvedPath = read_symlink(symlinkPath);
         EXPECT_TRUE(resolvedPath == targetPath) << resolvedPath << " " << targetPath;
     }
+
+    // writes a patchelf script and sets $PATCHELF to it, both are undone at the end of the scope, even if the test throws
+    class ScopedPatchelf {
+    private:
+        path path_;
+        std::optional<std::string> oldValue_;
+
+    public:
+        ScopedPatchelf(path scriptPath, const std::string& script) : path_(std::move(scriptPath)) {
+            std::ofstream(path_) << script;
+            permissions(path_, perms::owner_exec, perm_options::add);
+
+            if (const auto* value = getenv("PATCHELF"))
+                oldValue_ = value;
+            setenv("PATCHELF", path_.c_str(), 1);
+        }
+
+        ScopedPatchelf(const ScopedPatchelf&) = delete;
+        ScopedPatchelf& operator=(const ScopedPatchelf&) = delete;
+
+        ~ScopedPatchelf() {
+            if (oldValue_)
+                setenv("PATCHELF", oldValue_->c_str(), 1);
+            else
+                unsetenv("PATCHELF");
+            std::error_code ec;
+            remove(path_, ec);
+        }
+    };
 }
 
 namespace AppDirTest {
@@ -184,6 +219,40 @@ namespace AppDirTest {
         const auto destination = tmpAppDir / "usr/share/doc/simple_application/";
         appDir.deployFile(nonexistingFilePath, destination);
         ASSERT_FALSE(appDir.executeDeferredOperations());
+    }
+
+    TEST_F(AppDirUnitTestsFixture, testFailingToSetRPathFailsDeployment) {
+        // a patchelf which can be run, but fails, e.g., on a file it cannot rewrite
+        // it must read the rpath, as linuxdeploy stops if it cannot
+        const ScopedPatchelf patchelf(tmpAppDir.parent_path() / (tmpAppDir.filename().string() + "-failing-patchelf"),
+                                      "#!/bin/sh\n[ \"$1\" = --print-rpath ] && exit 0\nexit 1\n");
+
+        appDir.deployLibrary(SIMPLE_LIBRARY_PATH);
+        EXPECT_FALSE(appDir.executeDeferredOperations());
+    }
+
+    TEST_F(AppDirUnitTestsFixture, testFailingToReadRPathBeforeStrippingFailsDeployment) {
+        // the rpath is read to decide whether to strip a file, which must fail the deployment instead of throwing
+        const ScopedPatchelf patchelf(tmpAppDir.parent_path() / (tmpAppDir.filename().string() + "-failing-patchelf"),
+                                      "#!/bin/sh\nexit 1\n");
+
+        appDir.deployLibrary(SIMPLE_LIBRARY_NO_DEPENDENCIES_PATH);
+        bool success = true;
+        EXPECT_NO_THROW(success = appDir.executeDeferredOperations());
+        EXPECT_FALSE(success);
+    }
+
+    TEST_F(AppDirUnitTestsFixture, testFailingToReadRPathOfExistingLibraryFailsDeployment) {
+        // the rpath of a library already in the AppDir is extended, so it must be read, but a failure must fail the
+        // deployment instead of throwing
+        appDir.createBasicStructure();
+        copy_file(SIMPLE_LIBRARY_NO_DEPENDENCIES_PATH, tmpAppDir / "usr/lib" / path(SIMPLE_LIBRARY_NO_DEPENDENCIES_PATH).filename());
+        const ScopedPatchelf patchelf(tmpAppDir.parent_path() / (tmpAppDir.filename().string() + "-failing-patchelf"),
+                                      "#!/bin/sh\nexit 1\n");
+
+        bool success = true;
+        EXPECT_NO_THROW(success = appDir.deployDependenciesForExistingFiles());
+        EXPECT_FALSE(success);
     }
 }
 

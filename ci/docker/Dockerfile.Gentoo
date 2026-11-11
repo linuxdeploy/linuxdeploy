@@ -1,0 +1,35 @@
+# selected by ci/build-in-docker.sh: latest (glibc), musl or musl-llvm
+ARG GENTOO_FLAVOR=musl-llvm
+
+# package index
+FROM --platform=linux/amd64 gentoo/portage:latest AS portage
+FROM gentoo/stage3:${GENTOO_FLAVOR}
+COPY --from=portage /var/db/repos/gentoo /var/db/repos/gentoo
+
+RUN eselect profile show && \
+    echo 'FEATURES="getbinpkg -ipc-sandbox -network-sandbox -pid-sandbox"' \
+    >> /etc/portage/make.conf && \
+    echo 'media-libs/cimg ~*' \
+    > /etc/portage/package.accept_keywords/linuxdeploy && \
+    printf '%s\n' 'media-libs/libpng static-libs' \
+                  'media-libs/libjpeg-turbo static-libs' \
+                  'sys-libs/zlib static-libs' \
+                  '# avoid -> rust-bin -> gcc' \
+                  'dev-vcs/git -rust' \
+    > /etc/portage/package.use/linuxdeploy && \
+    emerge --oneshot --verbose --changed-use \
+        app-misc/ca-certificates \
+        dev-build/cmake \
+        dev-build/ninja \
+        dev-util/patchelf \
+        dev-cpp/gtest \
+        dev-vcs/git \
+        media-libs/cimg \
+        media-libs/libjpeg-turbo \
+        media-libs/libpng \
+        sys-libs/zlib \
+        sys-apps/file \
+        virtual/pkgconfig
+
+# the containers have no FUSE to mount AppImages, e.g., the one ci/build.sh tests
+ENV APPIMAGE_EXTRACT_AND_RUN=1

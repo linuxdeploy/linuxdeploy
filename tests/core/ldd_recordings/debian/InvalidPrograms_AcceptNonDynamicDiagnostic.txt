@@ -1,0 +1,5 @@
+# ldd /fixture/unloadable/libdependency_leaf.so
+# exit status 1
+# stdout
+# stderr
+	not a dynamic executable

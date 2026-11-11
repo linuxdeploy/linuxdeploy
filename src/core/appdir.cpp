@@ -1,4 +1,6 @@
 // system headers
+#include <cstdint>
+#include <cstring>
 #include <filesystem>
 #include <iomanip>
 #include <map>
@@ -111,6 +113,9 @@ namespace linuxdeploy {
                     // lookups in a single container are a lot faster than having to look up in several ones, therefore
                     // the little amount of additional memory is worth it, considering the improved performance
                     std::set<fs::path> visitedFiles;
+
+                    // preloaded libraries which have been warned about, as every deployed library is traced again
+                    std::set<fs::path> warnedPreloads;
 
                     // used to automatically rename resources to improve the UX, e.g. icons
                     std::string appName;
@@ -253,7 +258,22 @@ namespace linuxdeploy {
                             while (!stripOperations.empty()) {
                                 const auto& filePath = *(stripOperations.begin());
 
-                                if (util::stringStartsWith(elf_file::ElfFile(filePath).getRPath(), "$")) {
+                                // the rpath only decides whether to strip the file, so if it cannot be read, skip
+                                // just this file, but fail the deployment
+                                std::string rpath;
+                                bool rpathRead = true;
+                                try {
+                                    rpath = elf_file::ElfFile(filePath).getRPath();
+                                } catch (const elf_file::PatchelfError& e) {
+                                    ldLog() << LD_ERROR << e.what() << std::endl;
+                                    rpathRead = false;
+                                    success = false;
+                                }
+
+                                if (!rpathRead) {
+                                    ldLog() << LD_ERROR << "Not calling strip on binary" << filePath << LD_NO_SPACE
+                                            << ": could not read its rpath" << std::endl;
+                                } else if (util::stringStartsWith(rpath, "$")) {
                                     ldLog() << LD_WARNING << "Not calling strip on binary" << filePath << LD_NO_SPACE
                                             << ": rpath starts with $" << std::endl;
                                 } else {
@@ -267,9 +287,21 @@ namespace linuxdeploy {
                                     const auto result = proc.run();
                                     const auto& err = result.stderr_string();
 
+                                    if (result.exec_error() != 0) {
+                                        // quoted, as the path may be just the name (e.g., "strip")
+                                        ldLog() << LD_ERROR << "Failed to find or run strip \"" << LD_NO_SPACE << stripPath
+                                                << LD_NO_SPACE << "\":" << strerror(result.exec_error()) << std::endl;
+
+                                        // the other files cannot be stripped either
+                                        stripOperations.clear();
+                                        success = false;
+                                        break;
+                                    }
+
                                     if (result.exit_code() != 0 &&
                                         !util::stringContains(err, "Not enough room for program headers")) {
-                                        ldLog() << LD_ERROR << "Strip call failed:" << err << std::endl;
+                                        ldLog() << LD_ERROR << "Strip call failed (" << LD_NO_SPACE << result.exit_description()
+                                                << LD_NO_SPACE << "):" << err << std::endl;
                                         success = false;
                                     }
                                 }
@@ -298,7 +330,17 @@ namespace linuxdeploy {
                                         << std::endl;
                             } else {
                                 ldLog() << "Setting rpath in ELF file" << filePath << "to" << rpath << std::endl;
-                                if (!elf_file::ElfFile(filePath).setRPath(rpath)) {
+
+                                // if patchelf cannot be run, it cannot set the other rpaths either, so stop
+                                bool rpathSet;
+                                try {
+                                    rpathSet = elf_file::ElfFile(filePath).setRPath(rpath);
+                                } catch (const elf_file::PatchelfError& e) {
+                                    ldLog() << LD_ERROR << e.what() << std::endl;
+                                    return false;
+                                }
+
+                                if (!rpathSet) {
                                     ldLog() << LD_ERROR << "Failed to set rpath in ELF file:" << filePath << std::endl;
                                     success = false;
                                 }
@@ -307,7 +349,7 @@ namespace linuxdeploy {
                             setElfRPathOperations.erase(setElfRPathOperations.begin());
                         }
 
-                        return true;
+                        return success;
                     }
 
                     // search for copyright file for file and deploy it to AppDir
@@ -365,10 +407,11 @@ namespace linuxdeploy {
 
                         ldLog() << "Deploying dependencies for ELF file" << path << std::endl;
                         try {
-                            for (const auto &dependencyPath : elfFile.traceDynamicDependencies(excludeLibraryPatterns))
+                            for (const auto &dependencyPath : elfFile.traceDynamicDependencies(
+                                     excludeLibraryPatterns, elf_file::ElfFile::defaultPreloadFile, &warnedPreloads))
                                 if (!deployLibrary(dependencyPath, false, false))
                                     return false;
-                        } catch (const elf_file::DependencyNotFoundError& e) {
+                        } catch (const elf_file::DependencyTraceError& e) {
                             ldLog() << LD_ERROR << e.what() << std::endl;
                             return false;
                         }
@@ -377,19 +420,12 @@ namespace linuxdeploy {
                     }
 
                     static std::string getStripPath() {
-                        // by default, try to use a strip next to the linuxdeploy binary
-                        // if that isn't available, fall back to searching for strip in the PATH
-                        std::string stripPath = "strip";
+                        const auto strip = util::findTool("STRIP", "strip");
 
-                        auto binDirPath = fs::path(util::getOwnExecutablePath()).parent_path();
-                        auto localStripPath = binDirPath / "strip";
+                        ldLog() << LD_DEBUG << "Using strip (" << LD_NO_SPACE << strip.source << LD_NO_SPACE << "):"
+                                << strip.path << std::endl;
 
-                        if (fs::exists(localStripPath))
-                            stripPath = localStripPath.string();
-
-                        ldLog() << LD_DEBUG << "Using strip:" << stripPath << std::endl;
-
-                        return stripPath;
+                        return strip.path;
                     }
 
                     static std::string calculateRelativeRPath(const fs::path& originDir, const fs::path& dependencyLibrariesDir) {
@@ -850,7 +886,15 @@ namespace linuxdeploy {
                     if (!d->deployElfDependencies(sharedLibrary))
                         return false;
 
-                    const auto rpath = elf_file::ElfFile(sharedLibrary).getRPath();
+                    // the rpath is extended, so it must be read, or the existing one would be replaced
+                    std::string rpath;
+                    try {
+                        rpath = elf_file::ElfFile(sharedLibrary).getRPath();
+                    } catch (const elf_file::PatchelfError& e) {
+                        ldLog() << LD_ERROR << e.what() << std::endl;
+                        return false;
+                    }
+
                     auto rpathList = util::split(rpath, ':');
                     if (std::find(rpathList.begin(), rpathList.end(), "$ORIGIN") == rpathList.end()) {
                         rpathList.push_back("$ORIGIN");
